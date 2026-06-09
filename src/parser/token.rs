@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Token<'a> {
     LBrace,
     RBrace,
@@ -23,4 +23,11 @@ pub enum Token<'a> {
     Assignment(&'a str),
     Op(&'a str),
     EOF,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct IndexedToken<'a> {
+    pub token: Token<'a>,
+    pub addr: usize,
+    pub len: usize,
 }

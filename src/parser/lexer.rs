@@ -1,6 +1,8 @@
-use crate::parser::token::Token::{self, *};
-use std::io;
-struct Lexer<'a> {
+use crate::parser::token::{
+    IndexedToken,
+    Token::{self, *},
+};
+pub struct Lexer<'a> {
     s: &'a str,
     ind: usize,
     curr_char: Option<char>,
@@ -15,6 +17,12 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn get_next_indexed_token(&mut self) -> Option<IndexedToken<'a>> {
+        let addr = self.ind;
+        let token = self.get_next_token()?;
+        let len = self.ind - addr;
+        Some(IndexedToken { token, addr, len })
+    }
     pub fn get_next_token(&mut self) -> Option<Token<'a>> {
         loop {
             let next_char = self.get_next_char();
@@ -318,10 +326,6 @@ impl<'a> Lexer<'a> {
 
     fn peek_next_char(&self) -> Option<char> {
         self.s[self.ind..].chars().next()
-    }
-
-    fn peek_char_offset(&self, offset: usize) -> Option<char> {
-        self.s[self.ind..].chars().nth(offset)
     }
 
     fn peek_next_2(&self) -> (Option<char>, Option<char>) {
