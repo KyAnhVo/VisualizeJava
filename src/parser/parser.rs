@@ -6,7 +6,8 @@ use crate::parser::{
         Token::{self, *},
     },
     types::{
-        ImportObject, JavaFile, ParseErr, ParseResult, QualifiedName, RefType, TypeArg, TypeArgList,
+        AccessModifier, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult, QualifiedName,
+        RefType, TypeArg, TypeArgList,
     },
 };
 pub struct Parser<'a> {
@@ -22,7 +23,7 @@ impl<'a> Parser<'a> {
         self.java_file()
     }
 
-    /// { <package_decl> } <import> {<type_decl>}
+    /// `<java_file> ::= [<package_decl>] <import> {<type_decl>}`
     fn java_file(&mut self) -> Result<JavaFile<'a>, ParseErr<'a>> {
         let mut file = JavaFile {
             package_name: None,
@@ -41,7 +42,7 @@ impl<'a> Parser<'a> {
         Ok(file)
     }
 
-    /// <package_decl>  ::= [ "package" <qualified_name> ";" ]
+    /// `<package_decl>  ::= [ "package" <qualified_name> ";" ]`
     fn package_decl(&mut self) -> ParseResult<'a, QualifiedName<'a>> {
         if self.get_next_token()?.token != Keyword("package") {
             Err(ParseErr::UnexpectedToken {
@@ -53,7 +54,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// <import> ::= { "import" ["static"] <qualified_name>[.*] ";" }
+    /// `<import> ::= { "import" ["static"] <qualified_name>[.*] ";" }`
     fn import(&mut self) -> ParseResult<'a, Vec<ImportObject<'a>>> {
         let mut v: Vec<ImportObject> = vec![];
 
@@ -105,7 +106,7 @@ impl<'a> Parser<'a> {
     // ------------------- Util nonterms -----------------------------------
     // ---------------------------------------------------------------------
 
-    /// <qualified_name> ::= IDENTIFIER {"." IDENTIFIER}
+    /// `<qualified_name> ::= IDENTIFIER {"." IDENTIFIER}`
     fn qualified_name(&mut self) -> ParseResult<'a, QualifiedName<'a>> {
         let mut name = QualifiedName(vec![]);
 
@@ -126,7 +127,11 @@ impl<'a> Parser<'a> {
                 self.peek_token_offset(0)?.token,
                 self.peek_token_offset(1)?.token,
             ) {
-                (Dot, Identifier(s)) => name.0.push(s),
+                (Dot, Identifier(s)) => {
+                    name.0.push(s);
+                    self.get_next_token()?;
+                    self.get_next_token()?;
+                }
                 _ => break,
             }
         }
@@ -134,7 +139,8 @@ impl<'a> Parser<'a> {
         Ok(name)
     }
 
-    /// <annotation> ::= "@" <qualified_name> [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}" )]
+    /// `<annotation> ::= "@" <qualified_name> [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}"
+    /// )]`
     fn annotation(&mut self) -> ParseResult<'a, &'a str> {
         if self.get_next_token()?.token != Annotation {
             return Err(ParseErr::UnexpectedToken {
@@ -177,6 +183,38 @@ impl<'a> Parser<'a> {
 
         let len = (self.get_current_token()?.addr + self.get_current_token()?.len) - start_ind;
         return Ok(&self.string[start_ind..start_ind + len]);
+    }
+
+    /// `<modifiers> ::= { "public" | "private" | "protected" | "abstract" | "static" | "final" |
+    /// "strictfp" }`
+    pub fn modifiers(&mut self) -> ParseResult<'a, Modifiers<'a>> {
+        let mut modifiers = Modifiers {
+            modifiers: vec![],
+            access_modifier: AccessModifier::Default,
+        };
+
+        while let Keyword(s) = self.peek_next_token()?.token {
+            if matches!(s, "public" | "private" | "protected") {
+                if modifiers.access_modifier != AccessModifier::Default {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "non-access modifier",
+                        got: vec![Keyword(s)],
+                    });
+                }
+                modifiers.access_modifier = match s {
+                    "public" => AccessModifier::Public,
+                    "private" => AccessModifier::Private,
+                    "protected" => AccessModifier::Protected,
+                    _ => unreachable!("we have guaranteed public/private/protected"),
+                };
+            } else if !matches!(s, "abstract" | "static" | "final" | "strictfp") {
+                break;
+            }
+            self.get_next_token()?;
+            modifiers.modifiers.push(s);
+        }
+
+        Ok(modifiers)
     }
 }
 
@@ -265,5 +303,25 @@ impl<'a> Parser<'a> {
                     .ok_or(ParseErr::UnexpectedEOF)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_annotation() {
+        let mut parser = Parser::new(
+            "@annotation1 @com.annotation2(val1, val2) @annotation3{key1: val1, key2: val2}",
+        )
+        .unwrap();
+
+        assert_eq!(parser.annotation().unwrap(), "@annotation1");
+        assert_eq!(parser.annotation().unwrap(), "@com.annotation2(val1, val2)");
+        assert_eq!(
+            parser.annotation().unwrap(),
+            "@annotation3{key1: val1, key2: val2}"
+        )
     }
 }

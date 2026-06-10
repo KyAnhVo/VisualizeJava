@@ -1,6 +1,7 @@
 use crate::parser::token::Token;
 
 /// Error type for our parser
+#[derive(Debug)]
 pub enum ParseErr<'a> {
     UnexpectedToken {
         expected: &'static str,
@@ -111,4 +112,18 @@ pub struct ImportObject<'a> {
     pub name: QualifiedName<'a>,
     pub is_static: bool,
     pub is_wildcard: bool,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum AccessModifier {
+    Public,
+    Private,
+    Protected,
+    Default,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Modifiers<'a> {
+    pub modifiers: Vec<&'a str>,
+    pub access_modifier: AccessModifier,
 }

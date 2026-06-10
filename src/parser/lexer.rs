@@ -6,6 +6,7 @@ pub struct Lexer<'a> {
     s: &'a str,
     ind: usize,
     curr_char: Option<char>,
+    token_start: usize,
 }
 
 impl<'a> Lexer<'a> {
@@ -14,17 +15,23 @@ impl<'a> Lexer<'a> {
             s,
             ind: 0,
             curr_char: Some('\0'),
+            token_start: 0,
         }
     }
 
     pub fn get_next_indexed_token(&mut self) -> Option<IndexedToken<'a>> {
-        let addr = self.ind;
         let token = self.get_next_token()?;
-        let len = self.ind - addr;
-        Some(IndexedToken { token, addr, len })
+
+        let len = self.ind - self.token_start;
+        Some(IndexedToken {
+            token,
+            addr: self.token_start,
+            len,
+        })
     }
     pub fn get_next_token(&mut self) -> Option<Token<'a>> {
         loop {
+            self.token_start = self.ind;
             let next_char = self.get_next_char();
             if next_char.is_none() {
                 return Some(EOF);

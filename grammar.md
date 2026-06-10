@@ -8,8 +8,8 @@ Not done  == `[ ]`
 ```
 [x] <qualified_name>  ::= IDENTIFIER {"." IDENTIFIER}
 [x] <annotation>      ::= "@" <qualified_name> ["(" <skip_parens> ")"]
-[ ] <modifier>        ::= "public" | "private" | "protected" | "abstract" | "static" | "final" | "strictfp"
-[ ] <modifiers>       ::= { <modifiers> }
+[x] <modifier>        ::= "public" | "private" | "protected" | "abstract" | "static" | "final" | "strictfp"
+[x] <modifiers>       ::= { <modifiers> }
 [ ] <voidable_type>   ::= "void" | <ref_type>
 [ ] <ref_type>        ::= <qualified_name> [ "<" <type_arg_lst> ">" ] { "[]" }
 [ ] <type_arg_list>   ::= <type_arg> { "," <type_arg> }
