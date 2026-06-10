@@ -1,13 +1,13 @@
 # Grammar for Java that we will be using
 
 #### Note:
-Donzo     == `[X]`
+Donzo     == `[x]`
 Not done  == `[ ]`
 
 ### util stuffs that everything uses
 ```
-[ ] <qualified_name>  ::= IDENTIFIER {"." IDENTIFIER}
-[ ] <annotation>      ::= "@" <qualified_name> ["(" <skip_parens> ")"]
+[x] <qualified_name>  ::= IDENTIFIER {"." IDENTIFIER}
+[x] <annotation>      ::= "@" <qualified_name> ["(" <skip_parens> ")"]
 [ ] <modifier>        ::= "public" | "private" | "protected" | "abstract" | "static" | "final" | "strictfp"
 [ ] <modifiers>       ::= { <modifiers> }
 [ ] <voidable_type>   ::= "void" | <ref_type>
@@ -25,8 +25,8 @@ Not done  == `[ ]`
 
 ### package, import
 ```
-[ ] <package_decl>  ::= [ "package" <qualified_name> ";" ]
-[ ] <import>        ::= { "import" [ "static" ] <qualified_name> [ ".*" ] ";" }
+[x] <package_decl>  ::= [ "package" <qualified_name> ";" ]
+[x] <import>        ::= { "import" [ "static" ] <qualified_name> [ ".*" ] ";" }
 ```
 
 

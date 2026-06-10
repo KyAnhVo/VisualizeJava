@@ -3,7 +3,7 @@ use crate::parser::token::Token;
 /// Error type for our parser
 pub enum ParseErr<'a> {
     UnexpectedToken {
-        expected: String,
+        expected: &'static str,
         got: Vec<Token<'a>>,
     },
     UnexpectedEOF,
@@ -11,7 +11,6 @@ pub enum ParseErr<'a> {
     IndexingError,
     UnimplementedError,
 }
-pub type Result<'a, T> = std::result::Result<T, ParseErr<'a>>;
 
 /// A TypeArg has 4 values representing 4 different args:
 /// - Is(A) = `A`
@@ -25,6 +24,7 @@ pub enum TypeArg<'a> {
     Super(RefType<'a>),
     Wildcard,
 }
+pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
 
 /// A TypeArgList is a list of type args,
 /// `<A, B, C>` is translated to `vec![A, B, C]`
@@ -34,6 +34,9 @@ pub struct TypeArgList<'a>(pub Vec<TypeArg<'a>>);
 /// A qualified name is a dotted name, e.g. `java.util.ArrayList`
 #[derive(Debug, PartialEq)]
 pub struct QualifiedName<'a>(pub Vec<&'a str>);
+
+/// An annotation is a string slice of one annotation for some type/property/method
+pub struct Annotation<'a>(pub &'a str);
 
 /// A struct to represent type usages with generic,
 /// e.g. `java.util.Hashtable<Integer, ? extends com.util.MyClass>`
@@ -99,7 +102,13 @@ pub struct JavaFile<'a> {
     /// None means this is in the default package
     pub package_name: Option<QualifiedName<'a>>,
     /// imported objects, could be com.etc.*
-    pub imported_objects: Vec<QualifiedName<'a>>,
+    pub imported_objects: Vec<ImportObject<'a>>,
     /// type declarations in the current file
     pub type_decls: Vec<Type<'a>>,
+}
+
+pub struct ImportObject<'a> {
+    pub name: QualifiedName<'a>,
+    pub is_static: bool,
+    pub is_wildcard: bool,
 }
