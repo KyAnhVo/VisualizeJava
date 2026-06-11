@@ -137,7 +137,7 @@ impl<'a> Lexer<'a> {
                         self.get_next_char();
                         return Some(Assignment("&="));
                     }
-                    Some('-') => {
+                    Some('&') => {
                         self.get_next_char();
                         return Some(Op("&&"));
                     }
@@ -148,7 +148,7 @@ impl<'a> Lexer<'a> {
                         self.get_next_char();
                         return Some(Assignment("|="));
                     }
-                    Some('-') => {
+                    Some('|') => {
                         self.get_next_char();
                         return Some(Op("||"));
                     }
