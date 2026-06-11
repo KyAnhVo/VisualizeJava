@@ -1,6 +1,9 @@
 # JavaToUML
 Your java code doesn't have a UML for it yet? Generate one with JavaToUML!
 
+# Note
+This one moved from `https://github.com/KyAnhVo/javaToUml` due to the other one cloning too much (String instead of &str and all that jazz)
+
 ## Description
 This project will capture class relationships and these relationships only:
 - inheritance (and thus polymorphism)
