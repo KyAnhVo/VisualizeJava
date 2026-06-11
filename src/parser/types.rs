@@ -45,8 +45,8 @@ pub struct Annotation<'a>(pub &'a str);
 #[derive(Debug, PartialEq)]
 pub struct RefType<'a> {
     pub name: QualifiedName<'a>,
-    pub type_arg_lst: TypeArgList<'a>,
-    pub arr_dim: usize,
+    pub type_arg_list: TypeArgList<'a>,
+    pub arr_dim: u8,
 }
 
 /// A voidable type is an output for a function.

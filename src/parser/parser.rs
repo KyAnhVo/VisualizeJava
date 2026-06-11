@@ -7,7 +7,7 @@ use crate::parser::{
     },
     types::{
         AccessModifier, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult, QualifiedName,
-        RefType, TypeArg, TypeArgList,
+        RefType, TypeArg, TypeArgList, VoidableType,
     },
 };
 pub struct Parser<'a> {
@@ -16,6 +16,10 @@ pub struct Parser<'a> {
     ind: usize,
     lookahead: Option<IndexedToken<'a>>,
 }
+
+// ---------------------------------------------------------------------
+// --------------------- Parsing ---------------------------------------
+// ---------------------------------------------------------------------
 
 // Parsing
 impl<'a> Parser<'a> {
@@ -101,10 +105,108 @@ impl<'a> Parser<'a> {
 
         Ok(v)
     }
+}
 
-    // ---------------------------------------------------------------------
-    // ------------------- Util nonterms -----------------------------------
-    // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// ------------------- Util nonterms -----------------------------------
+// ---------------------------------------------------------------------
+
+impl<'a> Parser<'a> {
+    /// `<voidable_type> ::= "void" | <ref_type>`
+    fn voidable_type(&mut self) -> ParseResult<'a, VoidableType<'a>> {
+        if let Ok(token) = self.peek_next_token()
+            && token.token == Keyword("void")
+        {
+            Ok(VoidableType::Void)
+        } else {
+            Ok(VoidableType::RefType(self.ref_type()?))
+        }
+    }
+
+    /// `<ref_type> ::= <qualified_name> <type_arg_lst> { "[]" }`
+    fn ref_type(&mut self) -> ParseResult<'a, RefType<'a>> {
+        // <qualified_name>
+        let name: QualifiedName<'a> = self.qualified_name()?;
+
+        // <type_arg_lst>
+        let type_arg_list = self.type_arg_list()?;
+
+        // { "[]" }
+        let mut arr_dim: u8 = 0;
+        loop {
+            if let Ok(token1) = self.peek_next_token() {
+                if token1.token != LBracket {
+                    break;
+                }
+                self.get_next_token().unwrap();
+                if self.get_next_token()?.token != RBracket {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "]",
+                        got: vec![self.get_current_token().unwrap().token],
+                    });
+                }
+                arr_dim += 1;
+            } else {
+                break;
+            }
+        }
+
+        Ok(RefType {
+            name,
+            type_arg_list,
+            arr_dim,
+        })
+    }
+
+    /// `<type_arg_list> ::= "<" <type_arg> { "," <type_arg> } ">"`
+    fn type_arg_list(&mut self) -> ParseResult<'a, TypeArgList<'a>> {
+        // [ "<" ...
+        if let Ok(token) = self.peek_next_token()
+            && token.token == LessThan
+        {
+            self.get_next_token()?;
+        } else {
+            return Ok(TypeArgList(vec![]));
+        };
+
+        // <type_arg>
+        let mut type_arg_list = TypeArgList(vec![self.type_arg()?]);
+
+        // {"," <type_arg>}
+        while let Ok(token) = self.peek_next_token()
+            && token.token == Comma
+        {
+            self.get_next_token()?;
+            type_arg_list.0.push(self.type_arg()?);
+        }
+
+        // ... ">" ]
+        self.consume_gt()?;
+
+        Ok(type_arg_list)
+    }
+
+    /// `<type_arg> ::= <ref_type> | "?" [ ( "extends" | "super" ) <ref_type> ]`
+    fn type_arg(&mut self) -> ParseResult<'a, TypeArg<'a>> {
+        if self.peek_next_token()?.token == QuestionMark {
+            self.get_next_token()?;
+            if let Ok(token) = self.peek_next_token() {
+                if token.token == Keyword("super") {
+                    self.get_next_token()?;
+                    return Ok(TypeArg::Super(self.ref_type()?));
+                } else if token.token == Keyword("extends") {
+                    self.get_next_token()?;
+                    return Ok(TypeArg::Extends(self.ref_type()?));
+                } else {
+                    return Ok(TypeArg::Wildcard);
+                }
+            } else {
+                return Ok(TypeArg::Wildcard);
+            }
+        } else {
+            return Ok(TypeArg::Is(self.ref_type()?));
+        }
+    }
 
     /// `<qualified_name> ::= IDENTIFIER {"." IDENTIFIER}`
     fn qualified_name(&mut self) -> ParseResult<'a, QualifiedName<'a>> {
@@ -218,7 +320,10 @@ impl<'a> Parser<'a> {
     }
 }
 
-// helpers for Parser
+// ---------------------------------------------------------------------
+// ------------------------ helpers for Parser -------------------------
+// ---------------------------------------------------------------------
+
 impl<'a> Parser<'a> {
     pub fn new(s: &'a str) -> Result<Self, ParseErr<'a>> {
         let mut lexer = Lexer::new(s);
@@ -304,7 +409,62 @@ impl<'a> Parser<'a> {
             }
         }
     }
+
+    fn consume_gt(&mut self) -> ParseResult<'a, ()> {
+        let indexed_token = self.get_next_token()?;
+        match indexed_token.token {
+            GreaterThan => Ok(()),
+            Op(">=") => {
+                self.lookahead = Some(IndexedToken {
+                    token: Assignment("="),
+                    addr: indexed_token.addr + 1,
+                    len: indexed_token.len - 1,
+                });
+                Ok(())
+            }
+            Op(">>") => {
+                self.lookahead = Some(IndexedToken {
+                    token: Op(">"),
+                    addr: indexed_token.addr + 1,
+                    len: indexed_token.len - 1,
+                });
+                Ok(())
+            }
+            Assignment(">>=") => {
+                self.lookahead = Some(IndexedToken {
+                    token: Op(">="),
+                    addr: indexed_token.addr + 1,
+                    len: indexed_token.len - 1,
+                });
+                Ok(())
+            }
+            Op(">>>") => {
+                self.lookahead = Some(IndexedToken {
+                    token: Op(">>"),
+                    addr: indexed_token.addr + 1,
+                    len: indexed_token.len - 1,
+                });
+                Ok(())
+            }
+            Assignment(">>>=") => {
+                self.lookahead = Some(IndexedToken {
+                    token: Assignment(">>="),
+                    addr: indexed_token.addr + 1,
+                    len: indexed_token.len - 1,
+                });
+                Ok(())
+            }
+            token => Err(ParseErr::UnexpectedToken {
+                expected: ">",
+                got: vec![token],
+            }),
+        }
+    }
 }
+
+// ---------------------------------------------------------------------
+// ------------------------ TESTS --------------------------------------
+// ---------------------------------------------------------------------
 
 #[cfg(test)]
 mod test {
@@ -335,6 +495,39 @@ mod test {
                 modifiers: vec!["public", "static", "abstract"],
                 access_modifier: AccessModifier::Public
             }
+        );
+    }
+
+    #[test]
+    fn test_ref_type() {
+        fn test_ref_type_str(s: &str, r: RefType) {
+            let mut parser = Parser::new(s).unwrap();
+            assert_eq!(parser.ref_type().unwrap(), r);
+        }
+
+        test_ref_type_str(
+            "java.util.Map<String, ? extends int[][], ? super Integer>[][][]",
+            RefType {
+                name: QualifiedName(vec!["java", "util", "Map"]),
+                type_arg_list: TypeArgList(vec![
+                    TypeArg::Is(RefType {
+                        name: QualifiedName(vec!["String"]),
+                        type_arg_list: TypeArgList(vec![]),
+                        arr_dim: 0,
+                    }),
+                    TypeArg::Extends(RefType {
+                        name: QualifiedName(vec!["int"]),
+                        type_arg_list: TypeArgList(vec![]),
+                        arr_dim: 2,
+                    }),
+                    TypeArg::Super(RefType {
+                        name: QualifiedName(vec!["Integer"]),
+                        type_arg_list: TypeArgList(vec![]),
+                        arr_dim: 0,
+                    }),
+                ]),
+                arr_dim: 3,
+            },
         );
     }
 }
