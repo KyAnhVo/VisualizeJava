@@ -96,7 +96,7 @@ impl<'a> Parser<'a> {
                 name,
                 is_static,
                 is_wildcard,
-            })
+            });
         }
 
         Ok(v)

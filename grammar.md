@@ -1,4 +1,4 @@
-# Grammar for Java that we will be using
+# Grammar for Java that we will be using (also used as checklist hehe)
 
 #### Note:
 Donzo     == `[x]`

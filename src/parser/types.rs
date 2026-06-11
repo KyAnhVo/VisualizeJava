@@ -11,6 +11,7 @@ pub enum ParseErr<'a> {
     LexerError,
     IndexingError,
     UnimplementedError,
+    ImportError,
 }
 
 /// A TypeArg has 4 values representing 4 different args:
