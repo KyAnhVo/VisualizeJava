@@ -324,4 +324,17 @@ mod test {
             "@annotation3{key1: val1, key2: val2}"
         )
     }
+
+    #[test]
+    fn test_modifiers() {
+        let mut parser = Parser::new("public static abstract").unwrap();
+
+        assert_eq!(
+            parser.modifiers().unwrap(),
+            Modifiers {
+                modifiers: vec!["public", "static", "abstract"],
+                access_modifier: AccessModifier::Public
+            }
+        );
+    }
 }
