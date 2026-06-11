@@ -342,6 +342,10 @@ impl<'a> Parser<'a> {
             }
         }
 
+        // essentially idea is that we are going to look at,
+        // at most, 4 values, and counting the first EOF,
+        // it is suffice to say that we insert 3 more EOF's
+        // so that we don't run into Out of Bounds err.
         let mut gen_eof = || {
             ind += 1;
             IndexedToken {
@@ -350,10 +354,9 @@ impl<'a> Parser<'a> {
                 len: 1,
             }
         };
-
-        tokens.push(gen_eof());
-        tokens.push(gen_eof());
-        tokens.push(gen_eof());
+        for _ in 0..3 {
+            tokens.push(gen_eof());
+        }
 
         Ok(Self {
             string: s,
