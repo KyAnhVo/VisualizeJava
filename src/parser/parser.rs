@@ -7,7 +7,7 @@ use crate::parser::{
     },
     types::{
         AccessModifier, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult, QualifiedName,
-        RefType, TypeArg, TypeArgList, VoidableType,
+        RefType, TypeArg, TypeArgList, TypeParam, TypeParamList, VoidableType,
     },
 };
 pub struct Parser<'a> {
@@ -205,6 +205,63 @@ impl<'a> Parser<'a> {
             }
         } else {
             return Ok(TypeArg::Is(self.ref_type()?));
+        }
+    }
+
+    /// `<type_param_list> ::= ["<" <type_param> { "," <type_param> } ">"]`
+    fn type_param_list(&mut self) -> ParseResult<'a, TypeParamList<'a>> {
+        let mut list = TypeParamList(vec![]);
+
+        if let Ok(token) = self.peek_next_token()
+            && token.token == LessThan
+        {
+            self.get_next_token()?;
+            list.0.push(self.type_param()?);
+
+            while let Ok(token) = self.peek_next_token()
+                && token.token == Comma
+            {
+                self.get_next_token()?;
+                list.0.push(self.type_param()?);
+            }
+
+            self.consume_gt()?;
+        }
+
+        Ok(list)
+    }
+
+    /// `<type_param> ::= IDENTIFIER ["extends" <ref_type> { "&" <ref_type> }]`
+    fn type_param(&mut self) -> ParseResult<'a, TypeParam<'a>> {
+        let name = match self.get_next_token()?.token {
+            Identifier(s) => s,
+            token => {
+                return Err(ParseErr::UnexpectedToken {
+                    expected: "IDENTIFIER",
+                    got: vec![token],
+                });
+            }
+        };
+
+        if let Ok(token) = self.peek_next_token()
+            && token.token == Keyword("extends")
+        {
+            self.get_next_token()?;
+            let mut extends_from = vec![self.ref_type()?];
+
+            while let Ok(token) = self.peek_next_token()
+                && token.token == Op("&")
+            {
+                self.get_next_token()?;
+                extends_from.push(self.ref_type()?);
+            }
+
+            Ok(TypeParam { name, extends_from })
+        } else {
+            Ok(TypeParam {
+                name,
+                extends_from: vec![],
+            })
         }
     }
 
@@ -427,7 +484,7 @@ impl<'a> Parser<'a> {
             }
             Op(">>") => {
                 self.lookahead = Some(IndexedToken {
-                    token: Op(">"),
+                    token: GreaterThan,
                     addr: indexed_token.addr + 1,
                     len: indexed_token.len - 1,
                 });
@@ -509,7 +566,7 @@ mod test {
         }
 
         test_ref_type_str(
-            "java.util.Map<String, ? extends int[][], ? super Integer>[][][]",
+            "java.util.Map<String, ? extends int[][], ? super Array<Integer>>[][][]",
             RefType {
                 name: QualifiedName(vec!["java", "util", "Map"]),
                 type_arg_list: TypeArgList(vec![
@@ -524,13 +581,50 @@ mod test {
                         arr_dim: 2,
                     }),
                     TypeArg::Super(RefType {
-                        name: QualifiedName(vec!["Integer"]),
-                        type_arg_list: TypeArgList(vec![]),
+                        name: QualifiedName(vec!["Array"]),
+                        type_arg_list: TypeArgList(vec![TypeArg::Is(RefType {
+                            name: QualifiedName(vec!["Integer"]),
+                            type_arg_list: TypeArgList(vec![]),
+                            arr_dim: 0,
+                        })]),
                         arr_dim: 0,
                     }),
                 ]),
                 arr_dim: 3,
             },
+        );
+    }
+
+    #[test]
+    fn test_type_param_list() {
+        let mut parser = Parser::new("<K extends Comparable<K> & com.util.Node, V>").unwrap();
+        assert_eq!(
+            parser.type_param_list().unwrap(),
+            TypeParamList(vec![
+                TypeParam {
+                    name: "K",
+                    extends_from: vec![
+                        RefType {
+                            name: QualifiedName(vec!["Comparable"]),
+                            type_arg_list: TypeArgList(vec![TypeArg::Is(RefType {
+                                name: QualifiedName(vec!["K"]),
+                                type_arg_list: TypeArgList(vec![]),
+                                arr_dim: 0
+                            })]),
+                            arr_dim: 0,
+                        },
+                        RefType {
+                            name: QualifiedName(vec!["com", "util", "Node"]),
+                            type_arg_list: TypeArgList(vec![]),
+                            arr_dim: 0,
+                        }
+                    ]
+                },
+                TypeParam {
+                    name: "V",
+                    extends_from: vec![],
+                }
+            ])
         );
     }
 }

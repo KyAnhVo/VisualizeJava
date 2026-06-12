@@ -56,6 +56,18 @@ pub enum VoidableType<'a> {
     RefType(RefType<'a>),
 }
 
+/// A list of parameters for generic types
+#[derive(Debug, PartialEq)]
+pub struct TypeParamList<'a>(pub Vec<TypeParam<'a>>);
+
+/// A type param is an input type (class `BinaryTree<K Comparable<K>, V>`,
+/// then `<K extends Comparable<K>>` and `<V>` are type params)
+#[derive(Debug, PartialEq)]
+pub struct TypeParam<'a> {
+    pub name: &'a str,
+    pub extends_from: Vec<RefType<'a>>,
+}
+
 /// A member can be a method or a property.
 #[derive(Debug, PartialEq)]
 pub enum MemberKind<'a> {
