@@ -7,7 +7,7 @@ use crate::parser::{
     },
     types::{
         AccessModifier, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult, QualifiedName,
-        RefType, TypeArg, TypeArgList, TypeParam, TypeParamList, VoidableType,
+        RefType, Type, TypeArg, TypeArgList, TypeKind, TypeParam, TypeParamList, VoidableType,
     },
 };
 pub struct Parser<'a> {
@@ -42,6 +42,21 @@ impl<'a> Parser<'a> {
 
         // <import>
         file.imported_objects.append(&mut self.import()?);
+
+        // {<type_decl>}
+        let mut have_public_type = false;
+        while let Ok(token) = self.peek_next_token()
+            && token.token != EOF
+        {
+            file.type_decls.push(self.type_decl()?);
+            if file.type_decls.last().unwrap().modifiers.access_modifier == AccessModifier::Public {
+                if have_public_type {
+                    return Err(ParseErr::MultiplePublicTypesError);
+                } else {
+                    have_public_type = true;
+                }
+            }
+        }
 
         Ok(file)
     }
@@ -104,6 +119,41 @@ impl<'a> Parser<'a> {
         }
 
         Ok(v)
+    }
+
+    fn type_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+        Err(ParseErr::UnimplementedError)
+    }
+
+    // ---------------------------------------------------------------------
+    // ----------------------- Class Nonterminals --------------------------
+    // ---------------------------------------------------------------------
+
+    fn class_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+        Err(ParseErr::UnimplementedError)
+    }
+
+    // ---------------------------------------------------------------------
+    // ----------------------- Enum Nonterminals ---------------------------
+    // ---------------------------------------------------------------------
+
+    fn enum_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+        Err(ParseErr::UnimplementedError)
+    }
+
+    // ---------------------------------------------------------------------
+    // ----------------------- Interface Nonterminals ----------------------
+    // ---------------------------------------------------------------------
+    fn interface_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+        Err(ParseErr::UnimplementedError)
+    }
+
+    // ---------------------------------------------------------------------
+    // ----------------------- Annotation Nonterminals ---------------------
+    // ---------------------------------------------------------------------
+
+    fn annotation_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+        Err(ParseErr::UnimplementedError)
     }
 }
 
@@ -597,7 +647,9 @@ mod test {
 
     #[test]
     fn test_type_param_list() {
-        let mut parser = Parser::new("<K extends Comparable<K> & com.util.Node, V>").unwrap();
+        let mut parser =
+            Parser::new("<K extends Comparable<K> & com.util.Node, V extends Vector<Token>>")
+                .unwrap();
         assert_eq!(
             parser.type_param_list().unwrap(),
             TypeParamList(vec![
@@ -622,7 +674,15 @@ mod test {
                 },
                 TypeParam {
                     name: "V",
-                    extends_from: vec![],
+                    extends_from: vec![RefType {
+                        name: QualifiedName(vec!["Vector"]),
+                        type_arg_list: TypeArgList(vec![TypeArg::Is(RefType {
+                            name: QualifiedName(vec!["Token"]),
+                            type_arg_list: TypeArgList(vec![]),
+                            arr_dim: 0
+                        })]),
+                        arr_dim: 0,
+                    }],
                 }
             ])
         );

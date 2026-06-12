@@ -12,6 +12,7 @@ pub enum ParseErr<'a> {
     IndexingError,
     UnimplementedError,
     ImportError,
+    MultiplePublicTypesError,
 }
 
 /// A TypeArg has 4 values representing 4 different args:
@@ -106,6 +107,7 @@ pub enum TypeKind<'a> {
 #[derive(Debug, PartialEq)]
 pub struct Type<'a> {
     pub name: &'a str,
+    pub modifiers: Modifiers<'a>,
     pub type_kind: TypeKind<'a>,
     pub members: Vec<Member<'a>>,
     pub subtypes: Vec<Type<'a>>,

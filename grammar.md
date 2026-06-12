@@ -14,8 +14,8 @@ Not done  == `[ ]`
 [x] <ref_type>        ::= <qualified_name> [ "<" <type_arg_lst> ">" ] { "[]" }
 [x] <type_arg_list>   ::= <type_arg> { "," <type_arg> }
 [x] <type_arg>        ::= <ref_type> | "?" [ ( "extends" | "super" ) <ref_type> ]
-[ ] <type_param_list> ::= ["<" <type_param> { "," <type_param> } ">"]
-[ ] <type_param>      ::= IDENTIFIER [ "extends" <ref_type> { "&" <ref_type> } ]
+[x] <type_param_list> ::= ["<" <type_param> { "," <type_param> } ">"]
+[x] <type_param>      ::= IDENTIFIER [ "extends" <ref_type> { "&" <ref_type> } ]
 ```
 
 ### declare pacakge, import files, then declare types
