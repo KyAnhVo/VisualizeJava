@@ -169,7 +169,7 @@ impl<'a> Lexer<'a> {
                     (Some('>'), Some('='), _) => {
                         self.get_next_char();
                         self.get_next_char();
-                        return Some(Assignment(">="));
+                        return Some(Assignment(">>="));
                     }
                     (Some('>'), _, _) => {
                         self.get_next_char();

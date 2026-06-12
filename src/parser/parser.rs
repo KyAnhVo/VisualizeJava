@@ -157,13 +157,28 @@ impl<'a> Parser<'a> {
     // ----------------------- Class Nonterminals --------------------------
     // ---------------------------------------------------------------------
 
+    /// `<class_decl> ::= "class" IDENTIFIER [ "extends" <ref_type> ]
+    /// [ "implements" <ref_type> { "," <ref_type> } ] "{" <class_body> "}"`
     fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+        // "class"
         if self.get_next_token()?.token != Keyword("class") {
             return Err(ParseErr::UnexpectedToken {
                 expected: "class",
                 got: vec![self.get_current_token()?.token],
             });
         }
+
+        // IDENTIFIER
+        let mut name = QualifiedName(prefix.0.clone());
+        name.0.push(match self.get_next_token()?.token {
+            Identifier(s) => s,
+            token => {
+                return Err(ParseErr::UnexpectedToken {
+                    expected: "IDENTIFIER",
+                    got: vec![token],
+                });
+            }
+        });
 
         Err(ParseErr::UnimplementedError)
     }

@@ -36,7 +36,7 @@ Not done  == `[ ]`
 
 ### type: class, enum, interface, annotation
 ```
-[ ] <type_decl>       ::= {<annotation>} <modifiers> ( <enum_decl> | <class_decl> | <interface_decl> | 
+[x] <type_decl>       ::= {<annotation>} <modifiers> ( <enum_decl> | <class_decl> | <interface_decl> | 
                       <annotation_decl> )
 [ ] <enum_decl>       ::= "enum" IDENTIFIER [ "implements" <ref_type> { "," <ref_type> } ] "{" <enum_body> "}"
 [ ] <class_decl>      ::= "class" IDENTIFIER [ "extends" <ref_type> ] 
