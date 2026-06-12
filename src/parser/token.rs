@@ -9,7 +9,7 @@ pub enum Token<'a> {
     LessThan,
     GreaterThan,
     Dot,
-    Annotation,
+    At,
     QuestionMark,
     Comma,
 

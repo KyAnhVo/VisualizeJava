@@ -45,7 +45,7 @@ impl<'a> Lexer<'a> {
                 '(' => return Some(LParen),
                 ')' => return Some(RParen),
                 '?' => return Some(QuestionMark),
-                '@' => return Some(Annotation),
+                '@' => return Some(At),
                 ',' => return Some(Comma),
                 '~' => return Some(Op("~")),
                 ';' => return Some(Semicolon),

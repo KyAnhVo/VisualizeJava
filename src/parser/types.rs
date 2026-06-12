@@ -35,10 +35,11 @@ pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
 pub struct TypeArgList<'a>(pub Vec<TypeArg<'a>>);
 
 /// A qualified name is a dotted name, e.g. `java.util.ArrayList`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct QualifiedName<'a>(pub Vec<&'a str>);
 
 /// An annotation is a string slice of one annotation for some type/property/method
+#[derive(Debug, PartialEq, Clone)]
 pub struct Annotation<'a>(pub &'a str);
 
 /// A struct to represent type usages with generic,
@@ -111,7 +112,7 @@ pub struct Type<'a> {
     pub type_kind: TypeKind<'a>,
     pub members: Vec<Member<'a>>,
     pub subtypes: Vec<Type<'a>>,
-    pub annotation: Vec<Type<'a>>,
+    pub annotation: Vec<Annotation<'a>>,
 }
 
 pub struct JavaFile<'a> {

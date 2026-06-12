@@ -6,8 +6,9 @@ use crate::parser::{
         Token::{self, *},
     },
     types::{
-        AccessModifier, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult, QualifiedName,
-        RefType, Type, TypeArg, TypeArgList, TypeKind, TypeParam, TypeParamList, VoidableType,
+        AccessModifier, Annotation, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult,
+        QualifiedName, RefType, Type, TypeArg, TypeArgList, TypeKind, TypeParam, TypeParamList,
+        VoidableType,
     },
 };
 pub struct Parser<'a> {
@@ -48,7 +49,7 @@ impl<'a> Parser<'a> {
         while let Ok(token) = self.peek_next_token()
             && token.token != EOF
         {
-            file.type_decls.push(self.type_decl()?);
+            file.type_decls.push(self.type_decl(QualifiedName(vec![]))?);
             if file.type_decls.last().unwrap().modifiers.access_modifier == AccessModifier::Public {
                 if have_public_type {
                     return Err(ParseErr::MultiplePublicTypesError);
@@ -121,15 +122,49 @@ impl<'a> Parser<'a> {
         Ok(v)
     }
 
-    fn type_decl(&mut self) -> ParseResult<'a, Type<'a>> {
-        Err(ParseErr::UnimplementedError)
+    /// `<type_decl> ::= {<annotation>} <modifiers> ( <enum_decl> | <class_decl> |
+    /// <interface_decl> | <annotation_decl> )`
+    fn type_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+        // {<annotation>}
+        let mut annotation: Vec<Annotation> = vec![];
+        while self.peek_next_token()?.token == At {
+            annotation.push(self.annotation()?);
+        }
+
+        // <modifiers>
+        let modifiers = self.modifiers()?;
+
+        // (<enum_decl> | <class_decl> | <interface_decl> | <annotation_decl>)
+        let mut typeclass = match self.peek_next_token()?.token {
+            Keyword("class") => self.class_decl(prefix)?,
+            Keyword("interface") => self.interface_decl(prefix)?,
+            Keyword("enum") => self.enum_decl(prefix)?,
+            At => self.annotation_decl(prefix)?,
+            token => {
+                return Err(ParseErr::UnexpectedToken {
+                    expected: "class | interface | enum | @",
+                    got: vec![token],
+                });
+            }
+        };
+        typeclass.modifiers = modifiers;
+        typeclass.annotation = annotation;
+
+        Ok(typeclass)
     }
 
     // ---------------------------------------------------------------------
     // ----------------------- Class Nonterminals --------------------------
     // ---------------------------------------------------------------------
 
-    fn class_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+    fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+        if self.get_next_token()?.token != Keyword("class") {
+            return Err(ParseErr::UnexpectedToken {
+                expected: "class",
+                got: vec![self.get_current_token()?.token],
+            });
+        }
+
         Err(ParseErr::UnimplementedError)
     }
 
@@ -137,14 +172,14 @@ impl<'a> Parser<'a> {
     // ----------------------- Enum Nonterminals ---------------------------
     // ---------------------------------------------------------------------
 
-    fn enum_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+    fn enum_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         Err(ParseErr::UnimplementedError)
     }
 
     // ---------------------------------------------------------------------
     // ----------------------- Interface Nonterminals ----------------------
     // ---------------------------------------------------------------------
-    fn interface_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+    fn interface_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         Err(ParseErr::UnimplementedError)
     }
 
@@ -152,7 +187,7 @@ impl<'a> Parser<'a> {
     // ----------------------- Annotation Nonterminals ---------------------
     // ---------------------------------------------------------------------
 
-    fn annotation_decl(&mut self) -> ParseResult<'a, Type<'a>> {
+    fn annotation_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         Err(ParseErr::UnimplementedError)
     }
 }
@@ -350,8 +385,8 @@ impl<'a> Parser<'a> {
 
     /// `<annotation> ::= "@" <qualified_name> [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}"
     /// )]`
-    fn annotation(&mut self) -> ParseResult<'a, &'a str> {
-        if self.get_next_token()?.token != Annotation {
+    fn annotation(&mut self) -> ParseResult<'a, Annotation<'a>> {
+        if self.get_next_token()?.token != At {
             return Err(ParseErr::UnexpectedToken {
                 expected: "@",
                 got: vec![self.get_current_token()?.token],
@@ -391,7 +426,7 @@ impl<'a> Parser<'a> {
         }
 
         let len = (self.get_current_token()?.addr + self.get_current_token()?.len) - start_ind;
-        return Ok(&self.string[start_ind..start_ind + len]);
+        return Ok(Annotation(&self.string[start_ind..start_ind + len]));
     }
 
     /// `<modifiers> ::= { "public" | "private" | "protected" | "abstract" | "static" | "final" |
@@ -587,11 +622,14 @@ mod test {
         )
         .unwrap();
 
-        assert_eq!(parser.annotation().unwrap(), "@annotation1");
-        assert_eq!(parser.annotation().unwrap(), "@com.annotation2(val1, val2)");
+        assert_eq!(parser.annotation().unwrap(), Annotation("@annotation1"));
         assert_eq!(
             parser.annotation().unwrap(),
-            "@annotation3{key1: val1, key2: val2}"
+            Annotation("@com.annotation2(val1, val2)")
+        );
+        assert_eq!(
+            parser.annotation().unwrap(),
+            Annotation("@annotation3{key1: val1, key2: val2}")
         )
     }
 
