@@ -7,8 +7,8 @@ use crate::parser::{
     },
     types::{
         AccessModifier, Annotation, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult,
-        QualifiedName, RefType, Type, TypeArg, TypeArgList, TypeKind, TypeParam, TypeParamList,
-        VoidableType,
+        QualifiedName, RefType, Type, TypeArg, TypeArgList, TypeBody, TypeKind, TypeParam,
+        TypeParamList, VoidableType,
     },
 };
 pub struct Parser<'a> {
@@ -160,6 +160,9 @@ impl<'a> Parser<'a> {
     /// `<class_decl> ::= "class" IDENTIFIER [ "extends" <ref_type> ]
     /// [ "implements" <ref_type> { "," <ref_type> } ] "{" <class_body> "}"`
     fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+        // TODO: class_decl missing generics. Add in. Also should probably change the type to store
+        // generics too.
+
         // "class"
         if self.get_next_token()?.token != Keyword("class") {
             return Err(ParseErr::UnexpectedToken {
@@ -180,6 +183,53 @@ impl<'a> Parser<'a> {
             }
         });
 
+        // ["extends" <ref_type>]
+        let inherits_from: Option<RefType<'a>> =
+            if self.peek_next_token()?.token == Keyword("extends") {
+                self.get_next_token()?;
+                Some(self.ref_type()?)
+            } else {
+                None
+            };
+
+        // ["implements" <ref_type> {"," <ref_type>}]
+        let implement_interfaces: Vec<RefType<'a>> =
+            if self.peek_next_token()?.token == Keyword("implements") {
+                self.get_next_token()?;
+                let mut vector = vec![self.ref_type()?];
+                while self.peek_next_token()?.token == Comma {
+                    self.get_next_token()?;
+                    vector.push(self.ref_type()?)
+                }
+                vector
+            } else {
+                vec![]
+            };
+
+        let type_kind = TypeKind::Class {
+            inherits_from,
+            implement_interfaces,
+        };
+
+        // <class_body>
+        let body = self.class_body()?;
+
+        // use default modifiers and annotation
+        let typeclass = Type {
+            name,
+            modifiers: Modifiers {
+                modifiers: vec![],
+                access_modifier: AccessModifier::Default,
+            },
+            type_kind,
+            body,
+            annotation: vec![],
+        };
+
+        Ok(typeclass)
+    }
+
+    fn class_body(&mut self) -> ParseResult<'a, TypeBody<'a>> {
         Err(ParseErr::UnimplementedError)
     }
 

@@ -92,7 +92,7 @@ pub struct Member<'a> {
 #[derive(Debug, PartialEq)]
 pub enum TypeKind<'a> {
     Class {
-        inherits_from: RefType<'a>,
+        inherits_from: Option<RefType<'a>>,
         implement_interfaces: Vec<RefType<'a>>,
     },
     Enum {
@@ -104,17 +104,22 @@ pub enum TypeKind<'a> {
     Annotation {},
 }
 
+/// A type's body contains its members (not subtypes) and its subtypes.
+#[derive(Debug, PartialEq)]
+pub struct TypeBody<'a> {
+    pub members: Vec<Member<'a>>,
+    pub subtypes: Vec<Type<'a>>,
+}
+
 /// A type can be a class/enum/interface/annotation.
 #[derive(Debug, PartialEq)]
 pub struct Type<'a> {
-    pub name: &'a str,
+    pub name: QualifiedName<'a>,
     pub modifiers: Modifiers<'a>,
     pub type_kind: TypeKind<'a>,
-    pub members: Vec<Member<'a>>,
-    pub subtypes: Vec<Type<'a>>,
+    pub body: TypeBody<'a>,
     pub annotation: Vec<Annotation<'a>>,
 }
-
 pub struct JavaFile<'a> {
     /// None means this is in the default package
     pub package_name: Option<QualifiedName<'a>>,
