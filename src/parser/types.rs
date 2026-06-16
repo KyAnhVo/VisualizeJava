@@ -77,15 +77,18 @@ pub enum MemberKind<'a> {
         reftype: RefType<'a>,
     },
     Method {
-        input: RefType<'a>,
+        type_param_list: TypeParamList<'a>,
+        input: Vec<RefType<'a>>,
         output: VoidableType<'a>,
     },
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Member<'a> {
+    pub name: &'a str,
     pub member_kind: MemberKind<'a>,
-    pub annotations: Vec<&'a str>,
+    pub annotations: Vec<Annotation<'a>>,
+    pub modifiers: Modifiers<'a>,
 }
 
 /// A typekind is an enum of different kinds of type

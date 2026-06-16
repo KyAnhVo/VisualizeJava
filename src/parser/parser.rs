@@ -6,9 +6,9 @@ use crate::parser::{
         Token::{self, *},
     },
     types::{
-        AccessModifier, Annotation, ImportObject, JavaFile, Modifiers, ParseErr, ParseResult,
-        QualifiedName, RefType, Type, TypeArg, TypeArgList, TypeBody, TypeKind, TypeParam,
-        TypeParamList, VoidableType,
+        AccessModifier, Annotation, ImportObject, JavaFile, Member, MemberKind, Modifiers,
+        ParseErr, ParseResult, QualifiedName, RefType, Type, TypeArg, TypeArgList, TypeBody,
+        TypeKind, TypeParam, TypeParamList, VoidableType,
     },
 };
 pub struct Parser<'a> {
@@ -157,12 +157,9 @@ impl<'a> Parser<'a> {
     // ----------------------- Class Nonterminals --------------------------
     // ---------------------------------------------------------------------
 
-    /// `<class_decl> ::= "class" IDENTIFIER [ "extends" <ref_type> ]
-    /// [ "implements" <ref_type> { "," <ref_type> } ] "{" <class_body> "}"`
+    /// `<class_decl> ::= "class" IDENTIFIER <type_param_list> [ "extends" <ref_type> ]
+    /// [ "implements" <ref_type> { "," <ref_type> } ] <class_body>
     fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
-        // TODO: class_decl missing generics. Add in. Also should probably change the type to store
-        // generics too.
-
         // "class"
         if self.get_next_token()?.token != Keyword("class") {
             return Err(ParseErr::UnexpectedToken {
@@ -182,6 +179,9 @@ impl<'a> Parser<'a> {
                 });
             }
         });
+
+        // <type_param> (unimportant for now)
+        self.type_param_list()?;
 
         // ["extends" <ref_type>]
         let inherits_from: Option<RefType<'a>> =
@@ -212,7 +212,7 @@ impl<'a> Parser<'a> {
         };
 
         // <class_body>
-        let body = self.class_body()?;
+        let body = self.class_body(name.clone())?;
 
         // use default modifiers and annotation
         let typeclass = Type {
@@ -229,7 +229,125 @@ impl<'a> Parser<'a> {
         Ok(typeclass)
     }
 
-    fn class_body(&mut self) -> ParseResult<'a, TypeBody<'a>> {
+    /// `<class_body>      ::= "{" {<member_decl>} "}"`, where
+    /// `<member_decl>     ::= {<annotation>} <modifiers> ( <method_decl> | <property_decl> | <type_decl> )`
+    fn class_body(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, TypeBody<'a>> {
+        // if the next token is not closing the body, then it must be still
+        // a member.
+        let mut body = TypeBody {
+            members: vec![],
+            subtypes: vec![],
+        };
+
+        // {<member_decl>}, inside is the <member_decl>
+        while self.peek_next_token()?.token != RBrace {
+            if self.peek_next_token()?.token == EOF {
+                return Err(ParseErr::UnexpectedEOF);
+            }
+
+            let mut annotations: Vec<Annotation> = vec![];
+            while self.peek_next_token()?.token == At {
+                annotations.push(self.annotation()?);
+            }
+
+            let modifiers = self.modifiers()?;
+
+            match self.peek_next_token()?.token {
+                Keyword("class") => {
+                    let mut typeclass = self.class_decl(prefix.clone())?;
+                    typeclass.modifiers = modifiers;
+                    typeclass.annotation = annotations;
+                    body.subtypes.push(typeclass);
+                }
+                Keyword("enum") => {
+                    let mut typeclass = self.enum_decl(prefix.clone())?;
+                    typeclass.modifiers = modifiers;
+                    typeclass.annotation = annotations;
+                    body.subtypes.push(typeclass);
+                }
+                At => {
+                    let mut typeclass = self.annotation_decl(prefix.clone())?;
+                    typeclass.modifiers = modifiers;
+                    typeclass.annotation = annotations;
+                    body.subtypes.push(typeclass);
+                }
+                Keyword("interface") => {
+                    let mut typeclass = self.enum_decl(prefix.clone())?;
+                    typeclass.modifiers = modifiers;
+                    typeclass.annotation = annotations;
+                    body.subtypes.push(typeclass);
+                }
+                Keyword("void") => {
+                    // void IDENTIFIER <arg_list> <method_body>
+                    let output = VoidableType::Void;
+
+                    // "void"
+                    self.get_next_token()?;
+
+                    // IDENTIFIER
+                    let name: &str = if let Identifier(s) = self.get_next_token()?.token {
+                        s
+                    } else {
+                        return Err(ParseErr::UnexpectedToken {
+                            expected: "IDENTIFIER",
+                            got: vec![self.get_current_token()?.token],
+                        });
+                    };
+
+                    let input = self.arg_list()?;
+                    self.skip_brace(LBrace, RBrace)?;
+
+                    body.members.push(Member {
+                        name,
+                        member_kind: MemberKind::Method {
+                            type_param_list: TypeParamList(vec![]),
+                            input,
+                            output,
+                        },
+                        annotations,
+                        modifiers,
+                    });
+                }
+                GreaterThan => {
+                    // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
+                    let type_param_list = self.type_param_list()?;
+                    let output = self.voidable_type()?;
+                    let name = if let Identifier(s) = self.get_next_token()?.token {
+                        s
+                    } else {
+                        return Err(ParseErr::UnexpectedToken {
+                            expected: "IDENTIFIER",
+                            got: vec![self.get_current_token()?.token],
+                        });
+                    };
+                    let input = self.arg_list()?;
+                    self.skip_brace(LBrace, RBrace)?;
+                    body.members.push(Member {
+                        name,
+                        member_kind: MemberKind::Method {
+                            type_param_list,
+                            input,
+                            output,
+                        },
+                        annotations,
+                        modifiers,
+                    })
+                }
+                Identifier(_) => {
+                    // <ref_type> IDENTIFIER (
+                    //  | <arg_list> <method_body>
+                    // )
+                }
+                token => {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "type_decl | type_param",
+                        got: vec![token],
+                    });
+                }
+            };
+        }
+        // consume the RBrace
+        self.get_next_token()?;
         Err(ParseErr::UnimplementedError)
     }
 
@@ -262,6 +380,121 @@ impl<'a> Parser<'a> {
 // ---------------------------------------------------------------------
 
 impl<'a> Parser<'a> {
+    /// ```
+    /// <arg_list> ::=
+    /// "(" <annotations> ["final"] <ref_type> (
+    ///     |   ("..." IDENTIFIER)
+    ///     |   (IDENTIFIER {"[]"} {"," <annotations> ["final"] <ref_type> IDENTIFIER {"[]"}}
+    ///         ["," "final" <annotations> <ref_type> "..." IDENTIFIER])
+    /// ) ")"
+    /// ```
+    fn arg_list(&mut self) -> ParseResult<'a, Vec<RefType<'a>>> {
+        // "("
+        if self.get_next_token()?.token != LParen {
+            return Err(ParseErr::UnexpectedToken {
+                expected: "LParen",
+                got: vec![self.get_current_token()?.token],
+            });
+        }
+        let mut v: Vec<RefType> = vec![];
+        if self.peek_next_token()?.token == RParen {
+            self.get_next_token()?;
+            Ok(v)
+        } else {
+            // <annotations> ["final"]
+            self.annotations()?;
+            if self.peek_next_token()?.token == Keyword("final") {
+                self.get_next_token()?;
+            }
+
+            // <reftype>
+            v.push(self.ref_type()?);
+
+            // | ("..." IDENTIFIER ")")
+            if self.peek_next_token()?.token == Op("...") {
+                self.get_next_token()?;
+                let Identifier(_) = self.get_next_token()?.token else {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "IDENTIFIER",
+                        got: vec![self.get_current_token()?.token],
+                    });
+                };
+                if self.get_next_token()?.token != RParen {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "RParen",
+                        got: vec![self.get_current_token()?.token],
+                    });
+                }
+                return Ok(v);
+            }
+
+            // consume the Identifier
+            let Identifier(_) = self.get_next_token()?.token else {
+                return Err(ParseErr::UnexpectedToken {
+                    expected: "IDENTIFIER",
+                    got: vec![self.get_current_token()?.token],
+                });
+            };
+
+            // {"[]"}
+            while self.peek_next_token()?.token == LBracket {
+                self.get_next_token()?;
+                if self.get_next_token()?.token != RBracket {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "RBracket",
+                        got: vec![self.get_current_token()?.token],
+                    });
+                }
+                v.last_mut().unwrap().arr_dim += 1;
+            }
+
+            while self.peek_next_token()?.token == Comma {
+                self.get_next_token()?;
+                self.annotations()?;
+                if self.peek_next_token()?.token == Keyword("final") {
+                    self.get_next_token()?;
+                }
+
+                v.push(self.ref_type()?);
+
+                if self.peek_next_token()?.token == Op("...") {
+                    self.get_next_token()?;
+                    let Identifier(_) = self.get_next_token()?.token else {
+                        return Err(ParseErr::UnexpectedToken {
+                            expected: "IDENTIFIER",
+                            got: vec![self.get_current_token()?.token],
+                        });
+                    };
+                    if self.get_next_token()?.token != RParen {
+                        return Err(ParseErr::UnexpectedToken {
+                            expected: "RParen",
+                            got: vec![self.get_current_token()?.token],
+                        });
+                    }
+                    return Ok(v);
+                }
+
+                let Identifier(_) = self.get_next_token()?.token else {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "IDENTIFIER",
+                        got: vec![self.get_current_token()?.token],
+                    });
+                };
+
+                while self.peek_next_token()?.token == LBracket {
+                    self.get_next_token()?;
+                    if self.get_next_token()?.token != RBracket {
+                        return Err(ParseErr::UnexpectedToken {
+                            expected: "RBracket",
+                            got: vec![self.get_current_token()?.token],
+                        });
+                    }
+                }
+            }
+
+            Ok(v)
+        }
+    }
     /// `<voidable_type> ::= "void" | <ref_type>`
     fn voidable_type(&mut self) -> ParseResult<'a, VoidableType<'a>> {
         if let Ok(token) = self.peek_next_token()
@@ -273,9 +506,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// `<ref_type> ::= <qualified_name> <type_arg_lst> { "[]" }`
+    /// `<ref_type> ::= <annotations> <qualified_name> <type_arg_lst> { "[]" }`
     fn ref_type(&mut self) -> ParseResult<'a, RefType<'a>> {
         // <qualified_name>
+        self.annotations()?;
         let name: QualifiedName<'a> = self.qualified_name()?;
 
         // <type_arg_lst>
@@ -338,6 +572,7 @@ impl<'a> Parser<'a> {
 
     /// `<type_arg> ::= <ref_type> | "?" [ ( "extends" | "super" ) <ref_type> ]`
     fn type_arg(&mut self) -> ParseResult<'a, TypeArg<'a>> {
+        self.annotations()?;
         if self.peek_next_token()?.token == QuestionMark {
             self.get_next_token()?;
             if let Ok(token) = self.peek_next_token() {
@@ -446,6 +681,15 @@ impl<'a> Parser<'a> {
         }
 
         Ok(name)
+    }
+
+    /// `<annotations> ::= {<annotations>}`
+    fn annotations(&mut self) -> ParseResult<'a, Vec<Annotation<'a>>> {
+        let mut v: Vec<Annotation<'a>> = vec![];
+        while self.peek_next_token()?.token == At {
+            v.push(self.annotation()?);
+        }
+        Ok(v)
     }
 
     /// `<annotation> ::= "@" <qualified_name> [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}"
@@ -670,6 +914,27 @@ impl<'a> Parser<'a> {
             }),
         }
     }
+
+    fn skip_brace(&mut self, open_brace: Token, close_brace: Token) -> ParseResult<'a, ()> {
+        if self.get_next_token()?.token != open_brace {
+            return Err(ParseErr::UnexpectedToken {
+                expected: "LBrace | LBracket | LParen",
+                got: vec![self.get_current_token()?.token],
+            });
+        }
+
+        let mut stack: usize = 1;
+        while stack > 0 {
+            match self.get_next_token()?.token {
+                token if token == open_brace => stack += 1,
+                token if token == close_brace => stack -= 1,
+                EOF => return Err(ParseErr::UnexpectedEOF),
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
 }
 
 // ---------------------------------------------------------------------
@@ -788,6 +1053,39 @@ mod test {
                     }],
                 }
             ])
+        );
+    }
+
+    #[test]
+    fn test_arg_list() {
+        let mut parser = Parser::new("(final ArrayList<Integer> lst, final Integer... b)").unwrap();
+        assert_eq!(
+            parser.arg_list().unwrap(),
+            vec![
+                RefType {
+                    name: QualifiedName(vec!["ArrayList"]),
+                    type_arg_list: TypeArgList(vec![TypeArg::Is(RefType {
+                        name: QualifiedName(vec!["Integer"]),
+                        type_arg_list: TypeArgList(vec![]),
+                        arr_dim: 0
+                    })]),
+                    arr_dim: 0,
+                },
+                RefType {
+                    name: QualifiedName(vec!["Integer"]),
+                    type_arg_list: TypeArgList(vec![]),
+                    arr_dim: 0,
+                }
+            ]
+        );
+        parser = Parser::new("(String... val)").unwrap();
+        assert_eq!(
+            parser.arg_list().unwrap(),
+            vec![RefType {
+                name: QualifiedName(vec!["String"]),
+                type_arg_list: TypeArgList(vec![]),
+                arr_dim: 0,
+            }]
         );
     }
 }

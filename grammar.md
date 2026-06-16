@@ -40,7 +40,7 @@ Not done  == `[ ]`
                       <annotation_decl> )
 [ ] <enum_decl>       ::= "enum" IDENTIFIER [ "implements" <ref_type> { "," <ref_type> } ] "{" <enum_body> "}"
 [ ] <class_decl>      ::= "class" IDENTIFIER [ "extends" <ref_type> ] 
-                      [ "implements" <ref_type> { "," <ref_type> } ] "{" <class_body> "}"
+                      [ "implements" <ref_type> { "," <ref_type> } ] <class_body>
 [ ] <interface_decl>  ::= "interface" IDENTIFIER [ "extends" <ref_type> { "," <ref_type> } ] 
                       "{" <skip_interface_body> "}"
 [ ] <annotation_decl> ::= "@interface" IDENTIFIER "{" <skip_annotation_body> "}"
@@ -48,9 +48,10 @@ Not done  == `[ ]`
 
 ### Body for a class: properties, functions
 ```
-[ ] <class_body>      ::= { <member_decl> }
-[ ] <member_decl>     ::= {<annotation>} <modifiers> ( <method_decl> | <property_decl> | <type_decl> )
-[ ] <method_decl>     ::= [<type_params>] [<voidable_type>] IDENTIFIER "(" <arg_list> ")" 
+[ ] <class_body>      ::= "{" {<member_decl>} "}"
+[ ] <member_decl>     ::= {<annotation>} <modifiers> ( <method_decl> | <property_decl> | 
+                      <enum|class|interface|annotation_decl> )
+[ ] <method_decl>     ::= [<type_params>] <voidable_type> IDENTIFIER "(" <arg_list> ")" 
                       ["throws" <ref_type> {"," <ref_type>}] "{" <skip_body> "}"
 [ ] <property_decl>   ::= <ref_type> IDENTIFIER [ "=" <skip_expr> ] ";"
 
