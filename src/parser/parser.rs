@@ -126,10 +126,7 @@ impl<'a> Parser<'a> {
     /// <interface_decl> | <annotation_decl> )`
     fn type_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         // {<annotation>}
-        let mut annotation: Vec<Annotation> = vec![];
-        while self.peek_next_token()?.token == At {
-            annotation.push(self.annotation()?);
-        }
+        let annotation = self.annotations()?;
 
         // <modifiers>
         let modifiers = self.modifiers()?;
@@ -252,32 +249,35 @@ impl<'a> Parser<'a> {
 
             let modifiers = self.modifiers()?;
 
-            match self.peek_next_token()?.token {
-                Keyword("class") => {
+            match (
+                self.peek_next_token()?.token,
+                self.peek_token_offset(1)?.token,
+            ) {
+                (Keyword("class"), _) => {
                     let mut typeclass = self.class_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
-                Keyword("enum") => {
+                (Keyword("enum"), _) => {
                     let mut typeclass = self.enum_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
-                At => {
+                (At, Keyword("interface")) => {
                     let mut typeclass = self.annotation_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
-                Keyword("interface") => {
+                (Keyword("interface"), _) => {
                     let mut typeclass = self.enum_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
-                Keyword("void") => {
+                (Keyword("void"), _) => {
                     // void IDENTIFIER <arg_list> <method_body>
                     let output = VoidableType::Void;
 
@@ -308,7 +308,7 @@ impl<'a> Parser<'a> {
                         modifiers,
                     });
                 }
-                GreaterThan => {
+                (GreaterThan, _) => {
                     // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
                     let type_param_list = self.type_param_list()?;
                     let output = self.voidable_type()?;
@@ -333,15 +333,18 @@ impl<'a> Parser<'a> {
                         modifiers,
                     })
                 }
-                Identifier(_) => {
-                    // <ref_type> IDENTIFIER (
+                (Identifier(_), _) | (At, _) => {
+                    // TODO: design grammar for property declaration
+
+                    // <ref_type> <annotations> IDENTIFIER (
                     //  | <arg_list> <method_body>
                     // )
+                    self.annotations()?;
                 }
-                token => {
+                (token1, _) => {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "type_decl | type_param",
-                        got: vec![token],
+                        got: vec![token1],
                     });
                 }
             };
@@ -570,7 +573,7 @@ impl<'a> Parser<'a> {
         Ok(type_arg_list)
     }
 
-    /// `<type_arg> ::= <ref_type> | "?" [ ( "extends" | "super" ) <ref_type> ]`
+    /// `<type_arg> ::= (<ref_type> | "?" [ ( "extends" | "super" ) <ref_type> ]`
     fn type_arg(&mut self) -> ParseResult<'a, TypeArg<'a>> {
         self.annotations()?;
         if self.peek_next_token()?.token == QuestionMark {
@@ -616,8 +619,9 @@ impl<'a> Parser<'a> {
         Ok(list)
     }
 
-    /// `<type_param> ::= IDENTIFIER ["extends" <ref_type> { "&" <ref_type> }]`
+    /// `<type_param> ::= <annotations> IDENTIFIER ["extends" <ref_type> { "&" <ref_type> }]`
     fn type_param(&mut self) -> ParseResult<'a, TypeParam<'a>> {
+        self.annotations()?;
         let name = match self.get_next_token()?.token {
             Identifier(s) => s,
             token => {
@@ -686,7 +690,9 @@ impl<'a> Parser<'a> {
     /// `<annotations> ::= {<annotations>}`
     fn annotations(&mut self) -> ParseResult<'a, Vec<Annotation<'a>>> {
         let mut v: Vec<Annotation<'a>> = vec![];
-        while self.peek_next_token()?.token == At {
+        while self.peek_next_token()?.token == At
+            && self.peek_token_offset(1)?.token != Keyword("interface")
+        {
             v.push(self.annotation()?);
         }
         Ok(v)
@@ -699,6 +705,12 @@ impl<'a> Parser<'a> {
             return Err(ParseErr::UnexpectedToken {
                 expected: "@",
                 got: vec![self.get_current_token()?.token],
+            });
+        }
+        if self.peek_next_token()?.token == Keyword("interface") {
+            return Err(ParseErr::UnexpectedToken {
+                expected: "IDENTIFIER",
+                got: vec![Keyword("interface")],
             });
         }
 
@@ -984,9 +996,9 @@ mod test {
         }
 
         test_ref_type_str(
-            "java.util.Map<String, ? extends int[][], ? super Array<Integer>>[][][]",
+            "util.Map<@NotNull String, @NotNull ? extends @NotNull int[][], ? super @NotNull Array<Integer>>[][][]",
             RefType {
-                name: QualifiedName(vec!["java", "util", "Map"]),
+                name: QualifiedName(vec!["util", "Map"]),
                 type_arg_list: TypeArgList(vec![
                     TypeArg::Is(RefType {
                         name: QualifiedName(vec!["String"]),
@@ -1015,9 +1027,10 @@ mod test {
 
     #[test]
     fn test_type_param_list() {
-        let mut parser =
-            Parser::new("<K extends Comparable<K> & com.util.Node, V extends Vector<Token>>")
-                .unwrap();
+        let mut parser = Parser::new(
+            "<@NotNull @Anno K extends Comparable<K> & com.util.Node, V extends Vector<Token>>",
+        )
+        .unwrap();
         assert_eq!(
             parser.type_param_list().unwrap(),
             TypeParamList(vec![
