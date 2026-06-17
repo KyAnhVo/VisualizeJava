@@ -229,6 +229,13 @@ impl<'a> Parser<'a> {
     /// `<class_body>      ::= "{" {<member_decl>} "}"`, where
     /// `<member_decl>     ::= {<annotation>} <modifiers> ( <method_decl> | <property_decl> | <type_decl> )`
     fn class_body(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, TypeBody<'a>> {
+        if self.get_next_token()?.token != LBrace {
+            return Err(ParseErr::UnexpectedToken {
+                expected: "LBrace",
+                got: vec![self.get_current_token()?.token],
+            });
+        }
+
         // if the next token is not closing the body, then it must be still
         // a member.
         let mut body = TypeBody {
@@ -242,11 +249,7 @@ impl<'a> Parser<'a> {
                 return Err(ParseErr::UnexpectedEOF);
             }
 
-            let mut annotations: Vec<Annotation> = vec![];
-            while self.peek_next_token()?.token == At {
-                annotations.push(self.annotation()?);
-            }
-
+            let annotations: Vec<Annotation> = self.annotations()?;
             let modifiers = self.modifiers()?;
 
             match (
@@ -287,7 +290,7 @@ impl<'a> Parser<'a> {
                     body.subtypes.push(typeclass);
                 }
                 // Members: method with type_param
-                (GreaterThan, _) => {
+                (LessThan, _) => {
                     // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
                     let type_param_list = self.type_param_list()?;
                     let output = self.voidable_type()?;
@@ -337,6 +340,14 @@ impl<'a> Parser<'a> {
                     //  | [<assignment>] {"," IDENTIFIER [<assignment>]} ";"
                     // )
                     let output = self.voidable_type()?;
+                    let reftype = if let VoidableType::RefType(s) = output.clone() {
+                        Ok(s)
+                    } else {
+                        Err(ParseErr::UnexpectedToken {
+                            expected: "IDENTIFIER",
+                            got: vec![Keyword("void")],
+                        })
+                    };
                     let name = if let Identifier(s) = self.get_next_token()?.token {
                         s
                     } else {
@@ -365,7 +376,16 @@ impl<'a> Parser<'a> {
                             } else {
                                 vec![]
                             };
-                            self.skip_brace(LBrace, RBrace)?;
+                            if self.peek_next_token()?.token == Semicolon {
+                                self.get_next_token()?;
+                            } else if self.peek_next_token()?.token == LBrace {
+                                self.skip_brace(LBrace, RBrace)?;
+                            } else {
+                                return Err(ParseErr::UnexpectedToken {
+                                    expected: "Semicolon | LBrace",
+                                    got: vec![self.peek_next_token()?.token],
+                                });
+                            }
                             body.members.push(Member {
                                 name,
                                 member_kind: MemberKind::Method {
@@ -378,8 +398,81 @@ impl<'a> Parser<'a> {
                                 modifiers,
                             });
                         }
-                        Assignment("=") => {
+                        Assignment("=") | Comma | Semicolon => {
                             // resolve assignment
+                            // = <skip_assignment> {"," IDENTIFIER ["=" <skip_assignment>]} ";"
+
+                            // "=" <skip_assignment>
+                            if self.peek_next_token()?.token == Assignment("=") {
+                                loop {
+                                    match self.peek_next_token()?.token {
+                                        LBrace => self.skip_brace(LBrace, RBrace)?,
+                                        LParen => self.skip_brace(LParen, RParen)?,
+                                        LBracket => self.skip_brace(LBracket, RBracket)?,
+                                        Semicolon => {
+                                            self.get_next_token()?;
+                                            break;
+                                        }
+                                        Comma if self.check_end_assignment_comma()? => {
+                                            break;
+                                        }
+                                        _ => {
+                                            self.get_next_token()?;
+                                        }
+                                    };
+                                }
+                            }
+
+                            body.members.push(Member {
+                                name,
+                                member_kind: MemberKind::Property {
+                                    reftype: reftype.clone()?,
+                                },
+                                annotations: annotations.clone(),
+                                modifiers: modifiers.clone(),
+                            });
+
+                            // {"," IDENTIFIER ["=" <skip_assignment>]} ";"
+                            while self.get_next_token()?.token == Comma {
+                                // IDENTIFIER
+                                let Identifier(name) = self.get_next_token()?.token else {
+                                    return Err(ParseErr::UnexpectedToken {
+                                        expected: "IDENTIFIER",
+                                        got: vec![self.get_current_token()?.token],
+                                    });
+                                };
+
+                                match self.peek_next_token()?.token {
+                                    Assignment("=") => loop {
+                                        match self.peek_next_token()?.token {
+                                            LBrace => self.skip_brace(LBrace, RBrace)?,
+                                            LParen => self.skip_brace(LParen, RParen)?,
+                                            LBracket => self.skip_brace(LBracket, RBracket)?,
+                                            Semicolon => break,
+                                            Comma if self.check_end_assignment_comma()? => break,
+                                            _ => {
+                                                self.get_next_token()?;
+                                            }
+                                        };
+                                    },
+                                    Semicolon | Comma => {}
+                                    token => {
+                                        return Err(ParseErr::UnexpectedToken {
+                                            expected: "Assignment | Semicolon | Comma",
+                                            got: vec![token],
+                                        });
+                                    }
+                                };
+
+                                body.members.push(Member {
+                                    name,
+                                    member_kind: MemberKind::Property {
+                                        reftype: reftype.clone()?,
+                                    },
+                                    annotations: annotations.clone(),
+                                    modifiers: modifiers.clone(),
+                                });
+                            }
                         }
                         token => {
                             return Err(ParseErr::UnexpectedToken {
@@ -400,7 +493,7 @@ impl<'a> Parser<'a> {
         }
         // consume the RBrace
         self.get_next_token()?;
-        Err(ParseErr::UnimplementedError)
+        Ok(body)
     }
 
     // ---------------------------------------------------------------------
@@ -544,6 +637,13 @@ impl<'a> Parser<'a> {
                 }
             }
 
+            if self.get_next_token()?.token != RParen {
+                return Err(ParseErr::UnexpectedToken {
+                    expected: "RParen",
+                    got: vec![self.get_current_token()?.token],
+                });
+            }
+
             Ok(v)
         }
     }
@@ -552,6 +652,7 @@ impl<'a> Parser<'a> {
         if let Ok(token) = self.peek_next_token()
             && token.token == Keyword("void")
         {
+            self.get_next_token()?;
             Ok(VoidableType::Void)
         } else {
             Ok(VoidableType::RefType(self.ref_type()?))
@@ -1027,14 +1128,14 @@ impl<'a> Parser<'a> {
     ///
     /// Note: Called after the comma is consumed.
     fn check_end_assignment_comma(&mut self) -> ParseResult<'a, bool> {
-        if self.get_current_token()?.token != Comma {
+        if self.peek_next_token()?.token != Comma {
             return Err(ParseErr::UnexpectedToken {
                 expected: "Comma",
                 got: vec![self.get_current_token()?.token],
             });
         }
 
-        let mut offset: usize = 0;
+        let mut offset: usize = 1;
 
         // <annotations>
         offset = self.skip_annotations(offset)?;
@@ -1154,18 +1255,52 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_class_decl() {
+        let mut parser = Parser::new(
+            "@NotNull public class MyClass<T extends Comparable<T>> extends MyParentClass<T> implements Printable, GetTAble { 
+                @NotNull @JsonIgnore
+                java.util.HashMap<String, Integer> a, 
+                    b = new HashMap<String, Integer>(), 
+                    c; 
+
+                @Nullable
+                float fa = 1.0f, fb = math.PI / 6, fc = fb * 7;
+
+                @NotNull
+                float fe, fh = fa;
+
+                @NotNull
+                float fg;
+                
+                @Getter
+                public Integer fromA(@NotNull String key) { 
+                    return this.a.get(key); 
+                }
+                
+                @Getter
+                public <T> T getT(String key, java.util.HashMap<Integer, T> hashmap) {
+                    return hashmap.get(this.a.get(key));
+                }
+                
+                abstract public int joinAbc();
+            }",
+        )
+        .unwrap();
+        let res = parser.type_decl(QualifiedName(vec![]));
+        println!("res:\n {:#?}", res);
+    }
+
+    #[test]
     fn test_comma_end_property() {
         let mut parser = Parser::new(
             ", @annotation1 val1, @annotation2(v1, v2) val2, @annotation3{v1 = a1, v2 = a2} val3 = true;"
         ).unwrap();
-        parser.get_next_token().unwrap();
         assert!(parser.check_end_assignment_comma().unwrap());
 
         parser = Parser::new(
             ", @annotation1 val1, @annotation2(v1, v2) val2, @annotation3{v1 = a1, v2 = a2} val3, val4;",
         )
         .unwrap();
-        parser.get_next_token().unwrap();
         assert!(parser.check_end_assignment_comma().unwrap());
 
         parser = Parser::new(
@@ -1174,7 +1309,6 @@ mod test {
         .unwrap();
         parser.get_next_token().unwrap();
         parser.qualified_name().unwrap();
-        parser.get_next_token().unwrap();
         assert!(!parser.check_end_assignment_comma().unwrap());
     }
 
@@ -1320,6 +1454,22 @@ mod test {
                 type_arg_list: TypeArgList(vec![]),
                 arr_dim: 0,
             }]
+        );
+        parser = Parser::new("(int a, char b)").unwrap();
+        assert_eq!(
+            parser.arg_list().unwrap(),
+            vec![
+                RefType {
+                    name: QualifiedName(vec!["int"]),
+                    type_arg_list: TypeArgList(vec![]),
+                    arr_dim: 0,
+                },
+                RefType {
+                    name: QualifiedName(vec!["char"]),
+                    type_arg_list: TypeArgList(vec![]),
+                    arr_dim: 0,
+                },
+            ]
         );
     }
 }

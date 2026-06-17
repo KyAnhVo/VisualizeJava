@@ -1,7 +1,7 @@
 use crate::parser::token::Token;
 
 /// Error type for our parser
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParseErr<'a> {
     UnexpectedToken {
         expected: &'static str,
@@ -20,7 +20,7 @@ pub enum ParseErr<'a> {
 /// - Extends(A) = `? extends A`
 /// - Super(A) = `? super A`
 /// - Wildcard = `?`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TypeArg<'a> {
     Is(RefType<'a>),
     Extends(RefType<'a>),
@@ -31,7 +31,7 @@ pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
 
 /// A TypeArgList is a list of type args,
 /// `<A, B, C>` is translated to `vec![A, B, C]`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TypeArgList<'a>(pub Vec<TypeArg<'a>>);
 
 /// A qualified name is a dotted name, e.g. `java.util.ArrayList`
@@ -44,7 +44,7 @@ pub struct Annotation<'a>(pub &'a str);
 
 /// A struct to represent type usages with generic,
 /// e.g. `java.util.Hashtable<Integer, ? extends com.util.MyClass>`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct RefType<'a> {
     pub name: QualifiedName<'a>,
     pub type_arg_list: TypeArgList<'a>,
@@ -52,26 +52,26 @@ pub struct RefType<'a> {
 }
 
 /// A voidable type is an output for a function.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum VoidableType<'a> {
     Void,
     RefType(RefType<'a>),
 }
 
 /// A list of parameters for generic types
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TypeParamList<'a>(pub Vec<TypeParam<'a>>);
 
 /// A type param is an input type (class `BinaryTree<K Comparable<K>, V>`,
 /// then `<K extends Comparable<K>>` and `<V>` are type params)
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TypeParam<'a> {
     pub name: &'a str,
     pub extends_from: Vec<RefType<'a>>,
 }
 
 /// A member can be a method or a property.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum MemberKind<'a> {
     Property {
         reftype: RefType<'a>,
@@ -84,7 +84,7 @@ pub enum MemberKind<'a> {
     },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Member<'a> {
     pub name: &'a str,
     pub member_kind: MemberKind<'a>,
@@ -93,7 +93,7 @@ pub struct Member<'a> {
 }
 
 /// A typekind is an enum of different kinds of type
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TypeKind<'a> {
     Class {
         inherits_from: Option<RefType<'a>>,
@@ -109,14 +109,14 @@ pub enum TypeKind<'a> {
 }
 
 /// A type's body contains its members (not subtypes) and its subtypes.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TypeBody<'a> {
     pub members: Vec<Member<'a>>,
     pub subtypes: Vec<Type<'a>>,
 }
 
 /// A type can be a class/enum/interface/annotation.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Type<'a> {
     pub name: QualifiedName<'a>,
     pub modifiers: Modifiers<'a>,
@@ -139,7 +139,7 @@ pub struct ImportObject<'a> {
     pub is_wildcard: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum AccessModifier {
     Public,
     Private,
@@ -147,7 +147,7 @@ pub enum AccessModifier {
     Default,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Modifiers<'a> {
     pub modifiers: Vec<&'a str>,
     pub access_modifier: AccessModifier,
