@@ -253,61 +253,40 @@ impl<'a> Parser<'a> {
                 self.peek_next_token()?.token,
                 self.peek_token_offset(1)?.token,
             ) {
+                // initializer block
+                (LBrace, _) => {
+                    self.skip_brace(LBrace, RBrace)?;
+                }
+                // Types: class
                 (Keyword("class"), _) => {
                     let mut typeclass = self.class_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
+                // Types: enum
                 (Keyword("enum"), _) => {
                     let mut typeclass = self.enum_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
+                // Types: annotation
                 (At, Keyword("interface")) => {
                     let mut typeclass = self.annotation_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
+
+                // Types: interface
                 (Keyword("interface"), _) => {
                     let mut typeclass = self.enum_decl(prefix.clone())?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
-                (Keyword("void"), _) => {
-                    // void IDENTIFIER <arg_list> <method_body>
-                    let output = VoidableType::Void;
-
-                    // "void"
-                    self.get_next_token()?;
-
-                    // IDENTIFIER
-                    let name: &str = if let Identifier(s) = self.get_next_token()?.token {
-                        s
-                    } else {
-                        return Err(ParseErr::UnexpectedToken {
-                            expected: "IDENTIFIER",
-                            got: vec![self.get_current_token()?.token],
-                        });
-                    };
-
-                    let input = self.arg_list()?;
-                    self.skip_brace(LBrace, RBrace)?;
-
-                    body.members.push(Member {
-                        name,
-                        member_kind: MemberKind::Method {
-                            type_param_list: TypeParamList(vec![]),
-                            input,
-                            output,
-                        },
-                        annotations,
-                        modifiers,
-                    });
-                }
+                // Members: method with type_param
                 (GreaterThan, _) => {
                     // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
                     let type_param_list = self.type_param_list()?;
@@ -321,6 +300,23 @@ impl<'a> Parser<'a> {
                         });
                     };
                     let input = self.arg_list()?;
+                    let throws = if self.peek_next_token()?.token == Keyword("throws") {
+                        let mut v: Vec<RefType<'a>> = vec![];
+
+                        // "throws" <ref_type>
+                        self.get_next_token()?;
+                        v.push(self.ref_type()?);
+
+                        // {"," <ref_type>}
+                        while self.peek_next_token()?.token == Comma {
+                            self.get_next_token()?;
+                            v.push(self.ref_type()?);
+                        }
+
+                        v
+                    } else {
+                        vec![]
+                    };
                     self.skip_brace(LBrace, RBrace)?;
                     body.members.push(Member {
                         name,
@@ -328,19 +324,72 @@ impl<'a> Parser<'a> {
                             type_param_list,
                             input,
                             output,
+                            throws,
                         },
                         annotations,
                         modifiers,
                     })
                 }
-                (Identifier(_), _) | (At, _) => {
-                    // TODO: design grammar for property declaration
-
+                // Members: either property or method
+                (Keyword("void"), _) | (Identifier(_), _) | (At, _) => {
                     // <ref_type> <annotations> IDENTIFIER (
                     //  | <arg_list> <method_body>
+                    //  | [<assignment>] {"," IDENTIFIER [<assignment>]} ";"
                     // )
-                    self.annotations()?;
+                    let output = self.voidable_type()?;
+                    let name = if let Identifier(s) = self.get_next_token()?.token {
+                        s
+                    } else {
+                        return Err(ParseErr::UnexpectedToken {
+                            expected: "IDENTIFIER",
+                            got: vec![self.get_current_token()?.token],
+                        });
+                    };
+                    match self.peek_next_token()?.token {
+                        LParen => {
+                            let input = self.arg_list()?;
+                            let throws = if self.peek_next_token()?.token == Keyword("throws") {
+                                let mut v: Vec<RefType<'a>> = vec![];
+
+                                // "throws" <ref_type>
+                                self.get_next_token()?;
+                                v.push(self.ref_type()?);
+
+                                // {"," <ref_type>}
+                                while self.peek_next_token()?.token == Comma {
+                                    self.get_next_token()?;
+                                    v.push(self.ref_type()?);
+                                }
+
+                                v
+                            } else {
+                                vec![]
+                            };
+                            self.skip_brace(LBrace, RBrace)?;
+                            body.members.push(Member {
+                                name,
+                                member_kind: MemberKind::Method {
+                                    type_param_list: TypeParamList(vec![]),
+                                    input,
+                                    output,
+                                    throws,
+                                },
+                                annotations,
+                                modifiers,
+                            });
+                        }
+                        Assignment("=") => {
+                            // resolve assignment
+                        }
+                        token => {
+                            return Err(ParseErr::UnexpectedToken {
+                                expected: "LBrace | = | Comma",
+                                got: vec![token],
+                            });
+                        }
+                    }
                 }
+                // error
                 (token1, _) => {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "type_decl | type_param",
@@ -751,7 +800,8 @@ impl<'a> Parser<'a> {
     }
 
     /// `<modifiers> ::= { "public" | "private" | "protected" | "abstract" | "static" | "final" |
-    /// "strictfp" }`
+    /// "strictfp" | "synchronized" | "native" | "transient" | "volatile" | "default" | "sealed" |
+    /// "non-sealed" }`
     pub fn modifiers(&mut self) -> ParseResult<'a, Modifiers<'a>> {
         let mut modifiers = Modifiers {
             modifiers: vec![],
@@ -772,7 +822,29 @@ impl<'a> Parser<'a> {
                     "protected" => AccessModifier::Protected,
                     _ => unreachable!("we have guaranteed public/private/protected"),
                 };
-            } else if !matches!(s, "abstract" | "static" | "final" | "strictfp") {
+            } else if s == "non" {
+                if self.peek_token_offset(1)?.token != Op("-") {
+                    break;
+                }
+                if self.peek_token_offset(2)?.token != Keyword("sealed") {
+                    break;
+                }
+                modifiers.modifiers.push("non-sealed");
+                self.get_next_token()?;
+                self.get_next_token()?;
+                self.get_next_token()?;
+            } else if !matches!(
+                s,
+                "abstract"
+                    | "static"
+                    | "final"
+                    | "strictfp"
+                    | "synchronized"
+                    | "native"
+                    | "transient"
+                    | "volatile"
+                    | "default"
+            ) {
                 break;
             }
             self.get_next_token()?;
@@ -947,6 +1019,130 @@ impl<'a> Parser<'a> {
 
         Ok(())
     }
+
+    /// a valid assignment-ending comma is the first comma of the following phrase:
+    /// ```
+    /// "," <annotations> IDENTIFIER {"," <annotations> IDENTIFIER} (";" | "=")
+    /// ```
+    ///
+    /// Note: Called after the comma is consumed.
+    fn check_end_assignment_comma(&mut self) -> ParseResult<'a, bool> {
+        if self.get_current_token()?.token != Comma {
+            return Err(ParseErr::UnexpectedToken {
+                expected: "Comma",
+                got: vec![self.get_current_token()?.token],
+            });
+        }
+
+        let mut offset: usize = 0;
+
+        // <annotations>
+        offset = self.skip_annotations(offset)?;
+
+        // IDENTIFIER
+        let Identifier(_) = self.peek_token_offset(offset)?.token else {
+            return Ok(false);
+        };
+        offset += 1;
+
+        // {"," <annotations> IDENTIFIER}
+        while self.peek_token_offset(offset)?.token == Comma {
+            // ","
+            offset += 1;
+
+            // <annotations>
+            offset = self.skip_annotations(offset)?;
+
+            let Identifier(_) = self.peek_token_offset(offset)?.token else {
+                return Ok(false);
+            };
+            offset += 1;
+        }
+
+        match self.peek_token_offset(offset)?.token {
+            Semicolon | Assignment("=") => Ok(true),
+            _ => Ok(false),
+        }
+    }
+
+    /// return the index after skipping annotation
+    fn skip_annotations(&self, offset: usize) -> ParseResult<'a, usize> {
+        let mut offset = offset;
+
+        // go through annotations
+        while self.peek_token_offset(offset)?.token == At {
+            // "@"
+            offset += 1;
+
+            // "@" ID {"." ID}[
+            //  | ("("...")")
+            //  | ("{"..."}")
+            // ]
+
+            // ID
+            let Identifier(_) = self.peek_token_offset(offset)?.token else {
+                return Err(ParseErr::UnexpectedToken {
+                    expected: "IDENTIFIER",
+                    got: vec![self.peek_token_offset(offset)?.token],
+                });
+            };
+            offset += 1;
+
+            // {"." ID}
+            while self.peek_token_offset(offset)?.token == Dot {
+                // read Dot
+                offset += 1;
+
+                // read Identifier
+                let Identifier(_) = self.peek_token_offset(offset)?.token else {
+                    return Err(ParseErr::UnexpectedToken {
+                        expected: "IDENTIFIER",
+                        got: vec![self.peek_token_offset(offset)?.token],
+                    });
+                };
+                offset += 1;
+            }
+
+            offset = match self.peek_token_offset(offset)?.token {
+                LBrace => self.skip_brace_peek_forward(LBrace, RBrace, offset)?,
+                LParen => self.skip_brace_peek_forward(LParen, RParen, offset)?,
+                _ => offset,
+            };
+        }
+
+        Ok(offset)
+    }
+
+    /// returns the offset just after the closing of the brace
+    fn skip_brace_peek_forward(
+        &self,
+        open_brace: Token,
+        close_brace: Token,
+        offset: usize,
+    ) -> ParseResult<'a, usize> {
+        let mut offset = offset;
+
+        if self.peek_token_offset(offset)?.token != open_brace {
+            return Err(ParseErr::UnexpectedToken {
+                expected: "Open brace/bracket/paren",
+                got: vec![self.peek_token_offset(offset)?.token],
+            });
+        }
+        offset += 1;
+        let mut stack = 1;
+
+        while stack > 0 {
+            match self.peek_token_offset(offset)?.token {
+                EOF => return Err(ParseErr::UnexpectedEOF),
+                token if token == open_brace => stack += 1,
+                token if token == close_brace => stack -= 1,
+                _ => {}
+            }
+            offset += 1;
+        }
+
+        Ok(offset)
+    }
 }
 
 // ---------------------------------------------------------------------
@@ -956,6 +1152,31 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_comma_end_property() {
+        let mut parser = Parser::new(
+            ", @annotation1 val1, @annotation2(v1, v2) val2, @annotation3{v1 = a1, v2 = a2} val3 = true;"
+        ).unwrap();
+        parser.get_next_token().unwrap();
+        assert!(parser.check_end_assignment_comma().unwrap());
+
+        parser = Parser::new(
+            ", @annotation1 val1, @annotation2(v1, v2) val2, @annotation3{v1 = a1, v2 = a2} val3, val4;",
+        )
+        .unwrap();
+        parser.get_next_token().unwrap();
+        assert!(parser.check_end_assignment_comma().unwrap());
+
+        parser = Parser::new(
+            "<v1.v2, @annotation1 val1, @annotation2(v1, v2) val2, @annotation3{v1 = a1, v2 = a2} val3>",
+        )
+        .unwrap();
+        parser.get_next_token().unwrap();
+        parser.qualified_name().unwrap();
+        parser.get_next_token().unwrap();
+        assert!(!parser.check_end_assignment_comma().unwrap());
+    }
 
     #[test]
     fn test_annotation() {

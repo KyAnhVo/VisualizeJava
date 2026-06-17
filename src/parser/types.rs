@@ -80,6 +80,7 @@ pub enum MemberKind<'a> {
         type_param_list: TypeParamList<'a>,
         input: Vec<RefType<'a>>,
         output: VoidableType<'a>,
+        throws: Vec<RefType<'a>>,
     },
 }
 

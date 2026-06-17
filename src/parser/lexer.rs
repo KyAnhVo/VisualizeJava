@@ -242,6 +242,7 @@ impl<'a> Lexer<'a> {
                             | "throw"
                             | "throws"
                             | "volatile"
+                            | "sealed"
                     ) {
                         return Some(Keyword::<'a>(s));
                     } else {
