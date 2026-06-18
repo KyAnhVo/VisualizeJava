@@ -352,6 +352,11 @@ impl<'a> Parser<'a> {
     }
 }
 
+//-----------------------------------------------------------------
+//--------------------------- UNIT TEST ---------------------------
+//-----------------------------------------------------------------
+
+#[cfg(test)]
 mod test {
     use super::*;
 
@@ -378,7 +383,6 @@ mod test {
                     return this.a.get(key); 
                 }
                 
-                @Getter
                 public <T> T getT(String key, java.util.HashMap<Integer, T> hashmap) {
                     return hashmap.get(this.a.get(key));
                 }
@@ -387,7 +391,7 @@ mod test {
             }",
         )
         .unwrap();
-        let res = parser.class_decl(QualifiedName(vec![]));
+        let res = parser.class_decl(QualifiedName(vec![])).unwrap();
         // println!("res:\n {:#?}", res);
     }
 }

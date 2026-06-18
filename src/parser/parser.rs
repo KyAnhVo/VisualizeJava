@@ -1,4 +1,4 @@
-use crate::parser::{
+use super::{
     lexer::Lexer,
     token::{
         IndexedToken,
@@ -55,8 +55,8 @@ impl<'a> Parser<'a> {
         })
     }
 
-    // Parse the java file, return the structure of the file which can be
-    // thought of as a specialized AST
+    /// Parse the java file, return the structure of the file which can be
+    /// thought of as a specialized AST
     pub fn parse(&mut self) -> Result<JavaFile<'a>, ParseErr<'a>> {
         self.java_file()
     }
