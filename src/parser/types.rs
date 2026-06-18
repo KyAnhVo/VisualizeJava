@@ -1,5 +1,10 @@
 use crate::parser::token::Token;
 
+/// Parse error trait for all parsing stuffs.
+pub trait GenericParseResult<T> {
+    fn push_context(self, ctx: &'static str, index: usize) -> Self;
+}
+
 /// Error type for our parser
 #[derive(Debug, Clone)]
 pub enum ParseErr<'a> {
@@ -14,6 +19,28 @@ pub enum ParseErr<'a> {
     ImportError,
     MultiplePublicTypesError,
 }
+pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
+impl<'a, T> GenericParseResult<T> for ParseResult<'a, T> {
+    fn push_context(self, _: &'static str, _: usize) -> Self {
+        self
+    }
+}
+
+/// Stacked err uses err and pushes the stack's first index element up onto the stack.
+pub struct StackedParseErr<'a> {
+    pub err: ParseErr<'a>,
+    pub stack: Vec<(&'static str, usize)>,
+    pub err_index: usize,
+}
+pub type StackedParseResult<'a, T> = Result<T, StackedParseErr<'a>>;
+impl<'a, T> GenericParseResult<T> for StackedParseResult<'a, T> {
+    fn push_context(self, ctx: &'static str, index: usize) -> Self {
+        self.map_err(|mut e| {
+            e.stack.push((ctx, index));
+            e
+        })
+    }
+}
 
 /// A TypeArg has 4 values representing 4 different args:
 /// - Is(A) = `A`
@@ -27,7 +54,6 @@ pub enum TypeArg<'a> {
     Super(RefType<'a>),
     Wildcard,
 }
-pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
 
 /// A TypeArgList is a list of type args,
 /// `<A, B, C>` is translated to `vec![A, B, C]`
