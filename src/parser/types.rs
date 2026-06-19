@@ -1,7 +1,12 @@
 use crate::parser::token::Token;
 
+//-----------------------------------------------------------------------
+//------------------ ERROR / RESULT TYPES -------------------------------
+//-----------------------------------------------------------------------
+
 /// Parse error trait for all parsing stuffs.
 pub trait GenericParseResult<T> {
+    /// Pushes the current nonterminal's context into the stack.
     fn push_context(self, ctx: &'static str, index: usize) -> Self;
 }
 
@@ -19,6 +24,23 @@ pub enum ParseErr<'a> {
     ImportError,
     MultiplePublicTypesError,
 }
+
+impl<'a> ParseErr<'a> {
+    pub fn to_stack_parse_err(
+        self,
+        err_index: usize,
+        start_index: usize,
+        nonterm_name: &'static str,
+    ) -> StackedParseErr<'a> {
+        StackedParseErr {
+            err: self,
+            err_index,
+            stack: vec![(nonterm_name, start_index)],
+        }
+    }
+}
+
+/// Result type for simple ParseErr
 pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
 impl<'a, T> GenericParseResult<T> for ParseResult<'a, T> {
     fn push_context(self, _: &'static str, _: usize) -> Self {
@@ -32,6 +54,8 @@ pub struct StackedParseErr<'a> {
     pub stack: Vec<(&'static str, usize)>,
     pub err_index: usize,
 }
+
+/// Result type for stackParseErr
 pub type StackedParseResult<'a, T> = Result<T, StackedParseErr<'a>>;
 impl<'a, T> GenericParseResult<T> for StackedParseResult<'a, T> {
     fn push_context(self, ctx: &'static str, index: usize) -> Self {
