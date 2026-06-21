@@ -105,7 +105,7 @@ impl<'a> Parser<'a> {
 
             match (
                 self.peek_next_token().token,
-                self.peek_token_offset(1)?.token,
+                self.peek_token_offset(1).token,
             ) {
                 // initializer block
                 (LBrace, _) => {

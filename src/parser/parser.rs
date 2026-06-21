@@ -83,28 +83,20 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(super) fn peek_token_offset(
-        &self,
-        offset: usize,
-    ) -> Result<IndexedToken<'a>, ParseErr<'a>> {
+    pub(super) fn peek_token_offset(&self, offset: usize) -> IndexedToken<'a> {
         if offset == 0 {
-            Ok(self.peek_next_token())
+            self.peek_next_token()
         } else {
             if self.lookahead != None {
-                self.tokens
-                    .get(self.ind + offset - 1)
-                    .copied()
-                    .ok_or(ParseErr::UnexpectedEOF)
+                self.tokens.get(self.ind + offset - 1).copied().unwrap()
             } else {
-                self.tokens
-                    .get(self.ind + offset)
-                    .copied()
-                    .ok_or(ParseErr::UnexpectedEOF)
+                self.tokens.get(self.ind + offset).copied().unwrap()
             }
         }
     }
 
-    pub(super) fn consume_gt(&mut self) -> ParseResult<'a, ()> {
+    pub(super) fn consume_gt(&mut self) -> StackedParseResult<'a, ()> {
+        let ctx = ("consume_gt", self.peek_next_token().addr);
         let indexed_token = self.get_next_token();
         match indexed_token.token {
             GreaterThan => Ok(()),
@@ -151,7 +143,8 @@ impl<'a> Parser<'a> {
             token => Err(ParseErr::UnexpectedToken {
                 expected: ">",
                 got: vec![token],
-            }),
+            }
+            .to_stack_parse_err(indexed_token.addr, ctx)),
         }
     }
 
@@ -159,12 +152,15 @@ impl<'a> Parser<'a> {
         &mut self,
         open_brace: Token,
         close_brace: Token,
-    ) -> ParseResult<'a, ()> {
+    ) -> StackedParseResult<'a, ()> {
+        let ctx = ("skip_brace", self.peek_next_token().addr);
+
         if self.get_next_token().token != open_brace {
             return Err(ParseErr::UnexpectedToken {
                 expected: "LBrace | LBracket | LParen",
                 got: vec![self.get_current_token().token],
-            });
+            }
+            .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
 
         let mut stack: usize = 1;
@@ -172,7 +168,10 @@ impl<'a> Parser<'a> {
             match self.get_next_token().token {
                 token if token == open_brace => stack += 1,
                 token if token == close_brace => stack -= 1,
-                EOF => return Err(ParseErr::UnexpectedEOF),
+                EOF => {
+                    return Err(ParseErr::UnexpectedEOF
+                        .to_stack_parse_err(self.get_current_token().addr, ctx));
+                }
                 _ => {}
             }
         }
@@ -200,26 +199,26 @@ impl<'a> Parser<'a> {
         offset = self.skip_annotations(offset)?;
 
         // IDENTIFIER
-        let Identifier(_) = self.peek_token_offset(offset)?.token else {
+        let Identifier(_) = self.peek_token_offset(offset).token else {
             return Ok(false);
         };
         offset += 1;
 
         // {"," <annotations> IDENTIFIER}
-        while self.peek_token_offset(offset)?.token == Comma {
+        while self.peek_token_offset(offset).token == Comma {
             // ","
             offset += 1;
 
             // <annotations>
             offset = self.skip_annotations(offset)?;
 
-            let Identifier(_) = self.peek_token_offset(offset)?.token else {
+            let Identifier(_) = self.peek_token_offset(offset).token else {
                 return Ok(false);
             };
             offset += 1;
         }
 
-        match self.peek_token_offset(offset)?.token {
+        match self.peek_token_offset(offset).token {
             Semicolon | Assignment("=") => Ok(true),
             _ => Ok(false),
         }
@@ -230,7 +229,7 @@ impl<'a> Parser<'a> {
         let mut offset = offset;
 
         // go through annotations
-        while self.peek_token_offset(offset)?.token == At {
+        while self.peek_token_offset(offset).token == At {
             // "@"
             offset += 1;
 
@@ -240,30 +239,30 @@ impl<'a> Parser<'a> {
             // ]
 
             // ID
-            let Identifier(_) = self.peek_token_offset(offset)?.token else {
+            let Identifier(_) = self.peek_token_offset(offset).token else {
                 return Err(ParseErr::UnexpectedToken {
                     expected: "IDENTIFIER",
-                    got: vec![self.peek_token_offset(offset)?.token],
+                    got: vec![self.peek_token_offset(offset).token],
                 });
             };
             offset += 1;
 
             // {"." ID}
-            while self.peek_token_offset(offset)?.token == Dot {
+            while self.peek_token_offset(offset).token == Dot {
                 // read Dot
                 offset += 1;
 
                 // read Identifier
-                let Identifier(_) = self.peek_token_offset(offset)?.token else {
+                let Identifier(_) = self.peek_token_offset(offset).token else {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "IDENTIFIER",
-                        got: vec![self.peek_token_offset(offset)?.token],
+                        got: vec![self.peek_token_offset(offset).token],
                     });
                 };
                 offset += 1;
             }
 
-            offset = match self.peek_token_offset(offset)?.token {
+            offset = match self.peek_token_offset(offset).token {
                 LBrace => self.skip_brace_peek_forward(LBrace, RBrace, offset)?,
                 LParen => self.skip_brace_peek_forward(LParen, RParen, offset)?,
                 _ => offset,
@@ -282,17 +281,17 @@ impl<'a> Parser<'a> {
     ) -> ParseResult<'a, usize> {
         let mut offset = offset;
 
-        if self.peek_token_offset(offset)?.token != open_brace {
+        if self.peek_token_offset(offset).token != open_brace {
             return Err(ParseErr::UnexpectedToken {
                 expected: "Open brace/bracket/paren",
-                got: vec![self.peek_token_offset(offset)?.token],
+                got: vec![self.peek_token_offset(offset).token],
             });
         }
         offset += 1;
         let mut stack = 1;
 
         while stack > 0 {
-            match self.peek_token_offset(offset)?.token {
+            match self.peek_token_offset(offset).token {
                 EOF => return Err(ParseErr::UnexpectedEOF),
                 token if token == open_brace => stack += 1,
                 token if token == close_brace => stack -= 1,
@@ -375,8 +374,8 @@ impl<'a> Parser<'a> {
             let name = self.qualified_name()?;
 
             let is_wildcard = match (
-                self.peek_token_offset(0)?.token,
-                self.peek_token_offset(1)?.token,
+                self.peek_token_offset(0).token,
+                self.peek_token_offset(1).token,
             ) {
                 (Dot, Op("*")) => {
                     self.get_next_token();
@@ -486,7 +485,7 @@ mod test {
             "<v1.v2, @annotation1 val1, @annotation2(v1, v2) val2, @annotation3{v1 = a1, v2 = a2} val3>",
         )
         .unwrap();
-        parser.get_next_token().unwrap();
+        parser.get_next_token();
         parser.qualified_name().unwrap();
         assert!(!parser.check_end_assignment_comma().unwrap());
     }
