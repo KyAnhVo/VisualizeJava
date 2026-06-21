@@ -7,7 +7,7 @@ use crate::parser::token::Token;
 /// Parse error trait for all parsing stuffs.
 pub trait GenericParseResult<T> {
     /// Pushes the current nonterminal's context into the stack.
-    fn push_context(self, ctx: &'static str, index: usize) -> Self;
+    fn push_context(self, context: (&'static str, usize)) -> Self;
 }
 
 /// Error type for our parser
@@ -43,7 +43,7 @@ impl<'a> ParseErr<'a> {
 /// Result type for simple ParseErr
 pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
 impl<'a, T> GenericParseResult<T> for ParseResult<'a, T> {
-    fn push_context(self, _: &'static str, _: usize) -> Self {
+    fn push_context(self, _: (&'static str, usize)) -> Self {
         self
     }
 }
@@ -58,7 +58,7 @@ pub struct StackedParseErr<'a> {
 /// Result type for stackParseErr
 pub type StackedParseResult<'a, T> = Result<T, StackedParseErr<'a>>;
 impl<'a, T> GenericParseResult<T> for StackedParseResult<'a, T> {
-    fn push_context(self, ctx: &'static str, index: usize) -> Self {
+    fn push_context(self, (ctx, index): (&'static str, usize)) -> Self {
         self.map_err(|mut e| {
             e.stack.push((ctx, index));
             e

@@ -5,16 +5,16 @@ impl<'a> Parser<'a> {
     /// [ "implements" <ref_type> { "," <ref_type> } ] <class_body>
     pub(crate) fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         // "class"
-        if self.get_next_token()?.token != Keyword("class") {
+        if self.get_next_token().token != Keyword("class") {
             return Err(ParseErr::UnexpectedToken {
                 expected: "class",
-                got: vec![self.get_current_token()?.token],
+                got: vec![self.get_current_token().token],
             });
         }
 
         // IDENTIFIER
         let mut name = QualifiedName(prefix.0.clone());
-        name.0.push(match self.get_next_token()?.token {
+        name.0.push(match self.get_next_token().token {
             Identifier(s) => s,
             token => {
                 return Err(ParseErr::UnexpectedToken {
@@ -29,8 +29,8 @@ impl<'a> Parser<'a> {
 
         // ["extends" <ref_type>]
         let inherits_from: Option<RefType<'a>> =
-            if self.peek_next_token()?.token == Keyword("extends") {
-                self.get_next_token()?;
+            if self.peek_next_token().token == Keyword("extends") {
+                self.get_next_token();
                 Some(self.ref_type()?)
             } else {
                 None
@@ -38,11 +38,11 @@ impl<'a> Parser<'a> {
 
         // ["implements" <ref_type> {"," <ref_type>}]
         let implement_interfaces: Vec<RefType<'a>> =
-            if self.peek_next_token()?.token == Keyword("implements") {
-                self.get_next_token()?;
+            if self.peek_next_token().token == Keyword("implements") {
+                self.get_next_token();
                 let mut vector = vec![self.ref_type()?];
-                while self.peek_next_token()?.token == Comma {
-                    self.get_next_token()?;
+                while self.peek_next_token().token == Comma {
+                    self.get_next_token();
                     vector.push(self.ref_type()?)
                 }
                 vector
@@ -80,10 +80,10 @@ impl<'a> Parser<'a> {
         prefix: QualifiedName<'a>,
         classname: &str,
     ) -> ParseResult<'a, TypeBody<'a>> {
-        if self.get_next_token()?.token != LBrace {
+        if self.get_next_token().token != LBrace {
             return Err(ParseErr::UnexpectedToken {
                 expected: "LBrace",
-                got: vec![self.get_current_token()?.token],
+                got: vec![self.get_current_token().token],
             });
         }
 
@@ -95,8 +95,8 @@ impl<'a> Parser<'a> {
         };
 
         // {<member_decl>}, inside is the <member_decl>
-        while self.peek_next_token()?.token != RBrace {
-            if self.peek_next_token()?.token == EOF {
+        while self.peek_next_token().token != RBrace {
+            if self.peek_next_token().token == EOF {
                 return Err(ParseErr::UnexpectedEOF);
             }
 
@@ -104,7 +104,7 @@ impl<'a> Parser<'a> {
             let modifiers = self.modifiers()?;
 
             match (
-                self.peek_next_token()?.token,
+                self.peek_next_token().token,
                 self.peek_token_offset(1)?.token,
             ) {
                 // initializer block
@@ -145,25 +145,25 @@ impl<'a> Parser<'a> {
                     // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
                     let type_param_list = self.type_param_list()?;
                     let output = self.voidable_type()?;
-                    let name = if let Identifier(s) = self.get_next_token()?.token {
+                    let name = if let Identifier(s) = self.get_next_token().token {
                         s
                     } else {
                         return Err(ParseErr::UnexpectedToken {
                             expected: "IDENTIFIER",
-                            got: vec![self.get_current_token()?.token],
+                            got: vec![self.get_current_token().token],
                         });
                     };
                     let input = self.arg_list()?;
-                    let throws = if self.peek_next_token()?.token == Keyword("throws") {
+                    let throws = if self.peek_next_token().token == Keyword("throws") {
                         let mut v: Vec<RefType<'a>> = vec![];
 
                         // "throws" <ref_type>
-                        self.get_next_token()?;
+                        self.get_next_token();
                         v.push(self.ref_type()?);
 
                         // {"," <ref_type>}
-                        while self.peek_next_token()?.token == Comma {
-                            self.get_next_token()?;
+                        while self.peek_next_token().token == Comma {
+                            self.get_next_token();
                             v.push(self.ref_type()?);
                         }
 
@@ -199,27 +199,27 @@ impl<'a> Parser<'a> {
                             got: vec![Keyword("void")],
                         })
                     };
-                    let name = if let Identifier(s) = self.get_next_token()?.token {
+                    let name = if let Identifier(s) = self.get_next_token().token {
                         s
                     } else {
                         return Err(ParseErr::UnexpectedToken {
                             expected: "IDENTIFIER",
-                            got: vec![self.get_current_token()?.token],
+                            got: vec![self.get_current_token().token],
                         });
                     };
-                    match self.peek_next_token()?.token {
+                    match self.peek_next_token().token {
                         LParen => {
                             let input = self.arg_list()?;
-                            let throws = if self.peek_next_token()?.token == Keyword("throws") {
+                            let throws = if self.peek_next_token().token == Keyword("throws") {
                                 let mut v: Vec<RefType<'a>> = vec![];
 
                                 // "throws" <ref_type>
-                                self.get_next_token()?;
+                                self.get_next_token();
                                 v.push(self.ref_type()?);
 
                                 // {"," <ref_type>}
-                                while self.peek_next_token()?.token == Comma {
-                                    self.get_next_token()?;
+                                while self.peek_next_token().token == Comma {
+                                    self.get_next_token();
                                     v.push(self.ref_type()?);
                                 }
 
@@ -227,14 +227,14 @@ impl<'a> Parser<'a> {
                             } else {
                                 vec![]
                             };
-                            if self.peek_next_token()?.token == Semicolon {
-                                self.get_next_token()?;
-                            } else if self.peek_next_token()?.token == LBrace {
+                            if self.peek_next_token().token == Semicolon {
+                                self.get_next_token();
+                            } else if self.peek_next_token().token == LBrace {
                                 self.skip_brace(LBrace, RBrace)?;
                             } else {
                                 return Err(ParseErr::UnexpectedToken {
                                     expected: "Semicolon | LBrace",
-                                    got: vec![self.peek_next_token()?.token],
+                                    got: vec![self.peek_next_token().token],
                                 });
                             }
                             body.members.push(Member {
@@ -254,21 +254,21 @@ impl<'a> Parser<'a> {
                             // = <skip_assignment> {"," IDENTIFIER ["=" <skip_assignment>]} ";"
 
                             // "=" <skip_assignment>
-                            if self.peek_next_token()?.token == Assignment("=") {
+                            if self.peek_next_token().token == Assignment("=") {
                                 loop {
-                                    match self.peek_next_token()?.token {
+                                    match self.peek_next_token().token {
                                         LBrace => self.skip_brace(LBrace, RBrace)?,
                                         LParen => self.skip_brace(LParen, RParen)?,
                                         LBracket => self.skip_brace(LBracket, RBracket)?,
                                         Semicolon => {
-                                            self.get_next_token()?;
+                                            self.get_next_token();
                                             break;
                                         }
                                         Comma if self.check_end_assignment_comma()? => {
                                             break;
                                         }
                                         _ => {
-                                            self.get_next_token()?;
+                                            self.get_next_token();
                                         }
                                     };
                                 }
@@ -284,25 +284,25 @@ impl<'a> Parser<'a> {
                             });
 
                             // {"," IDENTIFIER ["=" <skip_assignment>]} ";"
-                            while self.get_next_token()?.token == Comma {
+                            while self.get_next_token().token == Comma {
                                 // IDENTIFIER
-                                let Identifier(name) = self.get_next_token()?.token else {
+                                let Identifier(name) = self.get_next_token().token else {
                                     return Err(ParseErr::UnexpectedToken {
                                         expected: "IDENTIFIER",
-                                        got: vec![self.get_current_token()?.token],
+                                        got: vec![self.get_current_token().token],
                                     });
                                 };
 
-                                match self.peek_next_token()?.token {
+                                match self.peek_next_token().token {
                                     Assignment("=") => loop {
-                                        match self.peek_next_token()?.token {
+                                        match self.peek_next_token().token {
                                             LBrace => self.skip_brace(LBrace, RBrace)?,
                                             LParen => self.skip_brace(LParen, RParen)?,
                                             LBracket => self.skip_brace(LBracket, RBracket)?,
                                             Semicolon => break,
                                             Comma if self.check_end_assignment_comma()? => break,
                                             _ => {
-                                                self.get_next_token()?;
+                                                self.get_next_token();
                                             }
                                         };
                                     },
@@ -343,7 +343,7 @@ impl<'a> Parser<'a> {
             };
         }
         // consume the RBrace
-        self.get_next_token()?;
+        self.get_next_token();
         Ok(body)
     }
 }
@@ -359,11 +359,11 @@ mod test {
     #[test]
     fn test_class_decl() {
         let mut parser = Parser::new(
-            "class MyClass<T extends Comparable<T>> extends MyParentClass<T> implements Printable, GetTAble { 
+            "class MyClass<T extends Comparable<T>> extends MyParentClass<T> implements Printable, GetTAble {
                 @NotNull @JsonIgnore
-                java.util.HashMap<String, Integer> a, 
-                    b = new HashMap<String, Integer>(), 
-                    c; 
+                java.util.HashMap<String, Integer> a,
+                    b = new HashMap<String, Integer>(),
+                    c;
 
                 @Nullable
                 float fa = 1.0f, fb = math.PI / 6, fc = fb * 7;
@@ -373,16 +373,16 @@ mod test {
 
                 @NotNull
                 float fg;
-                
+
                 @Getter
-                public Integer fromA(@NotNull String key) { 
-                    return this.a.get(key); 
+                public Integer fromA(@NotNull String key) {
+                    return this.a.get(key);
                 }
-                
+
                 public <T> T getT(String key, java.util.HashMap<Integer, T> hashmap) {
                     return hashmap.get(this.a.get(key));
                 }
-                
+
                 abstract public int joinAbc();
             }",
         )

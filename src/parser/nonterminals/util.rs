@@ -11,112 +11,112 @@ impl<'a> Parser<'a> {
     /// ```
     pub(crate) fn arg_list(&mut self) -> ParseResult<'a, Vec<RefType<'a>>> {
         // "("
-        if self.get_next_token()?.token != LParen {
+        if self.get_next_token().token != LParen {
             return Err(ParseErr::UnexpectedToken {
                 expected: "LParen",
-                got: vec![self.get_current_token()?.token],
+                got: vec![self.get_current_token().token],
             });
         }
         let mut v: Vec<RefType> = vec![];
-        if self.peek_next_token()?.token == RParen {
-            self.get_next_token()?;
+        if self.peek_next_token().token == RParen {
+            self.get_next_token();
             Ok(v)
         } else {
             // <annotations> ["final"]
             self.annotations()?;
-            if self.peek_next_token()?.token == Keyword("final") {
-                self.get_next_token()?;
+            if self.peek_next_token().token == Keyword("final") {
+                self.get_next_token();
             }
 
             // <reftype>
             v.push(self.ref_type()?);
 
             // | ("..." IDENTIFIER ")")
-            if self.peek_next_token()?.token == Op("...") {
-                self.get_next_token()?;
-                let Identifier(_) = self.get_next_token()?.token else {
+            if self.peek_next_token().token == Op("...") {
+                self.get_next_token();
+                let Identifier(_) = self.get_next_token().token else {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "IDENTIFIER",
-                        got: vec![self.get_current_token()?.token],
+                        got: vec![self.get_current_token().token],
                     });
                 };
-                if self.get_next_token()?.token != RParen {
+                if self.get_next_token().token != RParen {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "RParen",
-                        got: vec![self.get_current_token()?.token],
+                        got: vec![self.get_current_token().token],
                     });
                 }
                 return Ok(v);
             }
 
             // consume the Identifier
-            let Identifier(_) = self.get_next_token()?.token else {
+            let Identifier(_) = self.get_next_token().token else {
                 return Err(ParseErr::UnexpectedToken {
                     expected: "IDENTIFIER",
-                    got: vec![self.get_current_token()?.token],
+                    got: vec![self.get_current_token().token],
                 });
             };
 
             // {"[]"}
-            while self.peek_next_token()?.token == LBracket {
-                self.get_next_token()?;
-                if self.get_next_token()?.token != RBracket {
+            while self.peek_next_token().token == LBracket {
+                self.get_next_token();
+                if self.get_next_token().token != RBracket {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "RBracket",
-                        got: vec![self.get_current_token()?.token],
+                        got: vec![self.get_current_token().token],
                     });
                 }
                 v.last_mut().unwrap().arr_dim += 1;
             }
 
-            while self.peek_next_token()?.token == Comma {
-                self.get_next_token()?;
+            while self.peek_next_token().token == Comma {
+                self.get_next_token();
                 self.annotations()?;
-                if self.peek_next_token()?.token == Keyword("final") {
-                    self.get_next_token()?;
+                if self.peek_next_token().token == Keyword("final") {
+                    self.get_next_token();
                 }
 
                 v.push(self.ref_type()?);
 
-                if self.peek_next_token()?.token == Op("...") {
-                    self.get_next_token()?;
-                    let Identifier(_) = self.get_next_token()?.token else {
+                if self.peek_next_token().token == Op("...") {
+                    self.get_next_token();
+                    let Identifier(_) = self.get_next_token().token else {
                         return Err(ParseErr::UnexpectedToken {
                             expected: "IDENTIFIER",
-                            got: vec![self.get_current_token()?.token],
+                            got: vec![self.get_current_token().token],
                         });
                     };
-                    if self.get_next_token()?.token != RParen {
+                    if self.get_next_token().token != RParen {
                         return Err(ParseErr::UnexpectedToken {
                             expected: "RParen",
-                            got: vec![self.get_current_token()?.token],
+                            got: vec![self.get_current_token().token],
                         });
                     }
                     return Ok(v);
                 }
 
-                let Identifier(_) = self.get_next_token()?.token else {
+                let Identifier(_) = self.get_next_token().token else {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "IDENTIFIER",
-                        got: vec![self.get_current_token()?.token],
+                        got: vec![self.get_current_token().token],
                     });
                 };
 
-                while self.peek_next_token()?.token == LBracket {
-                    self.get_next_token()?;
-                    if self.get_next_token()?.token != RBracket {
+                while self.peek_next_token().token == LBracket {
+                    self.get_next_token();
+                    if self.get_next_token().token != RBracket {
                         return Err(ParseErr::UnexpectedToken {
                             expected: "RBracket",
-                            got: vec![self.get_current_token()?.token],
+                            got: vec![self.get_current_token().token],
                         });
                     }
                 }
             }
 
-            if self.get_next_token()?.token != RParen {
+            if self.get_next_token().token != RParen {
                 return Err(ParseErr::UnexpectedToken {
                     expected: "RParen",
-                    got: vec![self.get_current_token()?.token],
+                    got: vec![self.get_current_token().token],
                 });
             }
 
@@ -125,10 +125,8 @@ impl<'a> Parser<'a> {
     }
     /// `<voidable_type> ::= "void" | <ref_type>`
     pub(crate) fn voidable_type(&mut self) -> ParseResult<'a, VoidableType<'a>> {
-        if let Ok(token) = self.peek_next_token()
-            && token.token == Keyword("void")
-        {
-            self.get_next_token()?;
+        if self.peek_next_token().token == Keyword("void") {
+            self.get_next_token();
             Ok(VoidableType::Void)
         } else {
             Ok(VoidableType::RefType(self.ref_type()?))
@@ -147,21 +145,18 @@ impl<'a> Parser<'a> {
         // { "[]" }
         let mut arr_dim: u8 = 0;
         loop {
-            if let Ok(token1) = self.peek_next_token() {
-                if token1.token != LBracket {
-                    break;
-                }
-                self.get_next_token().unwrap();
-                if self.get_next_token()?.token != RBracket {
-                    return Err(ParseErr::UnexpectedToken {
-                        expected: "]",
-                        got: vec![self.get_current_token().unwrap().token],
-                    });
-                }
-                arr_dim += 1;
-            } else {
+            let token1 = self.peek_next_token();
+            if token1.token != LBracket {
                 break;
             }
+            self.get_next_token();
+            if self.get_next_token().token != RBracket {
+                return Err(ParseErr::UnexpectedToken {
+                    expected: "]",
+                    got: vec![self.get_current_token().token],
+                });
+            }
+            arr_dim += 1;
         }
 
         Ok(RefType {
@@ -174,10 +169,8 @@ impl<'a> Parser<'a> {
     /// `<type_arg_list> ::= "<" <type_arg> { "," <type_arg> } ">"`
     pub(crate) fn type_arg_list(&mut self) -> ParseResult<'a, TypeArgList<'a>> {
         // [ "<" ...
-        if let Ok(token) = self.peek_next_token()
-            && token.token == LessThan
-        {
-            self.get_next_token()?;
+        if self.peek_next_token().token == LessThan {
+            self.get_next_token();
         } else {
             return Ok(TypeArgList(vec![]));
         };
@@ -186,10 +179,8 @@ impl<'a> Parser<'a> {
         let mut type_arg_list = TypeArgList(vec![self.type_arg()?]);
 
         // {"," <type_arg>}
-        while let Ok(token) = self.peek_next_token()
-            && token.token == Comma
-        {
-            self.get_next_token()?;
+        while self.peek_next_token().token == Comma {
+            self.get_next_token();
             type_arg_list.0.push(self.type_arg()?);
         }
 
@@ -202,18 +193,15 @@ impl<'a> Parser<'a> {
     /// `<type_arg> ::= (<ref_type> | "?" [ ( "extends" | "super" ) <ref_type> ]`
     pub(crate) fn type_arg(&mut self) -> ParseResult<'a, TypeArg<'a>> {
         self.annotations()?;
-        if self.peek_next_token()?.token == QuestionMark {
-            self.get_next_token()?;
-            if let Ok(token) = self.peek_next_token() {
-                if token.token == Keyword("super") {
-                    self.get_next_token()?;
-                    return Ok(TypeArg::Super(self.ref_type()?));
-                } else if token.token == Keyword("extends") {
-                    self.get_next_token()?;
-                    return Ok(TypeArg::Extends(self.ref_type()?));
-                } else {
-                    return Ok(TypeArg::Wildcard);
-                }
+        if self.peek_next_token().token == QuestionMark {
+            self.get_next_token();
+            let token = self.peek_next_token();
+            if token.token == Keyword("super") {
+                self.get_next_token();
+                return Ok(TypeArg::Super(self.ref_type()?));
+            } else if token.token == Keyword("extends") {
+                self.get_next_token();
+                return Ok(TypeArg::Extends(self.ref_type()?));
             } else {
                 return Ok(TypeArg::Wildcard);
             }
@@ -226,16 +214,12 @@ impl<'a> Parser<'a> {
     pub(crate) fn type_param_list(&mut self) -> ParseResult<'a, TypeParamList<'a>> {
         let mut list = TypeParamList(vec![]);
 
-        if let Ok(token) = self.peek_next_token()
-            && token.token == LessThan
-        {
-            self.get_next_token()?;
+        if self.peek_next_token().token == LessThan {
+            self.get_next_token();
             list.0.push(self.type_param()?);
 
-            while let Ok(token) = self.peek_next_token()
-                && token.token == Comma
-            {
-                self.get_next_token()?;
+            while self.peek_next_token().token == Comma {
+                self.get_next_token();
                 list.0.push(self.type_param()?);
             }
 
@@ -248,7 +232,7 @@ impl<'a> Parser<'a> {
     /// `<type_param> ::= <annotations> IDENTIFIER ["extends" <ref_type> { "&" <ref_type> }]`
     pub(crate) fn type_param(&mut self) -> ParseResult<'a, TypeParam<'a>> {
         self.annotations()?;
-        let name = match self.get_next_token()?.token {
+        let name = match self.get_next_token().token {
             Identifier(s) => s,
             token => {
                 return Err(ParseErr::UnexpectedToken {
@@ -258,16 +242,12 @@ impl<'a> Parser<'a> {
             }
         };
 
-        if let Ok(token) = self.peek_next_token()
-            && token.token == Keyword("extends")
-        {
-            self.get_next_token()?;
+        if self.peek_next_token().token == Keyword("extends") {
+            self.get_next_token();
             let mut extends_from = vec![self.ref_type()?];
 
-            while let Ok(token) = self.peek_next_token()
-                && token.token == Op("&")
-            {
-                self.get_next_token()?;
+            while self.peek_next_token().token == Op("&") {
+                self.get_next_token();
                 extends_from.push(self.ref_type()?);
             }
 
@@ -285,7 +265,7 @@ impl<'a> Parser<'a> {
         let mut name = QualifiedName(vec![]);
 
         // IDENTIFIER
-        let token = self.get_next_token()?;
+        let token = self.get_next_token();
         if let Identifier(s) = token.token {
             name.0.push(s);
         } else {
@@ -303,8 +283,8 @@ impl<'a> Parser<'a> {
             ) {
                 (Dot, Identifier(s)) => {
                     name.0.push(s);
-                    self.get_next_token()?;
-                    self.get_next_token()?;
+                    self.get_next_token();
+                    self.get_next_token();
                 }
                 _ => break,
             }
@@ -316,7 +296,7 @@ impl<'a> Parser<'a> {
     /// `<annotations> ::= {<annotations>}`
     pub(crate) fn annotations(&mut self) -> ParseResult<'a, Vec<Annotation<'a>>> {
         let mut v: Vec<Annotation<'a>> = vec![];
-        while self.peek_next_token()?.token == At
+        while self.peek_next_token().token == At
             && self.peek_token_offset(1)?.token != Keyword("interface")
         {
             v.push(self.annotation()?);
@@ -327,31 +307,31 @@ impl<'a> Parser<'a> {
     /// `<annotation> ::= "@" <qualified_name> [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}"
     /// )]`
     pub(crate) fn annotation(&mut self) -> ParseResult<'a, Annotation<'a>> {
-        if self.get_next_token()?.token != At {
+        if self.get_next_token().token != At {
             return Err(ParseErr::UnexpectedToken {
                 expected: "@",
-                got: vec![self.get_current_token()?.token],
+                got: vec![self.get_current_token().token],
             });
         }
-        if self.peek_next_token()?.token == Keyword("interface") {
+        if self.peek_next_token().token == Keyword("interface") {
             return Err(ParseErr::UnexpectedToken {
                 expected: "IDENTIFIER",
                 got: vec![Keyword("interface")],
             });
         }
 
-        let start_ind = self.get_current_token()?.addr;
+        let start_ind = self.get_current_token().addr;
 
         // <qualified_name>
         self.qualified_name()?;
 
         // [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}" )]
-        match self.peek_next_token()?.token {
+        match self.peek_next_token().token {
             LBrace => {
-                self.get_next_token()?;
+                self.get_next_token();
                 let mut stack = 1;
                 while stack > 0 {
-                    match self.get_next_token()?.token {
+                    match self.get_next_token().token {
                         LBrace => stack += 1,
                         RBrace => stack -= 1,
                         _ => {}
@@ -359,10 +339,10 @@ impl<'a> Parser<'a> {
                 }
             }
             LParen => {
-                self.get_next_token()?;
+                self.get_next_token();
                 let mut stack = 1;
                 while stack > 0 {
-                    match self.get_next_token()?.token {
+                    match self.get_next_token().token {
                         LParen => stack += 1,
                         RParen => stack -= 1,
                         _ => {}
@@ -372,7 +352,7 @@ impl<'a> Parser<'a> {
             _ => {}
         }
 
-        let len = (self.get_current_token()?.addr + self.get_current_token()?.len) - start_ind;
+        let len = (self.get_current_token().addr + self.get_current_token().len) - start_ind;
         return Ok(Annotation(&self.string[start_ind..start_ind + len]));
     }
 
@@ -385,7 +365,7 @@ impl<'a> Parser<'a> {
             access_modifier: AccessModifier::Default,
         };
 
-        while let Keyword(s) = self.peek_next_token()?.token {
+        while let Keyword(s) = self.peek_next_token().token {
             if matches!(s, "public" | "private" | "protected") {
                 if modifiers.access_modifier != AccessModifier::Default {
                     return Err(ParseErr::UnexpectedToken {
@@ -407,9 +387,9 @@ impl<'a> Parser<'a> {
                     break;
                 }
                 modifiers.modifiers.push("non-sealed");
-                self.get_next_token()?;
-                self.get_next_token()?;
-                self.get_next_token()?;
+                self.get_next_token();
+                self.get_next_token();
+                self.get_next_token();
             } else if !matches!(
                 s,
                 "abstract"
@@ -424,7 +404,7 @@ impl<'a> Parser<'a> {
             ) {
                 break;
             }
-            self.get_next_token()?;
+            self.get_next_token();
             modifiers.modifiers.push(s);
         }
 
