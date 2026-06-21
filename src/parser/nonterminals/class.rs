@@ -427,10 +427,18 @@ mod test {
                 }
 
                 abstract public int joinAbc();
+
+                static enum Node<T> {
+                    @Nullable
+                    public Node l, r;
+                    
+                    @NotNull
+                    public T val;
+                }
             }",
         )
         .unwrap();
         let res = parser.class_decl(QualifiedName(vec![])).unwrap();
-        // println!("res:\n {:#?}", res);
+        println!("res:\n {:#?}", res);
     }
 }

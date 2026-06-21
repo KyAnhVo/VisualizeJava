@@ -456,41 +456,6 @@ impl<'a> Parser<'a> {
 
         Ok(typeclass)
     }
-
-    // ---------------------------------------------------------------------
-    // ----------------------- Enum Nonterminals ---------------------------
-    // ---------------------------------------------------------------------
-
-    pub(crate) fn enum_decl(
-        &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> StackedParseResult<'a, Type<'a>> {
-        let ctx = ("enum_decl", self.peek_next_token().addr);
-        Err(ParseErr::UnimplementedError.to_stack_parse_err(0, ctx))
-    }
-
-    // ---------------------------------------------------------------------
-    // ----------------------- Interface Nonterminals ----------------------
-    // ---------------------------------------------------------------------
-    pub(crate) fn interface_decl(
-        &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> StackedParseResult<'a, Type<'a>> {
-        let ctx = ("interface_decl", self.peek_next_token().addr);
-        Err(ParseErr::UnimplementedError.to_stack_parse_err(0, ctx))
-    }
-
-    // ---------------------------------------------------------------------
-    // ----------------------- Annotation Nonterminals ---------------------
-    // ---------------------------------------------------------------------
-
-    pub(crate) fn annotation_decl(
-        &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> StackedParseResult<'a, Type<'a>> {
-        let ctx = ("annotation_decl", self.peek_next_token().addr);
-        Err(ParseErr::UnimplementedError.to_stack_parse_err(0, ctx))
-    }
 }
 
 // ---------------------------------------------------------------------
