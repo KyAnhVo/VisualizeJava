@@ -3,13 +3,18 @@ use super::super::{parser::Parser, token::Token::*, types::*};
 impl<'a> Parser<'a> {
     /// `<class_decl> ::= "class" IDENTIFIER <type_param_list> [ "extends" <ref_type> ]
     /// [ "implements" <ref_type> { "," <ref_type> } ] <class_body>
-    pub(crate) fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+    pub(crate) fn class_decl(
+        &mut self,
+        prefix: QualifiedName<'a>,
+    ) -> StackedParseResult<'a, Type<'a>> {
+        let ctx = ("class_decl", self.peek_next_token().addr);
         // "class"
         if self.get_next_token().token != Keyword("class") {
             return Err(ParseErr::UnexpectedToken {
                 expected: "class",
                 got: vec![self.get_current_token().token],
-            });
+            }
+            .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
 
         // IDENTIFIER
@@ -20,18 +25,19 @@ impl<'a> Parser<'a> {
                 return Err(ParseErr::UnexpectedToken {
                     expected: "IDENTIFIER",
                     got: vec![token],
-                });
+                }
+                .to_stack_parse_err(self.get_current_token().addr, ctx));
             }
         });
 
         // <type_param> (unimportant for now)
-        self.type_param_list()?;
+        self.type_param_list().push_context(ctx)?;
 
         // ["extends" <ref_type>]
         let inherits_from: Option<RefType<'a>> =
             if self.peek_next_token().token == Keyword("extends") {
                 self.get_next_token();
-                Some(self.ref_type()?)
+                Some(self.ref_type().push_context(ctx)?)
             } else {
                 None
             };
@@ -40,10 +46,10 @@ impl<'a> Parser<'a> {
         let implement_interfaces: Vec<RefType<'a>> =
             if self.peek_next_token().token == Keyword("implements") {
                 self.get_next_token();
-                let mut vector = vec![self.ref_type()?];
+                let mut vector = vec![self.ref_type().push_context(ctx)?];
                 while self.peek_next_token().token == Comma {
                     self.get_next_token();
-                    vector.push(self.ref_type()?)
+                    vector.push(self.ref_type().push_context(ctx)?)
                 }
                 vector
             } else {
@@ -56,7 +62,9 @@ impl<'a> Parser<'a> {
         };
 
         // <class_body>
-        let body = self.class_body(name.clone(), name.0.last().unwrap())?;
+        let body = self
+            .class_body(name.clone(), name.0.last().unwrap())
+            .push_context(ctx)?;
 
         // use default modifiers and annotation
         let typeclass = Type {
@@ -79,12 +87,15 @@ impl<'a> Parser<'a> {
         &mut self,
         prefix: QualifiedName<'a>,
         classname: &str,
-    ) -> ParseResult<'a, TypeBody<'a>> {
+    ) -> StackedParseResult<'a, TypeBody<'a>> {
+        let ctx = ("class_body", self.peek_next_token().addr);
+
         if self.get_next_token().token != LBrace {
             return Err(ParseErr::UnexpectedToken {
                 expected: "LBrace",
                 got: vec![self.get_current_token().token],
-            });
+            }
+            .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
 
         // if the next token is not closing the body, then it must be still
@@ -97,11 +108,13 @@ impl<'a> Parser<'a> {
         // {<member_decl>}, inside is the <member_decl>
         while self.peek_next_token().token != RBrace {
             if self.peek_next_token().token == EOF {
-                return Err(ParseErr::UnexpectedEOF);
+                return Err(
+                    ParseErr::UnexpectedEOF.to_stack_parse_err(self.get_current_token().addr, ctx)
+                );
             }
 
-            let annotations: Vec<Annotation> = self.annotations()?;
-            let modifiers = self.modifiers()?;
+            let annotations: Vec<Annotation> = self.annotations().push_context(ctx)?;
+            let modifiers = self.modifiers().push_context(ctx)?;
 
             match (
                 self.peek_next_token().token,
@@ -109,25 +122,25 @@ impl<'a> Parser<'a> {
             ) {
                 // initializer block
                 (LBrace, _) => {
-                    self.skip_brace(LBrace, RBrace)?;
+                    self.skip_brace(LBrace, RBrace).push_context(ctx)?;
                 }
                 // Types: class
                 (Keyword("class"), _) => {
-                    let mut typeclass = self.class_decl(prefix.clone())?;
+                    let mut typeclass = self.class_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
                 // Types: enum
                 (Keyword("enum"), _) => {
-                    let mut typeclass = self.enum_decl(prefix.clone())?;
+                    let mut typeclass = self.enum_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
                 }
                 // Types: annotation
                 (At, Keyword("interface")) => {
-                    let mut typeclass = self.annotation_decl(prefix.clone())?;
+                    let mut typeclass = self.annotation_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
@@ -135,7 +148,7 @@ impl<'a> Parser<'a> {
 
                 // Types: interface
                 (Keyword("interface"), _) => {
-                    let mut typeclass = self.enum_decl(prefix.clone())?;
+                    let mut typeclass = self.enum_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
@@ -143,35 +156,36 @@ impl<'a> Parser<'a> {
                 // Members: method with type_param
                 (LessThan, _) => {
                     // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
-                    let type_param_list = self.type_param_list()?;
-                    let output = self.voidable_type()?;
+                    let type_param_list = self.type_param_list().push_context(ctx)?;
+                    let output = self.voidable_type().push_context(ctx)?;
                     let name = if let Identifier(s) = self.get_next_token().token {
                         s
                     } else {
                         return Err(ParseErr::UnexpectedToken {
                             expected: "IDENTIFIER",
                             got: vec![self.get_current_token().token],
-                        });
+                        }
+                        .to_stack_parse_err(self.get_current_token().addr, ctx));
                     };
-                    let input = self.arg_list()?;
+                    let input = self.arg_list().push_context(ctx)?;
                     let throws = if self.peek_next_token().token == Keyword("throws") {
                         let mut v: Vec<RefType<'a>> = vec![];
 
                         // "throws" <ref_type>
                         self.get_next_token();
-                        v.push(self.ref_type()?);
+                        v.push(self.ref_type().push_context(ctx)?);
 
                         // {"," <ref_type>}
                         while self.peek_next_token().token == Comma {
                             self.get_next_token();
-                            v.push(self.ref_type()?);
+                            v.push(self.ref_type().push_context(ctx)?);
                         }
 
                         v
                     } else {
                         vec![]
                     };
-                    self.skip_brace(LBrace, RBrace)?;
+                    self.skip_brace(LBrace, RBrace).push_context(ctx)?;
                     body.members.push(Member {
                         name,
                         member_kind: MemberKind::Method {
@@ -190,14 +204,15 @@ impl<'a> Parser<'a> {
                     //  | <arg_list> <method_body>
                     //  | [<assignment>] {"," IDENTIFIER [<assignment>]} ";"
                     // )
-                    let output = self.voidable_type()?;
+                    let output = self.voidable_type().push_context(ctx)?;
                     let reftype = if let VoidableType::RefType(s) = output.clone() {
                         Ok(s)
                     } else {
                         Err(ParseErr::UnexpectedToken {
                             expected: "IDENTIFIER",
                             got: vec![Keyword("void")],
-                        })
+                        }
+                        .to_stack_parse_err(self.get_current_token().addr, ctx))
                     };
                     let name = if let Identifier(s) = self.get_next_token().token {
                         s
@@ -205,22 +220,23 @@ impl<'a> Parser<'a> {
                         return Err(ParseErr::UnexpectedToken {
                             expected: "IDENTIFIER",
                             got: vec![self.get_current_token().token],
-                        });
+                        }
+                        .to_stack_parse_err(self.get_current_token().addr, ctx));
                     };
                     match self.peek_next_token().token {
                         LParen => {
-                            let input = self.arg_list()?;
+                            let input = self.arg_list().push_context(ctx)?;
                             let throws = if self.peek_next_token().token == Keyword("throws") {
                                 let mut v: Vec<RefType<'a>> = vec![];
 
                                 // "throws" <ref_type>
                                 self.get_next_token();
-                                v.push(self.ref_type()?);
+                                v.push(self.ref_type().push_context(ctx)?);
 
                                 // {"," <ref_type>}
                                 while self.peek_next_token().token == Comma {
                                     self.get_next_token();
-                                    v.push(self.ref_type()?);
+                                    v.push(self.ref_type().push_context(ctx)?);
                                 }
 
                                 v
@@ -230,12 +246,13 @@ impl<'a> Parser<'a> {
                             if self.peek_next_token().token == Semicolon {
                                 self.get_next_token();
                             } else if self.peek_next_token().token == LBrace {
-                                self.skip_brace(LBrace, RBrace)?;
+                                self.skip_brace(LBrace, RBrace).push_context(ctx)?;
                             } else {
                                 return Err(ParseErr::UnexpectedToken {
                                     expected: "Semicolon | LBrace",
                                     got: vec![self.peek_next_token().token],
-                                });
+                                }
+                                .to_stack_parse_err(self.peek_next_token().addr, ctx));
                             }
                             body.members.push(Member {
                                 name,
@@ -257,14 +274,24 @@ impl<'a> Parser<'a> {
                             if self.peek_next_token().token == Assignment("=") {
                                 loop {
                                     match self.peek_next_token().token {
-                                        LBrace => self.skip_brace(LBrace, RBrace)?,
-                                        LParen => self.skip_brace(LParen, RParen)?,
-                                        LBracket => self.skip_brace(LBracket, RBracket)?,
+                                        LBrace => {
+                                            self.skip_brace(LBrace, RBrace).push_context(ctx)?
+                                        }
+                                        LParen => {
+                                            self.skip_brace(LParen, RParen).push_context(ctx)?
+                                        }
+                                        LBracket => {
+                                            self.skip_brace(LBracket, RBracket).push_context(ctx)?
+                                        }
                                         Semicolon => {
                                             self.get_next_token();
                                             break;
                                         }
-                                        Comma if self.check_end_assignment_comma()? => {
+                                        Comma
+                                            if self
+                                                .check_end_assignment_comma()
+                                                .push_context(ctx)? =>
+                                        {
                                             break;
                                         }
                                         _ => {
@@ -290,17 +317,30 @@ impl<'a> Parser<'a> {
                                     return Err(ParseErr::UnexpectedToken {
                                         expected: "IDENTIFIER",
                                         got: vec![self.get_current_token().token],
-                                    });
+                                    }
+                                    .to_stack_parse_err(self.get_current_token().addr, ctx));
                                 };
 
                                 match self.peek_next_token().token {
                                     Assignment("=") => loop {
                                         match self.peek_next_token().token {
-                                            LBrace => self.skip_brace(LBrace, RBrace)?,
-                                            LParen => self.skip_brace(LParen, RParen)?,
-                                            LBracket => self.skip_brace(LBracket, RBracket)?,
+                                            LBrace => {
+                                                self.skip_brace(LBrace, RBrace).push_context(ctx)?
+                                            }
+                                            LParen => {
+                                                self.skip_brace(LParen, RParen).push_context(ctx)?
+                                            }
+                                            LBracket => self
+                                                .skip_brace(LBracket, RBracket)
+                                                .push_context(ctx)?,
                                             Semicolon => break,
-                                            Comma if self.check_end_assignment_comma()? => break,
+                                            Comma
+                                                if self
+                                                    .check_end_assignment_comma()
+                                                    .push_context(ctx)? =>
+                                            {
+                                                break;
+                                            }
                                             _ => {
                                                 self.get_next_token();
                                             }
@@ -311,7 +351,8 @@ impl<'a> Parser<'a> {
                                         return Err(ParseErr::UnexpectedToken {
                                             expected: "Assignment | Semicolon | Comma",
                                             got: vec![token],
-                                        });
+                                        }
+                                        .to_stack_parse_err(self.peek_next_token().addr, ctx));
                                     }
                                 };
 
@@ -329,7 +370,8 @@ impl<'a> Parser<'a> {
                             return Err(ParseErr::UnexpectedToken {
                                 expected: "LBrace | = | Comma",
                                 got: vec![token],
-                            });
+                            }
+                            .to_stack_parse_err(self.peek_next_token().addr, ctx));
                         }
                     }
                 }
@@ -338,7 +380,8 @@ impl<'a> Parser<'a> {
                     return Err(ParseErr::UnexpectedToken {
                         expected: "type_decl | type_param",
                         got: vec![token1],
-                    });
+                    }
+                    .to_stack_parse_err(self.peek_next_token().addr, ctx));
                 }
             };
         }

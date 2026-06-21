@@ -17,7 +17,7 @@ impl<'a> Parser<'a> {
                 expected: "LParen",
                 got: vec![self.get_current_token().token],
             }
-            .to_stack_parse_err(self.peek_next_token().addr, ctx));
+            .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
         let mut v: Vec<RefType> = vec![];
         if self.peek_next_token().token == RParen {
@@ -135,7 +135,7 @@ impl<'a> Parser<'a> {
         }
     }
     /// `<voidable_type> ::= "void" | <ref_type>`
-    pub(crate) fn voidable_type(&mut self) -> ParseResult<'a, VoidableType<'a>> {
+    pub(crate) fn voidable_type(&mut self) -> StackedParseResult<'a, VoidableType<'a>> {
         let ctx = ("voidable_type", self.peek_next_token().addr);
         if self.peek_next_token().token == Keyword("void") {
             self.get_next_token();
@@ -348,7 +348,7 @@ impl<'a> Parser<'a> {
         let start_ind = self.get_current_token().addr;
 
         // <qualified_name>
-        self.qualified_name()?;
+        self.qualified_name().push_context(ctx)?;
 
         // [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}" )]
         match self.peek_next_token().token {

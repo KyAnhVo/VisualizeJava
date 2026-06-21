@@ -39,14 +39,6 @@ impl<'a> ParseErr<'a> {
     }
 }
 
-/// Result type for simple ParseErr
-pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
-impl<'a, T> GenericParseResult<T> for ParseResult<'a, T> {
-    fn push_context(self, _: (&'static str, usize)) -> Self {
-        self
-    }
-}
-
 /// Stacked err uses err and pushes the stack's first index element up onto the stack.
 #[derive(Debug, Clone)]
 pub struct StackedParseErr<'a> {
