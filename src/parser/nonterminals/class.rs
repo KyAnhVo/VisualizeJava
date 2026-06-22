@@ -1,8 +1,13 @@
 use super::super::{parser::Parser, token::Token::*, types::*};
 
 impl<'a> Parser<'a> {
-    /// `<class_decl> ::= "class" IDENTIFIER <type_param_list> [ "extends" <ref_type> ]
-    /// [ "implements" <ref_type> { "," <ref_type> } ] <class_body>
+    /// ```
+    /// <class_decl> ::= "class" IDENTIFIER <type_param_list>
+    ///     ["extends" <ref_type>]
+    ///     ["implements" <ref_type> {"," <ref_type>}]
+    ///     ["permits" <ref_type> {"," <ref_type>}]
+    ///     <class_body>
+    /// ```
     pub(crate) fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         let ctx = ("class_decl", self.peek_next_token().addr);
         // "class"
@@ -52,6 +57,16 @@ impl<'a> Parser<'a> {
             } else {
                 vec![]
             };
+
+        // ["permits" <ref_type> {"," <ref_type>}]
+        if self.peek_next_token().token == Keyword("permits") {
+            self.get_next_token();
+            self.ref_type().push_context(ctx)?;
+            while self.peek_next_token().token == Comma {
+                self.get_next_token();
+                self.ref_type().push_context(ctx)?;
+            }
+        }
 
         let type_kind = TypeKind::Class {
             inherits_from,

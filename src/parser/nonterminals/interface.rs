@@ -36,6 +36,7 @@ impl<'a> Parser<'a> {
         };
         self.type_param_list().push_context(ctx)?;
 
+        // ["extends" <ref_type> {"," <ref_type>}]
         let extend_interfaces = if self.peek_next_token().token == Keyword("extends") {
             let mut v: Vec<RefType<'a>> = vec![];
             v.push(self.ref_type().push_context(ctx)?);
@@ -47,6 +48,16 @@ impl<'a> Parser<'a> {
         } else {
             vec![]
         };
+
+        // ["permits" <ref_type> {"," <ref_type>}]
+        if self.peek_next_token().token == Keyword("permits") {
+            self.get_next_token();
+            self.ref_type().push_context(ctx)?;
+            while self.peek_next_token().token == Comma {
+                self.get_next_token();
+                self.ref_type().push_context(ctx)?;
+            }
+        }
 
         Err(ParseErrType::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
     }
