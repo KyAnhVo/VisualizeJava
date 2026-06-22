@@ -1,4 +1,4 @@
-use crate::parser::types::{GenericParseResult, StackedParseResult};
+use crate::parser::types::{GenericParseResult, ParseResult};
 
 use super::{
     lexer::Lexer,
@@ -6,7 +6,7 @@ use super::{
         IndexedToken,
         Token::{self, *},
     },
-    types::{AccessModifier, ImportObject, JavaFile, ParseErr, QualifiedName, Type},
+    types::{AccessModifier, ImportObject, JavaFile, ParseErrType, QualifiedName, Type},
 };
 pub struct Parser<'a> {
     pub(super) string: &'a str,
@@ -16,10 +16,12 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(s: &'a str) -> Result<Self, ParseErr<'a>> {
+    pub fn new(s: &'a str) -> ParseResult<'a, Self> {
+        let ctx = ("create_parser", 0);
+
         let mut lexer = Lexer::new(s);
         let mut tokens = vec![];
-        let mut ind: usize;
+        let mut ind: usize = 0;
 
         loop {
             if let Some(token) = lexer.get_next_indexed_token() {
@@ -29,7 +31,7 @@ impl<'a> Parser<'a> {
                     break;
                 }
             } else {
-                return Err(ParseErr::LexerError);
+                return Err(ParseErrType::LexerError.to_stack_parse_err(ind, ctx));
             }
         }
 
@@ -59,7 +61,7 @@ impl<'a> Parser<'a> {
 
     /// Parse the java file, return the structure of the file which can be
     /// thought of as a specialized AST
-    pub fn parse(&mut self) -> StackedParseResult<'a, JavaFile<'a>> {
+    pub fn parse(&mut self) -> ParseResult<'a, JavaFile<'a>> {
         self.java_file().push_context(("java_file", 0))
     }
 
@@ -95,7 +97,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(super) fn consume_gt(&mut self) -> StackedParseResult<'a, ()> {
+    pub(super) fn consume_gt(&mut self) -> ParseResult<'a, ()> {
         let ctx = ("consume_gt", self.peek_next_token().addr);
         let indexed_token = self.get_next_token();
         match indexed_token.token {
@@ -140,7 +142,7 @@ impl<'a> Parser<'a> {
                 });
                 Ok(())
             }
-            token => Err(ParseErr::UnexpectedToken {
+            token => Err(ParseErrType::UnexpectedToken {
                 expected: ">",
                 got: vec![token],
             }
@@ -152,11 +154,11 @@ impl<'a> Parser<'a> {
         &mut self,
         open_brace: Token,
         close_brace: Token,
-    ) -> StackedParseResult<'a, ()> {
+    ) -> ParseResult<'a, ()> {
         let ctx = ("skip_brace", self.peek_next_token().addr);
 
         if self.get_next_token().token != open_brace {
-            return Err(ParseErr::UnexpectedToken {
+            return Err(ParseErrType::UnexpectedToken {
                 expected: "LBrace | LBracket | LParen",
                 got: vec![self.get_current_token().token],
             }
@@ -169,7 +171,7 @@ impl<'a> Parser<'a> {
                 token if token == open_brace => stack += 1,
                 token if token == close_brace => stack -= 1,
                 EOF => {
-                    return Err(ParseErr::UnexpectedEOF
+                    return Err(ParseErrType::UnexpectedEOF
                         .to_stack_parse_err(self.get_current_token().addr, ctx));
                 }
                 _ => {}
@@ -185,10 +187,10 @@ impl<'a> Parser<'a> {
     /// ```
     ///
     /// Note: Called after the comma is consumed.
-    pub(super) fn check_end_assignment_comma(&mut self) -> StackedParseResult<'a, bool> {
+    pub(super) fn check_end_assignment_comma(&mut self) -> ParseResult<'a, bool> {
         let ctx = ("check_end_assignment_comma", self.peek_next_token().addr);
         if self.peek_next_token().token != Comma {
-            return Err(ParseErr::UnexpectedToken {
+            return Err(ParseErrType::UnexpectedToken {
                 expected: "Comma",
                 got: vec![self.get_current_token().token],
             }
@@ -227,7 +229,7 @@ impl<'a> Parser<'a> {
     }
 
     /// return the index after skipping annotation
-    pub(super) fn skip_annotations(&self, offset: usize) -> StackedParseResult<'a, usize> {
+    pub(super) fn skip_annotations(&self, offset: usize) -> ParseResult<'a, usize> {
         let ctx = ("skip_annotations", self.peek_token_offset(offset).addr);
         let mut offset = offset;
 
@@ -243,7 +245,7 @@ impl<'a> Parser<'a> {
 
             // ID
             let Identifier(_) = self.peek_token_offset(offset).token else {
-                return Err(ParseErr::UnexpectedToken {
+                return Err(ParseErrType::UnexpectedToken {
                     expected: "IDENTIFIER",
                     got: vec![self.peek_token_offset(offset).token],
                 }
@@ -258,7 +260,7 @@ impl<'a> Parser<'a> {
 
                 // read Identifier
                 let Identifier(_) = self.peek_token_offset(offset).token else {
-                    return Err(ParseErr::UnexpectedToken {
+                    return Err(ParseErrType::UnexpectedToken {
                         expected: "IDENTIFIER",
                         got: vec![self.peek_token_offset(offset).token],
                     }
@@ -287,7 +289,7 @@ impl<'a> Parser<'a> {
         open_brace: Token,
         close_brace: Token,
         offset: usize,
-    ) -> StackedParseResult<'a, usize> {
+    ) -> ParseResult<'a, usize> {
         let ctx = (
             "skip_brace_peek_forward",
             self.peek_token_offset(offset).addr,
@@ -295,7 +297,7 @@ impl<'a> Parser<'a> {
         let mut offset = offset;
 
         if self.peek_token_offset(offset).token != open_brace {
-            return Err(ParseErr::UnexpectedToken {
+            return Err(ParseErrType::UnexpectedToken {
                 expected: "Open brace/bracket/paren",
                 got: vec![self.peek_token_offset(offset).token],
             }
@@ -307,7 +309,7 @@ impl<'a> Parser<'a> {
         while stack > 0 {
             match self.peek_token_offset(offset).token {
                 EOF => {
-                    return Err(ParseErr::UnexpectedEOF
+                    return Err(ParseErrType::UnexpectedEOF
                         .to_stack_parse_err(self.peek_token_offset(offset).addr, ctx));
                 }
                 token if token == open_brace => stack += 1,
@@ -328,7 +330,7 @@ impl<'a> Parser<'a> {
 // Parsing
 impl<'a> Parser<'a> {
     /// `<java_file> ::= [<package_decl>] <import> {<type_decl>}`
-    fn java_file(&mut self) -> StackedParseResult<'a, JavaFile<'a>> {
+    fn java_file(&mut self) -> ParseResult<'a, JavaFile<'a>> {
         let ctx = ("java_file", 0);
 
         let mut file = JavaFile {
@@ -353,7 +355,7 @@ impl<'a> Parser<'a> {
                 .push(self.type_decl(QualifiedName(vec![])).push_context(ctx)?);
             if file.type_decls.last().unwrap().modifiers.access_modifier == AccessModifier::Public {
                 if have_public_type {
-                    return Err(ParseErr::MultiplePublicTypesError.to_stack_parse_err(0, ctx));
+                    return Err(ParseErrType::MultiplePublicTypesError.to_stack_parse_err(0, ctx));
                 } else {
                     have_public_type = true;
                 }
@@ -364,10 +366,10 @@ impl<'a> Parser<'a> {
     }
 
     /// `<package_decl>  ::= [ "package" <qualified_name> ";" ]`
-    fn package_decl(&mut self) -> StackedParseResult<'a, QualifiedName<'a>> {
+    fn package_decl(&mut self) -> ParseResult<'a, QualifiedName<'a>> {
         let ctx = ("package_decl", self.peek_next_token().addr);
         if self.get_next_token().token != Keyword("package") {
-            Err(ParseErr::UnexpectedToken {
+            Err(ParseErrType::UnexpectedToken {
                 expected: "package",
                 got: vec![self.get_current_token().token],
             }
@@ -378,7 +380,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<import> ::= { "import" ["static"] <qualified_name>[.*] ";" }`
-    fn import(&mut self) -> StackedParseResult<'a, Vec<ImportObject<'a>>> {
+    fn import(&mut self) -> ParseResult<'a, Vec<ImportObject<'a>>> {
         let ctx = ("import", self.peek_next_token().addr);
         let mut v: Vec<ImportObject> = vec![];
 
@@ -410,7 +412,7 @@ impl<'a> Parser<'a> {
             };
 
             if self.get_next_token().token != Semicolon {
-                return Err(ParseErr::UnexpectedToken {
+                return Err(ParseErrType::UnexpectedToken {
                     expected: "Semicolon",
                     got: vec![self.get_current_token().token],
                 }
@@ -429,7 +431,7 @@ impl<'a> Parser<'a> {
 
     /// `<type_decl> ::= {<annotation>} <modifiers> ( <enum_decl> | <class_decl> |
     /// <interface_decl> | <annotation_decl> )`
-    fn type_decl(&mut self, prefix: QualifiedName<'a>) -> StackedParseResult<'a, Type<'a>> {
+    fn type_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         let ctx = ("type_decl", self.peek_next_token().addr);
         // {<annotation>}
         let annotation = self.annotations().push_context(ctx)?;
@@ -444,7 +446,7 @@ impl<'a> Parser<'a> {
             Keyword("enum") => self.enum_decl(prefix).push_context(ctx)?,
             At => self.annotation_decl(prefix).push_context(ctx)?,
             token => {
-                return Err(ParseErr::UnexpectedToken {
+                return Err(ParseErrType::UnexpectedToken {
                     expected: "class | interface | enum | @",
                     got: vec![token],
                 }

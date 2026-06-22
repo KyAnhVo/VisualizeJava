@@ -12,7 +12,7 @@ pub trait GenericParseResult<T> {
 
 /// Error type for our parser
 #[derive(Debug, Clone)]
-pub enum ParseErr<'a> {
+pub enum ParseErrType<'a> {
     UnexpectedToken {
         expected: &'static str,
         got: Vec<Token<'a>>,
@@ -25,13 +25,9 @@ pub enum ParseErr<'a> {
     MultiplePublicTypesError,
 }
 
-impl<'a> ParseErr<'a> {
-    pub fn to_stack_parse_err(
-        self,
-        err_index: usize,
-        ctx: (&'static str, usize),
-    ) -> StackedParseErr<'a> {
-        StackedParseErr {
+impl<'a> ParseErrType<'a> {
+    pub fn to_stack_parse_err(self, err_index: usize, ctx: (&'static str, usize)) -> ParseErr<'a> {
+        ParseErr {
             err: self,
             err_index,
             stack: vec![ctx],
@@ -41,15 +37,15 @@ impl<'a> ParseErr<'a> {
 
 /// Stacked err uses err and pushes the stack's first index element up onto the stack.
 #[derive(Debug, Clone)]
-pub struct StackedParseErr<'a> {
-    pub err: ParseErr<'a>,
+pub struct ParseErr<'a> {
+    pub err: ParseErrType<'a>,
     pub stack: Vec<(&'static str, usize)>,
     pub err_index: usize,
 }
 
 /// Result type for stackParseErr
-pub type StackedParseResult<'a, T> = Result<T, StackedParseErr<'a>>;
-impl<'a, T> GenericParseResult<T> for StackedParseResult<'a, T> {
+pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
+impl<'a, T> GenericParseResult<T> for ParseResult<'a, T> {
     fn push_context(self, (ctx, index): (&'static str, usize)) -> Self {
         self.map_err(|mut e| {
             e.stack.push((ctx, index));

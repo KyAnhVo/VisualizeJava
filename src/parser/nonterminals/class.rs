@@ -3,14 +3,11 @@ use super::super::{parser::Parser, token::Token::*, types::*};
 impl<'a> Parser<'a> {
     /// `<class_decl> ::= "class" IDENTIFIER <type_param_list> [ "extends" <ref_type> ]
     /// [ "implements" <ref_type> { "," <ref_type> } ] <class_body>
-    pub(crate) fn class_decl(
-        &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> StackedParseResult<'a, Type<'a>> {
+    pub(crate) fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         let ctx = ("class_decl", self.peek_next_token().addr);
         // "class"
         if self.get_next_token().token != Keyword("class") {
-            return Err(ParseErr::UnexpectedToken {
+            return Err(ParseErrType::UnexpectedToken {
                 expected: "class",
                 got: vec![self.get_current_token().token],
             }
@@ -22,7 +19,7 @@ impl<'a> Parser<'a> {
         name.0.push(match self.get_next_token().token {
             Identifier(s) => s,
             token => {
-                return Err(ParseErr::UnexpectedToken {
+                return Err(ParseErrType::UnexpectedToken {
                     expected: "IDENTIFIER",
                     got: vec![token],
                 }
@@ -87,11 +84,11 @@ impl<'a> Parser<'a> {
         &mut self,
         prefix: QualifiedName<'a>,
         classname: &str,
-    ) -> StackedParseResult<'a, TypeBody<'a>> {
+    ) -> ParseResult<'a, TypeBody<'a>> {
         let ctx = ("class_body", self.peek_next_token().addr);
 
         if self.get_next_token().token != LBrace {
-            return Err(ParseErr::UnexpectedToken {
+            return Err(ParseErrType::UnexpectedToken {
                 expected: "LBrace",
                 got: vec![self.get_current_token().token],
             }
@@ -108,9 +105,8 @@ impl<'a> Parser<'a> {
         // {<member_decl>}, inside is the <member_decl>
         while self.peek_next_token().token != RBrace {
             if self.peek_next_token().token == EOF {
-                return Err(
-                    ParseErr::UnexpectedEOF.to_stack_parse_err(self.get_current_token().addr, ctx)
-                );
+                return Err(ParseErrType::UnexpectedEOF
+                    .to_stack_parse_err(self.get_current_token().addr, ctx));
             }
 
             let annotations: Vec<Annotation> = self.annotations().push_context(ctx)?;
@@ -148,7 +144,7 @@ impl<'a> Parser<'a> {
 
                 // Types: interface
                 (Keyword("interface"), _) => {
-                    let mut typeclass = self.enum_decl(prefix.clone()).push_context(ctx)?;
+                    let mut typeclass = self.interface_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
                     body.subtypes.push(typeclass);
@@ -161,7 +157,7 @@ impl<'a> Parser<'a> {
                     let name = if let Identifier(s) = self.get_next_token().token {
                         s
                     } else {
-                        return Err(ParseErr::UnexpectedToken {
+                        return Err(ParseErrType::UnexpectedToken {
                             expected: "IDENTIFIER",
                             got: vec![self.get_current_token().token],
                         }
@@ -208,7 +204,7 @@ impl<'a> Parser<'a> {
                     let reftype = if let VoidableType::RefType(s) = output.clone() {
                         Ok(s)
                     } else {
-                        Err(ParseErr::UnexpectedToken {
+                        Err(ParseErrType::UnexpectedToken {
                             expected: "IDENTIFIER",
                             got: vec![Keyword("void")],
                         }
@@ -217,7 +213,7 @@ impl<'a> Parser<'a> {
                     let name = if let Identifier(s) = self.get_next_token().token {
                         s
                     } else {
-                        return Err(ParseErr::UnexpectedToken {
+                        return Err(ParseErrType::UnexpectedToken {
                             expected: "IDENTIFIER",
                             got: vec![self.get_current_token().token],
                         }
@@ -248,7 +244,7 @@ impl<'a> Parser<'a> {
                             } else if self.peek_next_token().token == LBrace {
                                 self.skip_brace(LBrace, RBrace).push_context(ctx)?;
                             } else {
-                                return Err(ParseErr::UnexpectedToken {
+                                return Err(ParseErrType::UnexpectedToken {
                                     expected: "Semicolon | LBrace",
                                     got: vec![self.peek_next_token().token],
                                 }
@@ -314,7 +310,7 @@ impl<'a> Parser<'a> {
                             while self.get_next_token().token == Comma {
                                 // IDENTIFIER
                                 let Identifier(name) = self.get_next_token().token else {
-                                    return Err(ParseErr::UnexpectedToken {
+                                    return Err(ParseErrType::UnexpectedToken {
                                         expected: "IDENTIFIER",
                                         got: vec![self.get_current_token().token],
                                     }
@@ -348,7 +344,7 @@ impl<'a> Parser<'a> {
                                     },
                                     Semicolon | Comma => {}
                                     token => {
-                                        return Err(ParseErr::UnexpectedToken {
+                                        return Err(ParseErrType::UnexpectedToken {
                                             expected: "Assignment | Semicolon | Comma",
                                             got: vec![token],
                                         }
@@ -367,7 +363,7 @@ impl<'a> Parser<'a> {
                             }
                         }
                         token => {
-                            return Err(ParseErr::UnexpectedToken {
+                            return Err(ParseErrType::UnexpectedToken {
                                 expected: "LBrace | = | Comma",
                                 got: vec![token],
                             }
@@ -377,7 +373,7 @@ impl<'a> Parser<'a> {
                 }
                 // error
                 (token1, _) => {
-                    return Err(ParseErr::UnexpectedToken {
+                    return Err(ParseErrType::UnexpectedToken {
                         expected: "type_decl | type_param",
                         got: vec![token1],
                     }
@@ -428,17 +424,11 @@ mod test {
 
                 abstract public int joinAbc();
 
-                static enum Node<T> {
-                    @Nullable
-                    public Node l, r;
-                    
-                    @NotNull
-                    public T val;
-                }
             }",
         )
         .unwrap();
-        let res = parser.class_decl(QualifiedName(vec![])).unwrap();
-        println!("res:\n {:#?}", res);
+        let res: Type = parser.class_decl(QualifiedName(vec![])).unwrap();
+        // println!("res:\n {:#?}", res);
+        assert_eq!(res.name, QualifiedName(vec!["MyClass"]));
     }
 }

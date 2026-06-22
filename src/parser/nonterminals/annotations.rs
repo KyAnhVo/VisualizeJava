@@ -7,8 +7,8 @@ impl<'a> Parser<'a> {
     pub(crate) fn annotation_decl(
         &mut self,
         prefix: QualifiedName<'a>,
-    ) -> StackedParseResult<'a, Type<'a>> {
+    ) -> ParseResult<'a, Type<'a>> {
         let ctx = ("annotation_decl", self.peek_next_token().addr);
-        Err(ParseErr::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
+        Err(ParseErrType::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
     }
 }

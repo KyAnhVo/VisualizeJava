@@ -5,11 +5,8 @@ use super::super::{parser::Parser, token::Token::*, types::*};
 // ---------------------------------------------------------------------
 
 impl<'a> Parser<'a> {
-    pub(crate) fn enum_decl(
-        &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> StackedParseResult<'a, Type<'a>> {
+    pub(crate) fn enum_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         let ctx = ("enum_decl", self.peek_next_token().addr);
-        Err(ParseErr::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
+        Err(ParseErrType::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
     }
 }
