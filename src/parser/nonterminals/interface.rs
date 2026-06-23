@@ -26,7 +26,9 @@ impl<'a> Parser<'a> {
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
         let name = if let Identifier(s) = self.get_next_token().token {
-            s
+            let mut v = prefix.clone();
+            v.0.push(s);
+            v
         } else {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "IDENTIFIER",
@@ -59,6 +61,33 @@ impl<'a> Parser<'a> {
             }
         }
 
+        let body = self.interface_body(name.clone()).push_context(ctx)?;
+
+        Ok(Type {
+            name,
+            body,
+            type_kind: TypeKind::Interface { extend_interfaces },
+            annotation: vec![],
+            modifiers: Modifiers {
+                modifiers: vec![],
+                access_modifier: AccessModifier::Default,
+            },
+        })
+    }
+
+    pub(crate) fn interface_body(
+        &mut self,
+        prefix: QualifiedName<'a>,
+    ) -> ParseResult<'a, TypeBody<'a>> {
+        let ctx = ("interface_body", self.peek_next_token().addr);
+
+        if self.get_next_token().token != LBrace {
+            return Err(ParseErrType::UnexpectedToken {
+                expected: "LBrace",
+                got: vec![self.get_current_token().token],
+            }
+            .to_stack_parse_err(self.get_current_token().addr, ctx));
+        }
         Err(ParseErrType::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
     }
 }
