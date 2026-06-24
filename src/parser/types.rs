@@ -120,6 +120,11 @@ pub enum MemberKind<'a> {
         output: VoidableType<'a>,
         throws: Vec<RefType<'a>>,
     },
+    Constructor {
+        type_param_list: TypeParamList<'a>,
+        input: Vec<RefType<'a>>,
+        throws: Vec<RefType<'a>>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]
