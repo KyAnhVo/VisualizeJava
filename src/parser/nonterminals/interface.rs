@@ -77,6 +77,7 @@ impl<'a> Parser<'a> {
         })
     }
 
+    /// Essentially members, maybe with member filters/checkers
     pub(crate) fn interface_body(
         &mut self,
         prefix: QualifiedName<'a>,

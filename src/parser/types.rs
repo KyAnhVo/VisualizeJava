@@ -139,7 +139,7 @@ pub struct Member<'a> {
 #[derive(Debug, PartialEq, Clone)]
 pub enum TypeKind<'a> {
     Class {
-        inherits_from: Option<RefType<'a>>,
+        inherit_class: Option<RefType<'a>>,
         implement_interfaces: Vec<RefType<'a>>,
     },
     Enum {

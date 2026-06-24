@@ -69,7 +69,7 @@ impl<'a> Parser<'a> {
         }
 
         let type_kind = TypeKind::Class {
-            inherits_from,
+            inherit_class: inherits_from,
             implement_interfaces,
         };
 
