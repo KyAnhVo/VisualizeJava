@@ -40,6 +40,7 @@ impl<'a> Parser<'a> {
 
         // ["extends" <ref_type> {"," <ref_type>}]
         let extend_interfaces = if self.peek_next_token().token == Keyword("extends") {
+            self.get_next_token();
             let mut v: Vec<RefType<'a>> = vec![];
             v.push(self.ref_type().push_context(ctx)?);
             while self.peek_next_token().token == Comma {
@@ -85,6 +86,7 @@ impl<'a> Parser<'a> {
     ) -> ParseResult<'a, TypeBody<'a>> {
         let ctx = ("interface_body", self.peek_next_token().addr);
 
+        // typical "{" <members> "}"
         if self.get_next_token().token != LBrace {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "LBrace",
@@ -95,12 +97,25 @@ impl<'a> Parser<'a> {
 
         let body = self.members(prefix, classname).push_context(ctx)?;
 
-        if self.get_next_token().token != LBrace {
+        if self.get_next_token().token != RBrace {
             return Err(ParseErrType::UnexpectedToken {
-                expected: "LBrace",
+                expected: "RBrace",
                 got: vec![self.get_current_token().token],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
+        }
+
+        // Verify these stuffs:
+        // - No constructor
+        // - CAN ADD MORE
+        for member in body.members.iter() {
+            match member.member_kind {
+                MemberKind::Constructor { .. } => {
+                    return Err(ParseErrType::SemanticError("Constructor in interface")
+                        .to_stack_parse_err(ctx.1, ctx));
+                }
+                _ => {}
+            }
         }
 
         Ok(body)

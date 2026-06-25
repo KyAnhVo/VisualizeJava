@@ -149,11 +149,14 @@ mod test {
 
                 abstract public int joinAbc();
 
+                public static enum MyEnum { MyEnum1, MyEnum2(v1, v2){}; public String printEnum() {} }
+                public static interface MyInterface { public String hash(); public int base64(); }
+
             }",
         )
         .unwrap();
         let res: Type = parser.class_decl(QualifiedName(vec![])).unwrap();
-        // println!("res:\n {:#?}", res);
+        println!("res:\n {:#?}", res);
         assert_eq!(res.name, QualifiedName(vec!["MyClass"]));
     }
 }

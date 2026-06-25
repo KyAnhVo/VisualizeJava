@@ -23,6 +23,7 @@ pub enum ParseErrType<'a> {
     UnimplementedError,
     ImportError,
     MultiplePublicTypesError,
+    SemanticError(&'static str),
 }
 
 impl<'a> ParseErrType<'a> {
@@ -144,6 +145,7 @@ pub enum TypeKind<'a> {
     },
     Enum {
         implement_interfaces: Vec<RefType<'a>>,
+        enum_vals: Vec<&'a str>,
     },
     Interface {
         extend_interfaces: Vec<RefType<'a>>,

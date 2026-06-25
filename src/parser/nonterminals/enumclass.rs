@@ -17,7 +17,9 @@ impl<'a> Parser<'a> {
         }
 
         let name = if let Identifier(s) = self.get_next_token().token {
-            s
+            let mut v = prefix.clone();
+            v.0.push(s);
+            v
         } else {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "IDENTIFIER",
@@ -39,16 +41,104 @@ impl<'a> Parser<'a> {
             } else {
                 vec![]
             };
-        Err(ParseErrType::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
+
+        let (enum_vals, body) = self
+            .enum_body(name.clone(), name.0.last().unwrap())
+            .push_context(ctx)?;
+
+        Ok(Type {
+            name,
+            modifiers: Modifiers {
+                modifiers: vec![],
+                access_modifier: AccessModifier::Default,
+            },
+            type_kind: TypeKind::Enum {
+                implement_interfaces,
+                enum_vals,
+            },
+            body,
+            annotation: vec![],
+        })
     }
 
+    /// ```
+    /// <enum_body> ::= "{" [<enum_val> {"," <enum_val>}] [";" <members>] "}"
+    /// ```
+    /// where
+    /// ```
+    /// <enum_val> ::= IDENTIFIEIR [<skip_paren>] [<skip_brace>]
+    /// ```
     pub(crate) fn enum_body(
         &mut self,
         prefix: QualifiedName<'a>,
-        classname: &str,
-    ) -> ParseResult<'a, TypeBody<'a>> {
+        classname: &'a str,
+    ) -> ParseResult<'a, (Vec<&'a str>, TypeBody<'a>)> {
         let ctx = ("enum_body", self.peek_next_token().addr);
 
-        Err(ParseErrType::UnimplementedError.to_stack_parse_err(ctx.1, ctx))
+        if self.get_next_token().token != LBrace {
+            return Err(ParseErrType::UnexpectedToken {
+                expected: "LBrace",
+                got: vec![self.get_current_token().token],
+            }
+            .to_stack_parse_err(self.get_current_token().addr, ctx));
+        }
+
+        let mut enum_vals: Vec<&'a str> = vec![];
+        if let Identifier(s) = self.peek_next_token().token {
+            self.get_next_token();
+            enum_vals.push(s);
+            if self.peek_next_token().token == LParen {
+                self.skip_brace(LParen, RParen).push_context(ctx)?;
+            }
+            if self.peek_next_token().token == LBrace {
+                self.skip_brace(LBrace, RBrace).push_context(ctx)?;
+            }
+
+            while self.peek_next_token().token == Comma {
+                self.get_next_token();
+                if let Identifier(s) = self.get_next_token().token {
+                    enum_vals.push(s);
+                } else {
+                    return Err(ParseErrType::UnexpectedToken {
+                        expected: "IDENTIFIER",
+                        got: vec![self.get_current_token().token],
+                    }
+                    .to_stack_parse_err(self.get_current_token().addr, ctx));
+                }
+                if self.peek_next_token().token == LParen {
+                    self.skip_brace(LParen, RParen).push_context(ctx)?;
+                }
+                if self.peek_next_token().token == LBrace {
+                    self.skip_brace(LBrace, RBrace).push_context(ctx)?;
+                }
+            }
+        }
+
+        let body = match self.get_next_token().token {
+            RBrace => TypeBody {
+                members: vec![],
+                subtypes: vec![],
+            },
+            Semicolon => {
+                let res = self.members(prefix, classname).push_context(ctx)?;
+                if self.get_next_token().token != RBrace {
+                    return Err(ParseErrType::UnexpectedToken {
+                        expected: "LBrace",
+                        got: vec![self.get_current_token().token],
+                    }
+                    .to_stack_parse_err(self.get_current_token().addr, ctx));
+                }
+                res
+            }
+            token => {
+                return Err(ParseErrType::UnexpectedToken {
+                    expected: "RBrace | Semicolon",
+                    got: vec![token],
+                }
+                .to_stack_parse_err(self.get_current_token().addr, ctx));
+            }
+        };
+
+        Ok((enum_vals, body))
     }
 }
