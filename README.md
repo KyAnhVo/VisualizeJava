@@ -34,13 +34,20 @@ public class A{
   private static class B {...}
   public static class C {...}
   protected static class D {...}
+  private class E {...}
+  public class F {...}
+  protected class G {...}
 }
 ```
 Our UML will capture this like
 ```java
 public class A {...}
+private class A.B
 public class A.C {...}
 protected class A.D {...}
+private class A.E {...}
+public class A.F {...}
+protected class A.G {...}
 ```
 
 ### Example 4

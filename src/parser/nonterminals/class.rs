@@ -149,6 +149,7 @@ mod test {
 
                 abstract public int joinAbc();
 
+                @annotation1(val1, val2)
                 public static enum MyEnum { MyEnum1, MyEnum2(v1, v2){}; public String printEnum() {} }
                 public static interface MyInterface { public String hash(); public int base64(); }
 

@@ -348,7 +348,7 @@ impl<'a> Parser<'a> {
         let start_ind = self.get_current_token().addr;
 
         // <qualified_name>
-        self.qualified_name().push_context(ctx)?;
+        let name = self.qualified_name().push_context(ctx)?;
 
         // [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}" )]
         match self.peek_next_token().token {
@@ -378,7 +378,10 @@ impl<'a> Parser<'a> {
         }
 
         let len = (self.get_current_token().addr + self.get_current_token().len) - start_ind;
-        return Ok(Annotation(&self.string[start_ind..start_ind + len]));
+        return Ok(Annotation {
+            name,
+            s: &self.string[start_ind..start_ind + len],
+        });
     }
 
     /// `<modifiers> ::= { "public" | "private" | "protected" | "abstract" | "static" | "final" |
@@ -454,14 +457,26 @@ mod test {
         )
         .unwrap();
 
-        assert_eq!(parser.annotation().unwrap(), Annotation("@annotation1"));
         assert_eq!(
             parser.annotation().unwrap(),
-            Annotation("@com.annotation2(val1, val2)")
+            Annotation {
+                name: QualifiedName(vec!["annotation1"]),
+                s: "@annotation1"
+            }
         );
         assert_eq!(
             parser.annotation().unwrap(),
-            Annotation("@annotation3{key1: val1, key2: val2}")
+            Annotation {
+                name: QualifiedName(vec!["com", "annotation2"]),
+                s: "@com.annotation2(val1, val2)"
+            },
+        );
+        assert_eq!(
+            parser.annotation().unwrap(),
+            Annotation {
+                name: QualifiedName(vec!["annotation3"]),
+                s: "@annotation3{key1: val1, key2: val2}"
+            }
         )
     }
 

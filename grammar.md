@@ -53,8 +53,7 @@ Not done  == `[ ]`
                       <enum|class|interface|annotation_decl> )
 [ ] <method_decl>     ::= [<type_params>] <voidable_type> IDENTIFIER "(" <arg_list> ")" 
                       ["throws" <ref_type> {"," <ref_type>}] "{" <skip_body> "}"
-[ ] <property_decl>   ::= <ref_type> IDENTIFIER [ "=" <skip_expr> ] ";"
-
+[ ] <property_decl>   ::= <ref_type> IDENTIFIER [ "=" <skip_expr> ] {"," IDENTIFIER [ "=" <skip_expr>]} ";"
 ```
 
 ### Body for enum

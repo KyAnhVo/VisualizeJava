@@ -1,3 +1,5 @@
+use std::{iter::Peekable, str::Chars};
+
 use crate::parser::token::{
     IndexedToken,
     Token::{self, *},
@@ -199,6 +201,7 @@ impl<'a> Lexer<'a> {
                 },
                 '\'' => return self.get_char_literal(),
                 '\"' => return self.get_string_literal(),
+                c if c.is_digit(10) => {}
                 c if c.is_alphanumeric() => {
                     let s = self.get_identifier_chain();
                     if matches!(
@@ -270,6 +273,29 @@ impl<'a> Lexer<'a> {
             }
         }
         return &self.s[start_ind..self.ind];
+    }
+
+    /// Numeric literal is represented as following:
+    /// ```
+    /// <numeric_literal> ::=
+    ///     (here are ints)
+    ///     | [0x|0X] hex_digits [L|l]
+    ///     | [0b|0B] bin_digits [L|l]
+    ///     | 0 octal_digits    [L|l]
+    ///     | decimal_digits    [L|l]
+    ///     (here are floats)
+    ///     | digits . [digits]  [e[+|-]digits] [f|F|d|D]
+    ///     | . digits           [e[+|-]digits] [f|F|d|D]
+    ///     | digits             e[+|-]digits   [f|F|d|D]
+    /// ```
+    ///
+    /// refer to https://docs.oracle.com/javase/specs/jls/se26/jls26.pdf
+    /// for intermediate closures
+    fn get_numeric_literal(&mut self) -> Option<Token<'a>> {
+        let start_ind = self.ind - 1;
+        let mut iter = self.s[self.ind..].chars().peekable();
+
+        Some(Literal(&self.s[start_ind..self.ind]))
     }
 
     fn get_char_literal(&mut self) -> Option<Token<'a>> {

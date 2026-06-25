@@ -79,7 +79,10 @@ pub struct QualifiedName<'a>(pub Vec<&'a str>);
 
 /// An annotation is a string slice of one annotation for some type/property/method
 #[derive(Debug, PartialEq, Clone)]
-pub struct Annotation<'a>(pub &'a str);
+pub struct Annotation<'a> {
+    pub name: QualifiedName<'a>,
+    pub s: &'a str,
+}
 
 /// A struct to represent type usages with generic,
 /// e.g. `java.util.Hashtable<Integer, ? extends com.util.MyClass>`
