@@ -330,6 +330,8 @@ impl<'a> Lexer<'a> {
                 } else if c == '\"' {
                     break;
                 }
+            } else {
+                return None;
             }
         }
         Some(Literal(&self.s[start_index..self.ind]))

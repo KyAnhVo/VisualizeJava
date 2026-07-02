@@ -74,23 +74,11 @@ impl<'a> Parser<'a> {
         };
 
         // <class_body>
-        if self.get_next_token().token != LBrace {
-            return Err(ParseErrType::UnexpectedToken {
-                expected: "LBrace",
-                got: vec![self.get_current_token().token],
-            }
-            .to_stack_parse_err(self.get_current_token().addr, ctx));
-        }
+        consume_token!(self, ctx, LBrace, "LBrace");
         let body = self
             .members(name.clone(), name.0.last().unwrap())
             .push_context(ctx)?;
-        if self.get_next_token().token != RBrace {
-            return Err(ParseErrType::UnexpectedToken {
-                expected: "LBrace",
-                got: vec![self.get_current_token().token],
-            }
-            .to_stack_parse_err(self.get_current_token().addr, ctx));
-        }
+        consume_token!(self, ctx, RBrace, "RBrace");
 
         // use default modifiers and annotation
         let typeclass = Type {

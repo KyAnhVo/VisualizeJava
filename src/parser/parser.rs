@@ -333,49 +333,45 @@ impl<'a> Parser<'a> {
     fn java_file(&mut self) -> ParseResult<'a, JavaFile<'a>> {
         let ctx = ("java_file", 0);
 
-        let mut file = JavaFile {
-            package_name: None,
-            imported_objects: vec![],
-            type_decls: vec![],
-        };
+        let mut type_decls: Vec<Type<'a>> = vec![];
 
         // <package_decl>
-        if self.peek_next_token().token == Keyword("package") {
-            file.package_name = Some(self.package_decl().push_context(ctx)?);
-        }
+        let package_name = self.package_decl().push_context(ctx)?;
 
         // <import>
-        file.imported_objects
-            .append(&mut self.import().push_context(ctx)?);
+        let imported_objects = self.import().push_context(ctx)?;
 
         // {<type_decl>}
         let mut have_public_type = false;
         while self.peek_next_token().token != EOF {
-            file.type_decls
-                .push(self.type_decl(QualifiedName(vec![])).push_context(ctx)?);
-            if file.type_decls.last().unwrap().modifiers.access_modifier == AccessModifier::Public {
+            type_decls.push(self.type_decl(QualifiedName(vec![])).push_context(ctx)?);
+            if type_decls.last().unwrap().modifiers.access_modifier == AccessModifier::Public {
                 if have_public_type {
-                    return Err(ParseErrType::MultiplePublicTypesError.to_stack_parse_err(0, ctx));
+                    return Err(ParseErrType::SemanticError("multiple public types")
+                        .to_stack_parse_err(0, ctx));
                 } else {
                     have_public_type = true;
                 }
             }
         }
 
-        Ok(file)
+        Ok(JavaFile {
+            package_name,
+            imported_objects,
+            type_decls,
+        })
     }
 
     /// `<package_decl>  ::= [ "package" <qualified_name> ";" ]`
     fn package_decl(&mut self) -> ParseResult<'a, QualifiedName<'a>> {
         let ctx = ("package_decl", self.peek_next_token().addr);
-        if self.get_next_token().token != Keyword("package") {
-            Err(ParseErrType::UnexpectedToken {
-                expected: "package",
-                got: vec![self.get_current_token().token],
-            }
-            .to_stack_parse_err(self.get_current_token().addr, ctx))
+        if self.peek_next_token().token != Keyword("package") {
+            Ok(QualifiedName(vec!["default"]))
         } else {
-            self.qualified_name().push_context(ctx)
+            consume_token!(self, ctx, Keyword("package"), "package");
+            let pkg_name = self.qualified_name().push_context(ctx);
+            consume_token!(self, ctx, Semicolon, "Semicolon");
+            pkg_name
         }
     }
 
@@ -431,7 +427,7 @@ impl<'a> Parser<'a> {
 
     /// `<type_decl> ::= {<annotation>} <modifiers> ( <enum_decl> | <class_decl> |
     /// <interface_decl> | <annotation_decl> )`
-    fn type_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+    pub(crate) fn type_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
         let ctx = ("type_decl", self.peek_next_token().addr);
         // {<annotation>}
         let annotation = self.annotations().push_context(ctx)?;

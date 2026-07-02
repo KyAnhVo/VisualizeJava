@@ -36,20 +36,8 @@ impl<'a> Parser<'a> {
             // | ("..." IDENTIFIER ")")
             if self.peek_next_token().token == Op("...") {
                 self.get_next_token();
-                let Identifier(_) = self.get_next_token().token else {
-                    return Err(ParseErrType::UnexpectedToken {
-                        expected: "IDENTIFIER",
-                        got: vec![self.get_current_token().token],
-                    }
-                    .to_stack_parse_err(self.peek_next_token().addr, ctx));
-                };
-                if self.get_next_token().token != RParen {
-                    return Err(ParseErrType::UnexpectedToken {
-                        expected: "RParen",
-                        got: vec![self.get_current_token().token],
-                    }
-                    .to_stack_parse_err(self.get_current_token().addr, ctx));
-                }
+                consume_token!(self, ctx, Identifier(_), "Identifier");
+                consume_token!(self, ctx, RParen, "RParen");
                 return Ok(v);
             }
 
@@ -65,61 +53,47 @@ impl<'a> Parser<'a> {
             // {"[]"}
             while self.peek_next_token().token == LBracket {
                 self.get_next_token();
-                if self.get_next_token().token != RBracket {
-                    return Err(ParseErrType::UnexpectedToken {
-                        expected: "RBracket",
-                        got: vec![self.get_current_token().token],
-                    }
-                    .to_stack_parse_err(self.get_current_token().addr, ctx));
-                }
+                consume_token!(self, ctx, RBracket, "RBracket");
                 v.last_mut().unwrap().arr_dim += 1;
             }
 
+            // {
+            //      "," <annotations> ["final"] <ref_type> IDENTIFIER {"[]"}}
+            //      ["," "final" <annotations> <ref_type> "..." IDENTIFIER])
+            //  }
             while self.peek_next_token().token == Comma {
+                // alright sorry for the many comments, I am not keeping track of things rn
+
+                // ","
                 self.get_next_token();
+
+                // <annotations>
                 self.annotations().push_context(ctx)?;
                 if self.peek_next_token().token == Keyword("final") {
                     self.get_next_token();
                 }
 
+                // <type> before ID
                 v.push(self.ref_type().push_context(ctx)?);
 
+                // Escape to the
+                // ```
+                // "..." IDENTIFIER)
+                // ```
                 if self.peek_next_token().token == Op("...") {
+                    // ...
                     self.get_next_token();
-                    let Identifier(_) = self.get_next_token().token else {
-                        return Err(ParseErrType::UnexpectedToken {
-                            expected: "IDENTIFIER",
-                            got: vec![self.get_current_token().token],
-                        }
-                        .to_stack_parse_err(self.get_current_token().addr, ctx));
-                    };
-                    if self.get_next_token().token != RParen {
-                        return Err(ParseErrType::UnexpectedToken {
-                            expected: "RParen",
-                            got: vec![self.get_current_token().token],
-                        }
-                        .to_stack_parse_err(self.get_current_token().addr, ctx));
-                    }
+                    consume_token!(self, ctx, Identifier(_), "IDENTIFIER");
+                    consume_token!(self, ctx, RParen, "RParen");
                     return Ok(v);
                 }
 
-                let Identifier(_) = self.get_next_token().token else {
-                    return Err(ParseErrType::UnexpectedToken {
-                        expected: "IDENTIFIER",
-                        got: vec![self.get_current_token().token],
-                    }
-                    .to_stack_parse_err(self.get_current_token().addr, ctx));
-                };
-
+                // not the "..." branch starts here
+                consume_token!(self, ctx, Identifier(_), "IDENTIFIER");
                 while self.peek_next_token().token == LBracket {
                     self.get_next_token();
-                    if self.get_next_token().token != RBracket {
-                        return Err(ParseErrType::UnexpectedToken {
-                            expected: "RBracket",
-                            got: vec![self.get_current_token().token],
-                        }
-                        .to_stack_parse_err(self.get_current_token().addr, ctx));
-                    }
+                    consume_token!(self, ctx, RBracket, "RBracket");
+                    v.last_mut().unwrap().arr_dim += 1;
                 }
             }
 
@@ -134,6 +108,7 @@ impl<'a> Parser<'a> {
             Ok(v)
         }
     }
+
     /// `<voidable_type> ::= "void" | <ref_type>`
     pub(crate) fn voidable_type(&mut self) -> ParseResult<'a, VoidableType<'a>> {
         let ctx = ("voidable_type", self.peek_next_token().addr);
@@ -157,19 +132,9 @@ impl<'a> Parser<'a> {
 
         // { "[]" }
         let mut arr_dim: u8 = 0;
-        loop {
-            let token1 = self.peek_next_token();
-            if token1.token != LBracket {
-                break;
-            }
+        while self.peek_next_token().token == LBracket {
             self.get_next_token();
-            if self.get_next_token().token != RBracket {
-                return Err(ParseErrType::UnexpectedToken {
-                    expected: "]",
-                    got: vec![self.get_current_token().token],
-                }
-                .to_stack_parse_err(self.get_current_token().addr, ctx));
-            }
+            consume_token!(self, ctx, RBracket, "RBracket");
             arr_dim += 1;
         }
 
@@ -359,6 +324,10 @@ impl<'a> Parser<'a> {
                     match self.get_next_token().token {
                         LBrace => stack += 1,
                         RBrace => stack -= 1,
+                        EOF => {
+                            return Err(ParseErrType::UnexpectedEOF
+                                .to_stack_parse_err(self.peek_next_token().addr, ctx));
+                        }
                         _ => {}
                     }
                 }
@@ -370,6 +339,10 @@ impl<'a> Parser<'a> {
                     match self.get_next_token().token {
                         LParen => stack += 1,
                         RParen => stack -= 1,
+                        EOF => {
+                            return Err(ParseErrType::UnexpectedEOF
+                                .to_stack_parse_err(self.peek_next_token().addr, ctx));
+                        }
                         _ => {}
                     }
                 }

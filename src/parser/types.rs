@@ -22,7 +22,6 @@ pub enum ParseErrType<'a> {
     IndexingError,
     UnimplementedError,
     ImportError,
-    MultiplePublicTypesError,
     SemanticError(&'static str),
 }
 
@@ -153,7 +152,9 @@ pub enum TypeKind<'a> {
     Interface {
         extend_interfaces: Vec<RefType<'a>>,
     },
-    Annotation {},
+    Annotation {
+        annotation_properties: Vec<(&'a str, RefType<'a>)>,
+    },
 }
 
 /// A type's body contains its members (not subtypes) and its subtypes.
@@ -172,15 +173,18 @@ pub struct Type<'a> {
     pub body: TypeBody<'a>,
     pub annotation: Vec<Annotation<'a>>,
 }
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct JavaFile<'a> {
     /// None means this is in the default package
-    pub package_name: Option<QualifiedName<'a>>,
+    pub package_name: QualifiedName<'a>,
     /// imported objects, could be com.etc.*
     pub imported_objects: Vec<ImportObject<'a>>,
     /// type declarations in the current file
     pub type_decls: Vec<Type<'a>>,
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct ImportObject<'a> {
     pub name: QualifiedName<'a>,
     pub is_static: bool,
