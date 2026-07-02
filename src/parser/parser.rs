@@ -344,7 +344,7 @@ impl<'a> Parser<'a> {
         // {<type_decl>}
         let mut have_public_type = false;
         while self.peek_next_token().token != EOF {
-            type_decls.push(self.type_decl(QualifiedName(vec![])).push_context(ctx)?);
+            type_decls.push(self.type_decl(package_name.clone()).push_context(ctx)?);
             if type_decls.last().unwrap().modifiers.access_modifier == AccessModifier::Public {
                 if have_public_type {
                     return Err(ParseErrType::SemanticError("multiple public types")
@@ -366,7 +366,7 @@ impl<'a> Parser<'a> {
     fn package_decl(&mut self) -> ParseResult<'a, QualifiedName<'a>> {
         let ctx = ("package_decl", self.peek_next_token().addr);
         if self.peek_next_token().token != Keyword("package") {
-            Ok(QualifiedName(vec!["default"]))
+            Ok(QualifiedName(vec![]))
         } else {
             consume_token!(self, ctx, Keyword("package"), "package");
             let pkg_name = self.qualified_name().push_context(ctx);
