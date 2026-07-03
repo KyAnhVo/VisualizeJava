@@ -73,7 +73,7 @@ pub enum TypeArg<'a> {
 pub struct TypeArgList<'a>(pub Vec<TypeArg<'a>>);
 
 /// A qualified name is a dotted name, e.g. `java.util.ArrayList`
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash)]
 pub struct QualifiedName<'a>(pub Vec<&'a str>);
 
 /// An annotation is a string slice of one annotation for some type/property/method
