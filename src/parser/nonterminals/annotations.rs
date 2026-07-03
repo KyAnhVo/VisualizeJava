@@ -27,7 +27,7 @@ impl<'a> Parser<'a> {
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         };
 
-        let (type_kind, body) = self.annotation_body(prefix).push_context(ctx)?;
+        let (type_kind, body) = self.annotation_body(name.clone()).push_context(ctx)?;
 
         Ok(Type {
             name,
@@ -282,7 +282,10 @@ mod test {
         ));
 
         // nested enum
-        assert_eq!(res.body.subtypes[0].name, QualifiedName(vec!["Scope"]));
+        assert_eq!(
+            res.body.subtypes[0].name,
+            QualifiedName(vec!["MyAnnotation", "Scope"])
+        );
         assert!(matches!(
             res.body.subtypes[0].type_kind,
             TypeKind::Enum { .. }

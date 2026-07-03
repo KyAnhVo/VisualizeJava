@@ -175,16 +175,6 @@ pub struct Type<'a> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct JavaFile<'a> {
-    /// None means this is in the default package
-    pub package_name: QualifiedName<'a>,
-    /// imported objects, could be com.etc.*
-    pub imported_objects: Vec<ImportObject<'a>>,
-    /// type declarations in the current file
-    pub type_decls: Vec<Type<'a>>,
-}
-
-#[derive(Debug, PartialEq, Clone)]
 pub struct ImportObject<'a> {
     pub name: QualifiedName<'a>,
     pub is_static: bool,
@@ -203,4 +193,14 @@ pub enum AccessModifier {
 pub struct Modifiers<'a> {
     pub modifiers: Vec<&'a str>,
     pub access_modifier: AccessModifier,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct JavaFile<'a> {
+    /// None means this is in the default package
+    pub package_name: QualifiedName<'a>,
+    /// imported objects, could be com.etc.*
+    pub imported_objects: Vec<ImportObject<'a>>,
+    /// type declarations in the current file
+    pub type_decls: Vec<Type<'a>>,
 }

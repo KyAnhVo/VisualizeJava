@@ -122,3 +122,36 @@ impl<'a> Parser<'a> {
         Ok(body)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_interface() {
+        let mut parser = Parser::new(
+            "
+            // Can be used for different types of vector or representations
+            // maybe a (r, theta) or (x, y) or spherical plane geometry.
+            public interface MetricSpaceTwoValueVector {
+                public static class Point {
+                    float p1 = 0, p2 = 0;
+                    public void setPoint(float p1, float p2) {
+                        this.p1 = p1;
+                        this.p2 = p2;
+                    }
+                    public float[] getPoint() {
+                        return {p1, p2};
+                    }
+                }
+                
+                public float getDistance(Point x, Point y);
+                public float getNorm(Point x);
+            }
+        ",
+        )
+        .unwrap();
+        let res = parser.type_decl(QualifiedName(vec![])).unwrap();
+        println!("res:\n {:#?}", res);
+    }
+}
