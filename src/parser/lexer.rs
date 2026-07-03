@@ -1,5 +1,3 @@
-use std::{iter::Peekable, str::Chars};
-
 use crate::parser::token::{
     IndexedToken,
     Token::{self, *},

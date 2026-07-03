@@ -1,4 +1,5 @@
-use super::super::{parser::Parser, token::Token::*, types::*};
+use super::super::{parser::Parser, token::Token::*};
+use crate::types::*;
 
 // ---------------------------------------------------------------------
 // ----------------------- Enum Nonterminals ---------------------------

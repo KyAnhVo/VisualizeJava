@@ -1,4 +1,4 @@
-use crate::parser::types::{GenericParseResult, ParseResult};
+use crate::types::*;
 
 use super::{
     lexer::Lexer,
@@ -6,7 +6,6 @@ use super::{
         IndexedToken,
         Token::{self, *},
     },
-    types::{AccessModifier, ImportObject, JavaFile, ParseErrType, QualifiedName, Type},
 };
 pub struct Parser<'a> {
     pub(super) string: &'a str,
