@@ -181,12 +181,12 @@ pub struct ImportObject<'a> {
     pub is_wildcard: bool,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord)]
 pub enum AccessModifier {
-    Public,
     Private,
-    Protected,
     Default,
+    Protected,
+    Public,
 }
 
 #[derive(Debug, PartialEq, Clone)]
