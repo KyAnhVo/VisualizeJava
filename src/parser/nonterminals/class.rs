@@ -146,7 +146,7 @@ mod test {
         )
         .unwrap();
         let res: Type = parser.class_decl(QualifiedName(vec![])).unwrap();
-        println!("res:\n {:#?}", res);
+        // println!("res:\n {:#?}", res);
         assert_eq!(res.name, QualifiedName(vec!["MyClass"]));
     }
 }

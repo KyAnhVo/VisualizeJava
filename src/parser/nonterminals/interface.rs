@@ -152,6 +152,6 @@ mod test {
         )
         .unwrap();
         let res = parser.type_decl(QualifiedName(vec![])).unwrap();
-        println!("res:\n {:#?}", res);
+        // println!("res:\n {:#?}", res);
     }
 }
