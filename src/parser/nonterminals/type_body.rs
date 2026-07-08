@@ -6,9 +6,9 @@ impl<'a> Parser<'a> {
     /// `<member_decl>     ::= {<annotation>} <modifiers> ( <method_decl> | <constructor_decl> | <property_decl> | <type_decl> )`
     pub(crate) fn members(
         &mut self,
-        prefix: QualifiedName<'a>,
-        classname: &str,
-    ) -> ParseResult<'a, TypeBody<'a>> {
+        prefix: QualifiedName,
+        classname: String,
+    ) -> ParseResult<'a, TypeBody> {
         let ctx = ("members", self.peek_next_token().addr);
 
         // if the next token is not closing the body, then it must be still
@@ -69,7 +69,7 @@ impl<'a> Parser<'a> {
                 (LessThan, _) => {
                     // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
                     let type_param_list = self.type_param_list().push_context(ctx)?;
-                    if self.peek_next_token().token == Identifier(classname) {
+                    if self.peek_next_token().token == Identifier(classname.as_str()) {
                         let name = match self.get_next_token().token {
                             Identifier(s) => s,
                             _ => unreachable!(),
@@ -90,7 +90,7 @@ impl<'a> Parser<'a> {
                         // must have body, since this is a constructor
                         self.skip_brace(LBrace, RBrace).push_context(ctx)?;
                         body.members.push(Member {
-                            name,
+                            name: name.to_owned(),
                             member_kind: MemberKind::Constructor {
                                 type_param_list,
                                 input,
@@ -112,7 +112,7 @@ impl<'a> Parser<'a> {
                         };
                         let input = self.arg_list().push_context(ctx)?;
                         let throws = if self.peek_next_token().token == Keyword("throws") {
-                            let mut v: Vec<RefType<'a>> = vec![];
+                            let mut v: Vec<RefType> = vec![];
 
                             // "throws" <ref_type>
                             self.get_next_token();
@@ -142,7 +142,7 @@ impl<'a> Parser<'a> {
                             }
                         }
                         body.members.push(Member {
-                            name,
+                            name: name.to_owned(),
                             member_kind: MemberKind::Method {
                                 type_param_list,
                                 input,
@@ -163,7 +163,7 @@ impl<'a> Parser<'a> {
                     let input = self.arg_list().push_context(ctx)?;
                     let throws = if self.peek_next_token().token == Keyword("throws") {
                         self.get_next_token();
-                        let mut v: Vec<RefType<'a>> = vec![];
+                        let mut v: Vec<RefType> = vec![];
                         v.push(self.ref_type().push_context(ctx)?);
                         while self.peek_next_token().token == Comma {
                             self.get_next_token();
@@ -178,7 +178,7 @@ impl<'a> Parser<'a> {
 
                     // donzo
                     body.members.push(Member {
-                        name,
+                        name: name.to_owned(),
                         member_kind: MemberKind::Constructor {
                             type_param_list: TypeParamList(vec![]),
                             input,
@@ -217,7 +217,7 @@ impl<'a> Parser<'a> {
                         LParen => {
                             let input = self.arg_list().push_context(ctx)?;
                             let throws = if self.peek_next_token().token == Keyword("throws") {
-                                let mut v: Vec<RefType<'a>> = vec![];
+                                let mut v: Vec<RefType> = vec![];
 
                                 // "throws" <ref_type>
                                 self.get_next_token();
@@ -245,7 +245,7 @@ impl<'a> Parser<'a> {
                                 .to_stack_parse_err(self.peek_next_token().addr, ctx));
                             }
                             body.members.push(Member {
-                                name,
+                                name: name.to_owned(),
                                 member_kind: MemberKind::Method {
                                     type_param_list: TypeParamList(vec![]),
                                     input,
@@ -292,7 +292,7 @@ impl<'a> Parser<'a> {
                             }
 
                             body.members.push(Member {
-                                name,
+                                name: name.to_owned(),
                                 member_kind: MemberKind::Property {
                                     reftype: reftype.clone()?,
                                 },
@@ -347,7 +347,7 @@ impl<'a> Parser<'a> {
                                 };
 
                                 body.members.push(Member {
-                                    name,
+                                    name: name.to_owned(),
                                     member_kind: MemberKind::Property {
                                         reftype: reftype.clone()?,
                                     },

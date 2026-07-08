@@ -1,26 +1,23 @@
-use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path, rc::Rc};
 use std::{fs, io};
 
-use crate::parser::parser::Parser;
 use crate::types::{
-    AccessModifier, ImportObject, JavaFile, Member, Modifiers, QualifiedName, Type, TypeBody,
-    TypeKind,
+    AccessModifier, ImportObject, JavaFile, Member, Modifiers, QualifiedName, Type, TypeKind,
 };
 
 #[derive(Debug, PartialEq)]
-pub struct FlattenType<'a> {
-    pub name: QualifiedName<'a>,
-    pub modifiers: Modifiers<'a>,
-    pub members: Rc<[Member<'a>]>,
-    pub type_kind: TypeKind<'a>,
-    pub import_objs: Rc<[ImportObject<'a>]>,
+pub struct FlattenType {
+    pub name: QualifiedName,
+    pub modifiers: Modifiers,
+    pub members: Rc<[Member]>,
+    pub type_kind: TypeKind,
+    pub import_objs: Rc<[ImportObject]>,
 }
 
-impl<'a> FlattenType<'a> {
-    pub fn from_file(file: JavaFile<'a>) -> Vec<Self> {
-        let import_objs: Rc<[ImportObject<'a>]> = Rc::from(file.imported_objects);
+impl FlattenType {
+    pub fn from_file(file: JavaFile) -> Vec<Self> {
+        let import_objs: Rc<[ImportObject]> = Rc::from(file.imported_objects);
         let mut res: Vec<Self> = vec![];
         for typeclass in file.type_decls {
             res.append(&mut Self::from_type(typeclass, import_objs.clone()));
@@ -29,14 +26,14 @@ impl<'a> FlattenType<'a> {
     }
 
     /// Flattens a type into a vector of types
-    pub fn from_type(typeclass: Type<'a>, import_objs: Rc<[ImportObject<'a>]>) -> Vec<Self> {
-        let import_objs: Rc<[ImportObject<'a>]> = Rc::from(import_objs);
+    pub fn from_type(typeclass: Type, import_objs: Rc<[ImportObject]>) -> Vec<Self> {
+        let import_objs: Rc<[ImportObject]> = Rc::from(import_objs);
         Self::recursive_from_type(typeclass, import_objs.clone(), AccessModifier::Public)
     }
 
     fn recursive_from_type(
-        typeclass: Type<'a>,
-        import_objs: Rc<[ImportObject<'a>]>,
+        typeclass: Type,
+        import_objs: Rc<[ImportObject]>,
         min_visibility: AccessModifier,
     ) -> Vec<Self> {
         let name = typeclass.name;
@@ -44,7 +41,7 @@ impl<'a> FlattenType<'a> {
             modifiers: typeclass.modifiers.modifiers,
             access_modifier: typeclass.modifiers.access_modifier.min(min_visibility),
         };
-        let members: Rc<[Member<'a>]> = Rc::from(typeclass.body.members);
+        let members: Rc<[Member]> = Rc::from(typeclass.body.members);
         let type_kind = typeclass.type_kind;
 
         let flatten_type = Self {
@@ -75,9 +72,9 @@ impl<'a> FlattenType<'a> {
 /// f: QualifiedName -> Rc<[FlattenType]>
 /// ```
 /// where semantically it maps a package name to all of its declared types.
-pub struct Project<'a>(HashMap<QualifiedName<'a>, Vec<FlattenType<'a>>>);
+pub struct Project(HashMap<QualifiedName, Vec<FlattenType>>);
 
-impl<'a> Project<'a> {
+impl Project {
     pub fn new(dir: &str) -> io::Result<Self> {
         let java_files = Self::get_java_files(PathBuf::from(dir).as_path())?;
         let hashmap: HashMap<QualifiedName, Vec<FlattenType>> = HashMap::new();
@@ -139,11 +136,20 @@ mod test {
         }
         assert_eq!(
             res[0].name,
-            QualifiedName(vec!["com", "example", "BinaryTree"])
+            QualifiedName(vec![
+                "com".to_owned(),
+                "example".to_owned(),
+                "BinaryTree".to_owned()
+            ])
         );
         assert_eq!(
             res[1].name,
-            QualifiedName(vec!["com", "example", "BinaryTree", "Node"])
+            QualifiedName(vec![
+                "com".to_owned(),
+                "example".to_owned(),
+                "BinaryTree".to_owned(),
+                "Node".to_owned()
+            ])
         );
         assert_eq!(res[0].members[0].name, "root");
         assert_eq!(res[1].members[0].name, "id");

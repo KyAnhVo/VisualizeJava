@@ -45,7 +45,7 @@ impl<'a> Parser<'a> {
         };
 
         // ["implements" <ref_type> {"," <ref_type>}]
-        let implement_interfaces: Vec<RefType<'a>> =
+        let implement_interfaces: Vec<RefType> =
             if self.peek_next_token().token == Keyword("implements") {
                 self.get_next_token();
                 let mut vector = vec![self.ref_type().push_context(ctx)?];
@@ -76,7 +76,7 @@ impl<'a> Parser<'a> {
         // <class_body>
         consume_token!(self, ctx, LBrace, "LBrace");
         let body = self
-            .members(name.clone(), name.0.last().unwrap())
+            .members(name.clone(), name.0.last().unwrap().to_owned())
             .push_context(ctx)?;
         consume_token!(self, ctx, RBrace, "RBrace");
 
@@ -146,6 +146,6 @@ mod test {
         .unwrap();
         let res: Type = parser.class_decl(QualifiedName(vec![])).unwrap();
         // println!("res:\n {:#?}", res);
-        assert_eq!(res.name, QualifiedName(vec!["MyClass"]));
+        assert_eq!(res.name, QualifiedName(vec!["MyClass".to_owned()]));
     }
 }

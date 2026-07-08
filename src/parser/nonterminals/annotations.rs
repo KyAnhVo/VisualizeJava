@@ -5,10 +5,7 @@ use crate::types::*;
 // ----------------------- Annotation Nonterminals ---------------------
 // ---------------------------------------------------------------------
 impl<'a> Parser<'a> {
-    pub(crate) fn annotation_decl(
-        &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> ParseResult<'a, Type<'a>> {
+    pub(crate) fn annotation_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
         let ctx = ("annotation_decl", self.peek_next_token().addr);
 
         // verify @interface
@@ -17,7 +14,7 @@ impl<'a> Parser<'a> {
 
         let name = if let Identifier(s) = self.get_next_token().token {
             let mut v = prefix.clone();
-            v.0.push(s);
+            v.0.push(s.to_owned());
             v
         } else {
             return Err(ParseErrType::UnexpectedToken {
@@ -43,10 +40,10 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn annotation_body(
         &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> ParseResult<'a, (TypeKind<'a>, TypeBody<'a>)> {
+        prefix: QualifiedName,
+    ) -> ParseResult<'a, (TypeKind, TypeBody)> {
         let ctx = ("annotation_body", self.peek_next_token().addr);
-        let mut annotation_elements: Vec<(&'a str, RefType<'a>)> = vec![];
+        let mut annotation_elements: Vec<(String, RefType)> = vec![];
         let mut body: TypeBody = TypeBody {
             members: vec![],
             subtypes: vec![],
@@ -64,7 +61,7 @@ impl<'a> Parser<'a> {
                     let annotations = self.annotations().push_context(ctx)?;
                     self.modifiers().push_context(ctx)?; // dont care for this, just for safety.
                     let modifiers = Modifiers {
-                        modifiers: vec!["static", "final"],
+                        modifiers: vec!["static".to_owned(), "final".to_owned()],
                         access_modifier: AccessModifier::Public,
                     };
 
@@ -104,7 +101,7 @@ impl<'a> Parser<'a> {
                             let typeclass = self.ref_type().push_context(ctx)?;
                             let name = if let Identifier(s) = self.get_next_token().token {
                                 let mut qualified_name = prefix.clone();
-                                qualified_name.0.push(s);
+                                qualified_name.0.push(s.to_owned());
                                 qualified_name
                             } else {
                                 return Err(ParseErrType::UnexpectedToken {
@@ -147,7 +144,7 @@ impl<'a> Parser<'a> {
                                     }
                                     consume_token!(self, ctx, Semicolon, "Semicolon");
                                     body.members.push(Member {
-                                        name: name.0.last().copied().unwrap(),
+                                        name: name.0.last().cloned().unwrap(),
                                         member_kind: MemberKind::Property { reftype: typeclass },
                                         annotations,
                                         modifiers,
@@ -191,7 +188,7 @@ impl<'a> Parser<'a> {
 
                                     consume_token!(self, ctx, Semicolon, "Semicolon");
                                     annotation_elements
-                                        .push((name.0.last().copied().unwrap(), typeclass));
+                                        .push((name.0.last().cloned().unwrap(), typeclass));
                                 }
                                 token => {
                                     return Err(ParseErrType::UnexpectedToken {
@@ -258,7 +255,7 @@ mod test {
         let res: Type = parser.type_decl(QualifiedName(vec![])).unwrap();
         // println!("res:\n {:#?}", res);
 
-        assert_eq!(res.name, QualifiedName(vec!["MyAnnotation"]));
+        assert_eq!(res.name, QualifiedName(vec!["MyAnnotation".to_owned()]));
         assert_eq!(res.modifiers.access_modifier, AccessModifier::Public);
 
         let TypeKind::Annotation {
@@ -284,7 +281,7 @@ mod test {
         // nested enum
         assert_eq!(
             res.body.subtypes[0].name,
-            QualifiedName(vec!["MyAnnotation", "Scope"])
+            QualifiedName(vec!["MyAnnotation".to_owned(), "Scope".to_owned()])
         );
         assert!(matches!(
             res.body.subtypes[0].type_kind,

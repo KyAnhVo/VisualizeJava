@@ -12,10 +12,7 @@ impl<'a> Parser<'a> {
     ///         ["permits" <ref_type> {"," <ref_type>}]
     ///         <interface_body>
     /// ```
-    pub(crate) fn interface_decl(
-        &mut self,
-        prefix: QualifiedName<'a>,
-    ) -> ParseResult<'a, Type<'a>> {
+    pub(crate) fn interface_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
         let ctx = ("interface_decl", self.peek_next_token().addr);
 
         // "interface" IDENFITIER <type_param_list>
@@ -28,7 +25,7 @@ impl<'a> Parser<'a> {
         }
         let name = if let Identifier(s) = self.get_next_token().token {
             let mut v = prefix.clone();
-            v.0.push(s);
+            v.0.push(s.to_string());
             v
         } else {
             return Err(ParseErrType::UnexpectedToken {
@@ -42,7 +39,7 @@ impl<'a> Parser<'a> {
         // ["extends" <ref_type> {"," <ref_type>}]
         let extend_interfaces = if self.peek_next_token().token == Keyword("extends") {
             self.get_next_token();
-            let mut v: Vec<RefType<'a>> = vec![];
+            let mut v: Vec<RefType> = vec![];
             v.push(self.ref_type().push_context(ctx)?);
             while self.peek_next_token().token == Comma {
                 self.get_next_token();
@@ -64,7 +61,7 @@ impl<'a> Parser<'a> {
         }
 
         let body = self
-            .interface_body(name.clone(), name.0.last().unwrap())
+            .interface_body(name.clone(), name.0.last().unwrap().to_owned())
             .push_context(ctx)?;
 
         Ok(Type {
@@ -82,9 +79,9 @@ impl<'a> Parser<'a> {
     /// Essentially members, maybe with member filters/checkers
     pub(crate) fn interface_body(
         &mut self,
-        prefix: QualifiedName<'a>,
-        classname: &str,
-    ) -> ParseResult<'a, TypeBody<'a>> {
+        prefix: QualifiedName,
+        classname: String,
+    ) -> ParseResult<'a, TypeBody> {
         let ctx = ("interface_body", self.peek_next_token().addr);
 
         // typical "{" <members> "}"
