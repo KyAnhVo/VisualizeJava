@@ -9,7 +9,7 @@ impl<'a> Parser<'a> {
     ///     ["permits" <ref_type> {"," <ref_type>}]
     ///     <class_body>
     /// ```
-    pub(crate) fn class_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+    pub(crate) fn class_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
         let ctx = ("class_decl", self.peek_next_token().addr);
         // "class"
         if self.get_next_token().token != Keyword("class") {
@@ -23,7 +23,7 @@ impl<'a> Parser<'a> {
         // IDENTIFIER
         let mut name = QualifiedName(prefix.0.clone());
         name.0.push(match self.get_next_token().token {
-            Identifier(s) => s,
+            Identifier(s) => s.to_owned(),
             token => {
                 return Err(ParseErrType::UnexpectedToken {
                     expected: "IDENTIFIER",
@@ -37,13 +37,12 @@ impl<'a> Parser<'a> {
         self.type_param_list().push_context(ctx)?;
 
         // ["extends" <ref_type>]
-        let inherits_from: Option<RefType<'a>> =
-            if self.peek_next_token().token == Keyword("extends") {
-                self.get_next_token();
-                Some(self.ref_type().push_context(ctx)?)
-            } else {
-                None
-            };
+        let inherits_from: Option<RefType> = if self.peek_next_token().token == Keyword("extends") {
+            self.get_next_token();
+            Some(self.ref_type().push_context(ctx)?)
+        } else {
+            None
+        };
 
         // ["implements" <ref_type> {"," <ref_type>}]
         let implement_interfaces: Vec<RefType<'a>> =

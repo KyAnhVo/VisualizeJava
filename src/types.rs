@@ -60,123 +60,123 @@ impl<'a, T> GenericParseResult<T> for ParseResult<'a, T> {
 /// - Super(A) = `? super A`
 /// - Wildcard = `?`
 #[derive(Debug, PartialEq, Clone)]
-pub enum TypeArg<'a> {
-    Is(RefType<'a>),
-    Extends(RefType<'a>),
-    Super(RefType<'a>),
+pub enum TypeArg {
+    Is(RefType),
+    Extends(RefType),
+    Super(RefType),
     Wildcard,
 }
 
 /// A TypeArgList is a list of type args,
 /// `<A, B, C>` is translated to `vec![A, B, C]`
 #[derive(Debug, PartialEq, Clone)]
-pub struct TypeArgList<'a>(pub Vec<TypeArg<'a>>);
+pub struct TypeArgList(pub Vec<TypeArg>);
 
 /// A qualified name is a dotted name, e.g. `java.util.ArrayList`
 #[derive(Debug, PartialEq, Clone, Hash)]
-pub struct QualifiedName<'a>(pub Vec<&'a str>);
-
-/// An annotation is a string slice of one annotation for some type/property/method
-#[derive(Debug, PartialEq, Clone)]
-pub struct Annotation<'a> {
-    pub name: QualifiedName<'a>,
-    pub s: &'a str,
-}
+pub struct QualifiedName(pub Vec<String>);
 
 /// A struct to represent type usages with generic,
 /// e.g. `java.util.Hashtable<Integer, ? extends com.util.MyClass>`
 #[derive(Debug, PartialEq, Clone)]
-pub struct RefType<'a> {
-    pub name: QualifiedName<'a>,
-    pub type_arg_list: TypeArgList<'a>,
+pub struct RefType {
+    pub name: QualifiedName,
+    pub type_arg_list: TypeArgList,
     pub arr_dim: u8,
+}
+
+/// An annotation is a string slice of one annotation for some type/property/method
+#[derive(Debug, PartialEq, Clone)]
+pub struct Annotation {
+    pub name: QualifiedName,
+    pub s: String,
 }
 
 /// A voidable type is an output for a function.
 #[derive(Debug, PartialEq, Clone)]
-pub enum VoidableType<'a> {
+pub enum VoidableType {
     Void,
-    RefType(RefType<'a>),
+    RefType(RefType),
 }
 
 /// A list of parameters for generic types
 #[derive(Debug, PartialEq, Clone)]
-pub struct TypeParamList<'a>(pub Vec<TypeParam<'a>>);
+pub struct TypeParamList(pub Vec<TypeParam>);
 
 /// A type param is an input type (class `BinaryTree<K Comparable<K>, V>`,
 /// then `<K extends Comparable<K>>` and `<V>` are type params)
 #[derive(Debug, PartialEq, Clone)]
-pub struct TypeParam<'a> {
-    pub name: &'a str,
-    pub extends_from: Vec<RefType<'a>>,
+pub struct TypeParam {
+    pub name: String,
+    pub extends_from: Vec<RefType>,
 }
 
 /// A member can be a method or a property.
 #[derive(Debug, PartialEq, Clone)]
-pub enum MemberKind<'a> {
+pub enum MemberKind {
     Property {
-        reftype: RefType<'a>,
+        reftype: RefType,
     },
     Method {
-        type_param_list: TypeParamList<'a>,
-        input: Vec<RefType<'a>>,
-        output: VoidableType<'a>,
-        throws: Vec<RefType<'a>>,
+        type_param_list: TypeParamList,
+        input: Vec<RefType>,
+        output: VoidableType,
+        throws: Vec<RefType>,
     },
     Constructor {
-        type_param_list: TypeParamList<'a>,
-        input: Vec<RefType<'a>>,
-        throws: Vec<RefType<'a>>,
+        type_param_list: TypeParamList,
+        input: Vec<RefType>,
+        throws: Vec<RefType>,
     },
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Member<'a> {
-    pub name: &'a str,
-    pub member_kind: MemberKind<'a>,
-    pub annotations: Vec<Annotation<'a>>,
-    pub modifiers: Modifiers<'a>,
+pub struct Member {
+    pub name: String,
+    pub member_kind: MemberKind,
+    pub annotations: Vec<Annotation>,
+    pub modifiers: Modifiers,
 }
 
 /// A typekind is an enum of different kinds of type
 #[derive(Debug, PartialEq, Clone)]
-pub enum TypeKind<'a> {
+pub enum TypeKind {
     Class {
-        inherit_class: Option<RefType<'a>>,
-        implement_interfaces: Vec<RefType<'a>>,
+        inherit_class: Option<RefType>,
+        implement_interfaces: Vec<RefType>,
     },
     Enum {
-        implement_interfaces: Vec<RefType<'a>>,
-        enum_vals: Vec<&'a str>,
+        implement_interfaces: Vec<RefType>,
+        enum_vals: Vec<String>,
     },
     Interface {
-        extend_interfaces: Vec<RefType<'a>>,
+        extend_interfaces: Vec<RefType>,
     },
     Annotation {
-        annotation_properties: Vec<(&'a str, RefType<'a>)>,
+        annotation_properties: Vec<(String, RefType)>,
     },
 }
 
 /// A type's body contains its members (not subtypes) and its subtypes.
 #[derive(Debug, PartialEq, Clone)]
-pub struct TypeBody<'a> {
-    pub members: Vec<Member<'a>>,
-    pub subtypes: Vec<Type<'a>>,
+pub struct TypeBody {
+    pub members: Vec<Member>,
+    pub subtypes: Vec<Type>,
 }
 
 /// A type can be a class/enum/interface/annotation.
 #[derive(Debug, PartialEq, Clone)]
-pub struct Type<'a> {
-    pub name: QualifiedName<'a>,
-    pub modifiers: Modifiers<'a>,
-    pub type_kind: TypeKind<'a>,
-    pub body: TypeBody<'a>,
-    pub annotation: Vec<Annotation<'a>>,
+pub struct Type {
+    pub name: QualifiedName,
+    pub modifiers: Modifiers,
+    pub type_kind: TypeKind,
+    pub body: TypeBody,
+    pub annotation: Vec<Annotation>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct ImportObject<'a> {
-    pub name: QualifiedName<'a>,
+pub struct ImportObject {
+    pub name: QualifiedName,
     pub is_static: bool,
     pub is_wildcard: bool,
 }
@@ -190,17 +190,17 @@ pub enum AccessModifier {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Modifiers<'a> {
-    pub modifiers: Vec<&'a str>,
+pub struct Modifiers {
+    pub modifiers: Vec<String>,
     pub access_modifier: AccessModifier,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct JavaFile<'a> {
+pub struct JavaFile {
     /// None means this is in the default package
-    pub package_name: QualifiedName<'a>,
+    pub package_name: QualifiedName,
     /// imported objects, could be com.etc.*
-    pub imported_objects: Vec<ImportObject<'a>>,
+    pub imported_objects: Vec<ImportObject>,
     /// type declarations in the current file
-    pub type_decls: Vec<Type<'a>>,
+    pub type_decls: Vec<Type>,
 }

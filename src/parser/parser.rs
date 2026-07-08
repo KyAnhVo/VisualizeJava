@@ -60,7 +60,7 @@ impl<'a> Parser<'a> {
 
     /// Parse the java file, return the structure of the file which can be
     /// thought of as a specialized AST
-    pub fn parse(&mut self) -> ParseResult<'a, JavaFile<'a>> {
+    pub fn parse(&mut self) -> ParseResult<'a, JavaFile> {
         self.java_file().push_context(("java_file", 0))
     }
 
@@ -329,10 +329,10 @@ impl<'a> Parser<'a> {
 // Parsing
 impl<'a> Parser<'a> {
     /// `<java_file> ::= [<package_decl>] <import> {<type_decl>}`
-    fn java_file(&mut self) -> ParseResult<'a, JavaFile<'a>> {
+    fn java_file(&mut self) -> ParseResult<'a, JavaFile> {
         let ctx = ("java_file", 0);
 
-        let mut type_decls: Vec<Type<'a>> = vec![];
+        let mut type_decls: Vec<Type> = vec![];
 
         // <package_decl>
         let package_name = self.package_decl().push_context(ctx)?;
@@ -362,7 +362,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<package_decl>  ::= [ "package" <qualified_name> ";" ]`
-    fn package_decl(&mut self) -> ParseResult<'a, QualifiedName<'a>> {
+    fn package_decl(&mut self) -> ParseResult<'a, QualifiedName> {
         let ctx = ("package_decl", self.peek_next_token().addr);
         if self.peek_next_token().token != Keyword("package") {
             Ok(QualifiedName(vec![]))
@@ -375,7 +375,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<import> ::= { "import" ["static"] <qualified_name>[.*] ";" }`
-    fn import(&mut self) -> ParseResult<'a, Vec<ImportObject<'a>>> {
+    fn import(&mut self) -> ParseResult<'a, Vec<ImportObject>> {
         let ctx = ("import", self.peek_next_token().addr);
         let mut v: Vec<ImportObject> = vec![];
 
@@ -426,7 +426,7 @@ impl<'a> Parser<'a> {
 
     /// `<type_decl> ::= {<annotation>} <modifiers> ( <enum_decl> | <class_decl> |
     /// <interface_decl> | <annotation_decl> )`
-    pub(crate) fn type_decl(&mut self, prefix: QualifiedName<'a>) -> ParseResult<'a, Type<'a>> {
+    pub(crate) fn type_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
         let ctx = ("type_decl", self.peek_next_token().addr);
         // {<annotation>}
         let annotation = self.annotations().push_context(ctx)?;
