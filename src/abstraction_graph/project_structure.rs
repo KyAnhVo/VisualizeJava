@@ -2,9 +2,17 @@ use std::path::PathBuf;
 use std::{collections::HashMap, path::Path, rc::Rc};
 use std::{fs, io};
 
+use crate::parser::parser::Parser;
 use crate::types::{
-    AccessModifier, ImportObject, JavaFile, Member, Modifiers, QualifiedName, Type, TypeKind,
+    AccessModifier, ImportObject, JavaFile, Member, Modifiers, ParseErr, QualifiedName, Type,
+    TypeKind,
 };
+
+#[derive(Debug)]
+pub enum ProjErr {
+    IoErr(io::Error),
+    ParseErr(ParseErr),
+}
 
 #[derive(Debug, PartialEq)]
 pub struct FlattenType {
@@ -75,12 +83,16 @@ impl FlattenType {
 pub struct Project(HashMap<QualifiedName, Vec<FlattenType>>);
 
 impl Project {
-    pub fn new(dir: &str) -> io::Result<Self> {
-        let java_files = Self::get_java_files(PathBuf::from(dir).as_path())?;
+    pub fn new(dir: &str) -> Result<Self, ProjErr> {
+        let java_files = Self::get_java_files(PathBuf::from(dir).as_path())
+            .map_err(|err| ProjErr::IoErr(err))?;
+
         let hashmap: HashMap<QualifiedName, Vec<FlattenType>> = HashMap::new();
 
         for file in java_files {
-            let content = fs::read_to_string(file)?;
+            let content: String = fs::read_to_string(file).map_err(|err| ProjErr::IoErr(err))?;
+            let parser = Parser::new(&content).map_err(|err| ProjErr::ParseErr(err))?;
+            let ast = parser.parse().map_err(|err| ProjErr::ParseErr(err))?;
         }
 
         Ok(Self(hashmap))

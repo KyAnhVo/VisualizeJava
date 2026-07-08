@@ -9,13 +9,13 @@ impl<'a> Parser<'a> {
     ///     ["permits" <ref_type> {"," <ref_type>}]
     ///     <class_body>
     /// ```
-    pub(crate) fn class_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
+    pub(crate) fn class_decl(&mut self, prefix: QualifiedName) -> ParseResult<Type> {
         let ctx = ("class_decl", self.peek_next_token().addr);
         // "class"
         if self.get_next_token().token != Keyword("class") {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "class",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -27,7 +27,7 @@ impl<'a> Parser<'a> {
             token => {
                 return Err(ParseErrType::UnexpectedToken {
                     expected: "IDENTIFIER",
-                    got: vec![token],
+                    got: vec![token.to_owned_token()],
                 }
                 .to_stack_parse_err(self.get_current_token().addr, ctx));
             }

@@ -6,7 +6,7 @@ macro_rules! consume_token {
         let $expected = token.token else {
             return Err(ParseErrType::UnexpectedToken {
                 expected: $expected_str,
-                got: vec![token.token],
+                got: vec![token.token.to_owned_token()],
             }
             .to_stack_parse_err(token.addr, $ctx));
         };

@@ -5,7 +5,7 @@ use crate::types::*;
 // ----------------------- Annotation Nonterminals ---------------------
 // ---------------------------------------------------------------------
 impl<'a> Parser<'a> {
-    pub(crate) fn annotation_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
+    pub(crate) fn annotation_decl(&mut self, prefix: QualifiedName) -> ParseResult<Type> {
         let ctx = ("annotation_decl", self.peek_next_token().addr);
 
         // verify @interface
@@ -19,7 +19,7 @@ impl<'a> Parser<'a> {
         } else {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "IDENTIFIER",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         };
@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
     pub(crate) fn annotation_body(
         &mut self,
         prefix: QualifiedName,
-    ) -> ParseResult<'a, (TypeKind, TypeBody)> {
+    ) -> ParseResult<(TypeKind, TypeBody)> {
         let ctx = ("annotation_body", self.peek_next_token().addr);
         let mut annotation_elements: Vec<(String, RefType)> = vec![];
         let mut body: TypeBody = TypeBody {
@@ -106,7 +106,7 @@ impl<'a> Parser<'a> {
                             } else {
                                 return Err(ParseErrType::UnexpectedToken {
                                     expected: "IDENTIFIER",
-                                    got: vec![self.get_current_token().token],
+                                    got: vec![self.get_current_token().token.to_owned_token()],
                                 }
                                 .to_stack_parse_err(self.get_current_token().addr, ctx));
                             };
@@ -193,7 +193,7 @@ impl<'a> Parser<'a> {
                                 token => {
                                     return Err(ParseErrType::UnexpectedToken {
                                         expected: "LParen | =",
-                                        got: vec![token],
+                                        got: vec![token.to_owned_token()],
                                     }
                                     .to_stack_parse_err(self.get_current_token().addr, ctx));
                                 }
@@ -202,7 +202,7 @@ impl<'a> Parser<'a> {
                         (token1, token2) => {
                             return Err(ParseErrType::UnexpectedToken {
                                 expected: "type_decl | IDENTIFIER",
-                                got: vec![token1, token2],
+                                got: vec![token1.to_owned_token(), token2.to_owned_token()],
                             }
                             .to_stack_parse_err(self.peek_next_token().addr, ctx));
                         }
@@ -217,7 +217,7 @@ impl<'a> Parser<'a> {
                     // )
                     return Err(ParseErrType::UnexpectedToken {
                         expected: "@ | IDENTIFIER | RBrace",
-                        got: vec![token],
+                        got: vec![token.to_owned_token()],
                     }
                     .to_stack_parse_err(self.peek_next_token().addr, ctx));
                 }

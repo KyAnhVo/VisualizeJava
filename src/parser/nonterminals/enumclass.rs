@@ -6,13 +6,13 @@ use crate::types::*;
 // ---------------------------------------------------------------------
 
 impl<'a> Parser<'a> {
-    pub(crate) fn enum_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
+    pub(crate) fn enum_decl(&mut self, prefix: QualifiedName) -> ParseResult<Type> {
         let ctx = ("enum_decl", self.peek_next_token().addr);
 
         if self.get_next_token().token != Keyword("enum") {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "enum",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -24,7 +24,7 @@ impl<'a> Parser<'a> {
         } else {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "IDENTIFIER",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         };
@@ -73,13 +73,13 @@ impl<'a> Parser<'a> {
         &mut self,
         prefix: QualifiedName,
         classname: String,
-    ) -> ParseResult<'a, (Vec<String>, TypeBody)> {
+    ) -> ParseResult<(Vec<String>, TypeBody)> {
         let ctx = ("enum_body", self.peek_next_token().addr);
 
         if self.get_next_token().token != LBrace {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "LBrace",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -102,7 +102,7 @@ impl<'a> Parser<'a> {
                 } else {
                     return Err(ParseErrType::UnexpectedToken {
                         expected: "IDENTIFIER",
-                        got: vec![self.get_current_token().token],
+                        got: vec![self.get_current_token().token.to_owned_token()],
                     }
                     .to_stack_parse_err(self.get_current_token().addr, ctx));
                 }
@@ -125,7 +125,7 @@ impl<'a> Parser<'a> {
                 if self.get_next_token().token != RBrace {
                     return Err(ParseErrType::UnexpectedToken {
                         expected: "LBrace",
-                        got: vec![self.get_current_token().token],
+                        got: vec![self.get_current_token().token.to_owned_token()],
                     }
                     .to_stack_parse_err(self.get_current_token().addr, ctx));
                 }
@@ -134,7 +134,7 @@ impl<'a> Parser<'a> {
             token => {
                 return Err(ParseErrType::UnexpectedToken {
                     expected: "RBrace | Semicolon",
-                    got: vec![token],
+                    got: vec![token.to_owned_token()],
                 }
                 .to_stack_parse_err(self.get_current_token().addr, ctx));
             }

@@ -8,7 +8,7 @@ impl<'a> Parser<'a> {
         &mut self,
         prefix: QualifiedName,
         classname: String,
-    ) -> ParseResult<'a, TypeBody> {
+    ) -> ParseResult<TypeBody> {
         let ctx = ("members", self.peek_next_token().addr);
 
         // if the next token is not closing the body, then it must be still
@@ -106,7 +106,7 @@ impl<'a> Parser<'a> {
                         } else {
                             return Err(ParseErrType::UnexpectedToken {
                                 expected: "IDENTIFIER",
-                                got: vec![self.get_current_token().token],
+                                got: vec![self.get_current_token().token.to_owned_token()],
                             }
                             .to_stack_parse_err(self.get_current_token().addr, ctx));
                         };
@@ -136,7 +136,7 @@ impl<'a> Parser<'a> {
                             token => {
                                 return Err(ParseErrType::UnexpectedToken {
                                     expected: "Semicolon | LBrace",
-                                    got: vec![token],
+                                    got: vec![token.to_owned_token()],
                                 }
                                 .to_stack_parse_err(self.get_current_token().addr, ctx));
                             }
@@ -200,7 +200,7 @@ impl<'a> Parser<'a> {
                     } else {
                         Err(ParseErrType::UnexpectedToken {
                             expected: "IDENTIFIER",
-                            got: vec![Keyword("void")],
+                            got: vec![Keyword("void").to_owned_token()],
                         }
                         .to_stack_parse_err(self.get_current_token().addr, ctx))
                     };
@@ -209,7 +209,7 @@ impl<'a> Parser<'a> {
                     } else {
                         return Err(ParseErrType::UnexpectedToken {
                             expected: "IDENTIFIER",
-                            got: vec![self.get_current_token().token],
+                            got: vec![self.get_current_token().token.to_owned_token()],
                         }
                         .to_stack_parse_err(self.get_current_token().addr, ctx));
                     };
@@ -240,7 +240,7 @@ impl<'a> Parser<'a> {
                             } else {
                                 return Err(ParseErrType::UnexpectedToken {
                                     expected: "Semicolon | LBrace",
-                                    got: vec![self.peek_next_token().token],
+                                    got: vec![self.peek_next_token().token.to_owned_token()],
                                 }
                                 .to_stack_parse_err(self.peek_next_token().addr, ctx));
                             }
@@ -306,7 +306,7 @@ impl<'a> Parser<'a> {
                                 let Identifier(name) = self.get_next_token().token else {
                                     return Err(ParseErrType::UnexpectedToken {
                                         expected: "IDENTIFIER",
-                                        got: vec![self.get_current_token().token],
+                                        got: vec![self.get_current_token().token.to_owned_token()],
                                     }
                                     .to_stack_parse_err(self.get_current_token().addr, ctx));
                                 };
@@ -340,7 +340,7 @@ impl<'a> Parser<'a> {
                                     token => {
                                         return Err(ParseErrType::UnexpectedToken {
                                             expected: "Assignment | Semicolon | Comma",
-                                            got: vec![token],
+                                            got: vec![token.to_owned_token()],
                                         }
                                         .to_stack_parse_err(self.peek_next_token().addr, ctx));
                                     }
@@ -359,7 +359,7 @@ impl<'a> Parser<'a> {
                         token => {
                             return Err(ParseErrType::UnexpectedToken {
                                 expected: "LBrace | = | Comma",
-                                got: vec![token],
+                                got: vec![token.to_owned_token()],
                             }
                             .to_stack_parse_err(self.peek_next_token().addr, ctx));
                         }
@@ -369,7 +369,7 @@ impl<'a> Parser<'a> {
                 (token1, _) => {
                     return Err(ParseErrType::UnexpectedToken {
                         expected: "type_decl | type_param",
-                        got: vec![token1],
+                        got: vec![token1.to_owned_token()],
                     }
                     .to_stack_parse_err(self.peek_next_token().addr, ctx));
                 }

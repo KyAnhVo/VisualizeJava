@@ -1,4 +1,4 @@
-use crate::parser::token::Token;
+use crate::parser::token::{OwnedToken, Token};
 
 //-----------------------------------------------------------------------
 //------------------ ERROR / RESULT TYPES -------------------------------
@@ -12,10 +12,10 @@ pub trait GenericParseResult<T> {
 
 /// Error type for our parser
 #[derive(Debug, Clone)]
-pub enum ParseErrType<'a> {
+pub enum ParseErrType {
     UnexpectedToken {
         expected: &'static str,
-        got: Vec<Token<'a>>,
+        got: Vec<OwnedToken>,
     },
     UnexpectedEOF,
     LexerError,
@@ -25,8 +25,8 @@ pub enum ParseErrType<'a> {
     SemanticError(&'static str),
 }
 
-impl<'a> ParseErrType<'a> {
-    pub fn to_stack_parse_err(self, err_index: usize, ctx: (&'static str, usize)) -> ParseErr<'a> {
+impl ParseErrType {
+    pub fn to_stack_parse_err(self, err_index: usize, ctx: (&'static str, usize)) -> ParseErr {
         ParseErr {
             err: self,
             err_index,
@@ -37,15 +37,15 @@ impl<'a> ParseErrType<'a> {
 
 /// Stacked err uses err and pushes the stack's first index element up onto the stack.
 #[derive(Debug, Clone)]
-pub struct ParseErr<'a> {
-    pub err: ParseErrType<'a>,
+pub struct ParseErr {
+    pub err: ParseErrType,
     pub stack: Vec<(&'static str, usize)>,
     pub err_index: usize,
 }
 
 /// Result type for stackParseErr
-pub type ParseResult<'a, T> = Result<T, ParseErr<'a>>;
-impl<'a, T> GenericParseResult<T> for ParseResult<'a, T> {
+pub type ParseResult<T> = Result<T, ParseErr>;
+impl<'a, T> GenericParseResult<T> for ParseResult<T> {
     fn push_context(self, (ctx, index): (&'static str, usize)) -> Self {
         self.map_err(|mut e| {
             e.stack.push((ctx, index));

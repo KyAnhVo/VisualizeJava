@@ -10,13 +10,13 @@ impl<'a> Parser<'a> {
     ///         ["," "final" <annotations> <ref_type> "..." IDENTIFIER])
     /// ) ")"
     /// ```
-    pub(crate) fn arg_list(&mut self) -> ParseResult<'a, Vec<RefType>> {
+    pub(crate) fn arg_list(&mut self) -> ParseResult<Vec<RefType>> {
         let ctx = ("arg_list", self.peek_next_token().addr);
         // "("
         if self.get_next_token().token != LParen {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "LParen",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -46,7 +46,7 @@ impl<'a> Parser<'a> {
             let Identifier(_) = self.get_next_token().token else {
                 return Err(ParseErrType::UnexpectedToken {
                     expected: "IDENTIFIER",
-                    got: vec![self.get_current_token().token],
+                    got: vec![self.get_current_token().token.to_owned_token()],
                 }
                 .to_stack_parse_err(self.get_current_token().addr, ctx));
             };
@@ -101,7 +101,7 @@ impl<'a> Parser<'a> {
             if self.get_next_token().token != RParen {
                 return Err(ParseErrType::UnexpectedToken {
                     expected: "RParen",
-                    got: vec![self.get_current_token().token],
+                    got: vec![self.get_current_token().token.to_owned_token()],
                 }
                 .to_stack_parse_err(self.get_current_token().addr, ctx));
             }
@@ -111,7 +111,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<voidable_type> ::= "void" | <ref_type>`
-    pub(crate) fn voidable_type(&mut self) -> ParseResult<'a, VoidableType> {
+    pub(crate) fn voidable_type(&mut self) -> ParseResult<VoidableType> {
         let ctx = ("voidable_type", self.peek_next_token().addr);
         if self.peek_next_token().token == Keyword("void") {
             self.get_next_token();
@@ -122,7 +122,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<ref_type> ::= <annotations> <qualified_name> <type_arg_lst> { "[]" }`
-    pub(crate) fn ref_type(&mut self) -> ParseResult<'a, RefType> {
+    pub(crate) fn ref_type(&mut self) -> ParseResult<RefType> {
         let ctx = ("ref_type", self.peek_next_token().addr);
         // <qualified_name>
         self.annotations().push_context(ctx)?;
@@ -147,7 +147,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<type_arg_list> ::= "<" <type_arg> { "," <type_arg> } ">"`
-    pub(crate) fn type_arg_list(&mut self) -> ParseResult<'a, TypeArgList> {
+    pub(crate) fn type_arg_list(&mut self) -> ParseResult<TypeArgList> {
         let ctx = ("type_arg_list", self.peek_next_token().addr);
         // [ "<" ...
         if self.peek_next_token().token == LessThan {
@@ -172,7 +172,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<type_arg> ::= (<ref_type> | "?" [ ( "extends" | "super" ) <ref_type> ]`
-    pub(crate) fn type_arg(&mut self) -> ParseResult<'a, TypeArg> {
+    pub(crate) fn type_arg(&mut self) -> ParseResult<TypeArg> {
         let ctx = ("type_arg", self.peek_next_token().addr);
         self.annotations().push_context(ctx)?;
         if self.peek_next_token().token == QuestionMark {
@@ -193,7 +193,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<type_param_list> ::= ["<" <type_param> { "," <type_param> } ">"]`
-    pub(crate) fn type_param_list(&mut self) -> ParseResult<'a, TypeParamList> {
+    pub(crate) fn type_param_list(&mut self) -> ParseResult<TypeParamList> {
         let ctx = ("type_param_list", self.peek_next_token().addr);
         let mut list = TypeParamList(vec![]);
 
@@ -213,7 +213,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<type_param> ::= <annotations> IDENTIFIER ["extends" <ref_type> { "&" <ref_type> }]`
-    pub(crate) fn type_param(&mut self) -> ParseResult<'a, TypeParam> {
+    pub(crate) fn type_param(&mut self) -> ParseResult<TypeParam> {
         let ctx = ("type_param", self.peek_next_token().addr);
         self.annotations().push_context(ctx)?;
         let name = match self.get_next_token().token {
@@ -221,7 +221,7 @@ impl<'a> Parser<'a> {
             token => {
                 return Err(ParseErrType::UnexpectedToken {
                     expected: "IDENTIFIER",
-                    got: vec![token],
+                    got: vec![token.to_owned_token()],
                 }
                 .to_stack_parse_err(self.get_current_token().addr, ctx));
             }
@@ -249,7 +249,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<qualified_name> ::= IDENTIFIER {"." IDENTIFIER}`
-    pub(crate) fn qualified_name(&mut self) -> ParseResult<'a, QualifiedName> {
+    pub(crate) fn qualified_name(&mut self) -> ParseResult<QualifiedName> {
         let ctx = ("qualified_name", self.peek_next_token().addr);
         let mut name = QualifiedName(vec![]);
 
@@ -260,7 +260,7 @@ impl<'a> Parser<'a> {
         } else {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "IDENTIFIER",
-                got: vec![token.token],
+                got: vec![token.token.to_owned_token()],
             }
             .to_stack_parse_err(token.addr, ctx));
         }
@@ -284,7 +284,7 @@ impl<'a> Parser<'a> {
     }
 
     /// `<annotations> ::= {<annotations>}`
-    pub(crate) fn annotations(&mut self) -> ParseResult<'a, Vec<Annotation>> {
+    pub(crate) fn annotations(&mut self) -> ParseResult<Vec<Annotation>> {
         let ctx = ("annotations", self.peek_next_token().addr);
         let mut v: Vec<Annotation> = vec![];
         while self.peek_next_token().token == At
@@ -297,19 +297,19 @@ impl<'a> Parser<'a> {
 
     /// `<annotation> ::= "@" <qualified_name> [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}"
     /// )]`
-    pub(crate) fn annotation(&mut self) -> ParseResult<'a, Annotation> {
+    pub(crate) fn annotation(&mut self) -> ParseResult<Annotation> {
         let ctx = ("annotation", self.peek_next_token().addr);
         if self.get_next_token().token != At {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "@",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
         if self.peek_next_token().token == Keyword("interface") {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "IDENTIFIER",
-                got: vec![Keyword("interface")],
+                got: vec![Keyword("interface").to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -364,7 +364,7 @@ impl<'a> Parser<'a> {
     /// `<modifiers> ::= { "public" | "private" | "protected" | "abstract" | "static" | "final" |
     /// "strictfp" | "synchronized" | "native" | "transient" | "volatile" | "default" | "sealed" |
     /// "non-sealed" }`
-    pub fn modifiers(&mut self) -> ParseResult<'a, Modifiers> {
+    pub fn modifiers(&mut self) -> ParseResult<Modifiers> {
         let ctx = ("modifiers", self.peek_next_token().addr);
 
         let mut modifiers = Modifiers {
@@ -377,7 +377,7 @@ impl<'a> Parser<'a> {
                 if modifiers.access_modifier != AccessModifier::Default {
                     return Err(ParseErrType::UnexpectedToken {
                         expected: "non-access modifier",
-                        got: vec![Keyword(s)],
+                        got: vec![Keyword(s).to_owned_token()],
                     }
                     .to_stack_parse_err(self.peek_next_token().addr, ctx));
                 }

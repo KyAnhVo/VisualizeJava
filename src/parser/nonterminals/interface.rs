@@ -12,14 +12,14 @@ impl<'a> Parser<'a> {
     ///         ["permits" <ref_type> {"," <ref_type>}]
     ///         <interface_body>
     /// ```
-    pub(crate) fn interface_decl(&mut self, prefix: QualifiedName) -> ParseResult<'a, Type> {
+    pub(crate) fn interface_decl(&mut self, prefix: QualifiedName) -> ParseResult<Type> {
         let ctx = ("interface_decl", self.peek_next_token().addr);
 
         // "interface" IDENFITIER <type_param_list>
         if self.get_next_token().token != Keyword("interface") {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "interface",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -30,7 +30,7 @@ impl<'a> Parser<'a> {
         } else {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "IDENTIFIER",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         };
@@ -81,14 +81,14 @@ impl<'a> Parser<'a> {
         &mut self,
         prefix: QualifiedName,
         classname: String,
-    ) -> ParseResult<'a, TypeBody> {
+    ) -> ParseResult<TypeBody> {
         let ctx = ("interface_body", self.peek_next_token().addr);
 
         // typical "{" <members> "}"
         if self.get_next_token().token != LBrace {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "LBrace",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -98,7 +98,7 @@ impl<'a> Parser<'a> {
         if self.get_next_token().token != RBrace {
             return Err(ParseErrType::UnexpectedToken {
                 expected: "RBrace",
-                got: vec![self.get_current_token().token],
+                got: vec![self.get_current_token().token.to_owned_token()],
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         }
@@ -148,7 +148,7 @@ mod test {
         ",
         )
         .unwrap();
-        let res = parser.type_decl(QualifiedName(vec![])).unwrap();
+        let _res = parser.type_decl(QualifiedName(vec![])).unwrap();
         // println!("res:\n {:#?}", res);
     }
 }
