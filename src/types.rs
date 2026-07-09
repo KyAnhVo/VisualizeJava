@@ -1,4 +1,4 @@
-use crate::parser::token::{OwnedToken, Token};
+use crate::parser::token::OwnedToken;
 
 //-----------------------------------------------------------------------
 //------------------ ERROR / RESULT TYPES -------------------------------
@@ -59,7 +59,7 @@ impl<'a, T> GenericParseResult<T> for ParseResult<T> {
 /// - Extends(A) = `? extends A`
 /// - Super(A) = `? super A`
 /// - Wildcard = `?`
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TypeArg {
     Is(RefType),
     Extends(RefType),
@@ -69,16 +69,16 @@ pub enum TypeArg {
 
 /// A TypeArgList is a list of type args,
 /// `<A, B, C>` is translated to `vec![A, B, C]`
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeArgList(pub Vec<TypeArg>);
 
 /// A qualified name is a dotted name, e.g. `java.util.ArrayList`
-#[derive(Debug, PartialEq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct QualifiedName(pub Vec<String>);
 
 /// A struct to represent type usages with generic,
 /// e.g. `java.util.Hashtable<Integer, ? extends com.util.MyClass>`
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct RefType {
     pub name: QualifiedName,
     pub type_arg_list: TypeArgList,
@@ -86,33 +86,33 @@ pub struct RefType {
 }
 
 /// An annotation is a string slice of one annotation for some type/property/method
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Annotation {
     pub name: QualifiedName,
     pub s: String,
 }
 
 /// A voidable type is an output for a function.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum VoidableType {
     Void,
     RefType(RefType),
 }
 
 /// A list of parameters for generic types
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeParamList(pub Vec<TypeParam>);
 
 /// A type param is an input type (class `BinaryTree<K Comparable<K>, V>`,
 /// then `<K extends Comparable<K>>` and `<V>` are type params)
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeParam {
     pub name: String,
     pub extends_from: Vec<RefType>,
 }
 
 /// A member can be a method or a property.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MemberKind {
     Property {
         reftype: RefType,
@@ -130,7 +130,7 @@ pub enum MemberKind {
     },
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Member {
     pub name: String,
     pub member_kind: MemberKind,
@@ -139,7 +139,7 @@ pub struct Member {
 }
 
 /// A typekind is an enum of different kinds of type
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TypeKind {
     Class {
         inherit_class: Option<RefType>,
@@ -158,14 +158,14 @@ pub enum TypeKind {
 }
 
 /// A type's body contains its members (not subtypes) and its subtypes.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeBody {
     pub members: Vec<Member>,
     pub subtypes: Vec<Type>,
 }
 
 /// A type can be a class/enum/interface/annotation.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Type {
     pub name: QualifiedName,
     pub modifiers: Modifiers,
@@ -174,7 +174,7 @@ pub struct Type {
     pub annotation: Vec<Annotation>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ImportObject {
     pub name: QualifiedName,
     pub is_static: bool,
@@ -189,13 +189,13 @@ pub enum AccessModifier {
     Public,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Modifiers {
     pub modifiers: Vec<String>,
     pub access_modifier: AccessModifier,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct JavaFile {
     /// None means this is in the default package
     pub package_name: QualifiedName,

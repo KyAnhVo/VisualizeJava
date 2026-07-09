@@ -87,12 +87,15 @@ impl Project {
         let java_files = Self::get_java_files(PathBuf::from(dir).as_path())
             .map_err(|err| ProjErr::IoErr(err))?;
 
-        let hashmap: HashMap<QualifiedName, Vec<FlattenType>> = HashMap::new();
+        let mut hashmap: HashMap<QualifiedName, Vec<FlattenType>> = HashMap::new();
 
         for file in java_files {
             let content: String = fs::read_to_string(file).map_err(|err| ProjErr::IoErr(err))?;
-            let parser = Parser::new(&content).map_err(|err| ProjErr::ParseErr(err))?;
-            let ast = parser.parse().map_err(|err| ProjErr::ParseErr(err))?;
+            let ast = Parser::parse(&content).map_err(|err| ProjErr::ParseErr(err))?;
+            hashmap
+                .entry(ast.package_name.clone())
+                .or_default()
+                .append(&mut FlattenType::from_file(ast));
         }
 
         Ok(Self(hashmap))
@@ -127,7 +130,7 @@ mod test {
 
     #[test]
     fn test_type_flattening() {
-        let parser = Parser::new(
+        let file = Parser::parse(
             "
             package com.example;
             public class BinaryTree {
@@ -137,10 +140,16 @@ mod test {
                 }
                 public Node root;
             }
+            class Graph {
+                public static class Node {
+                    public String id;
+                    public Vector<Node> to_nodes;
+                }
+                public HashMap<String, Node> nodes;
+            }
             ",
-        );
-
-        let file = parser.unwrap().parse().unwrap();
+        )
+        .unwrap();
         let mut res: Vec<FlattenType> = vec![];
         let import_objs: Rc<[ImportObject]> = Rc::from(file.imported_objects);
         for typeclass in file.type_decls {
@@ -161,6 +170,23 @@ mod test {
                 "example".to_owned(),
                 "BinaryTree".to_owned(),
                 "Node".to_owned()
+            ])
+        );
+        assert_eq!(
+            res[2].name,
+            QualifiedName(vec![
+                "com".to_owned(),
+                "example".to_owned(),
+                "Graph".to_owned(),
+            ])
+        );
+        assert_eq!(
+            res[3].name,
+            QualifiedName(vec![
+                "com".to_owned(),
+                "example".to_owned(),
+                "Graph".to_owned(),
+                "Node".to_owned(),
             ])
         );
         assert_eq!(res[0].members[0].name, "root");

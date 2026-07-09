@@ -60,8 +60,9 @@ impl<'a> Parser<'a> {
 
     /// Parse the java file, return the structure of the file which can be
     /// thought of as a specialized AST
-    pub fn parse(mut self) -> ParseResult<JavaFile> {
-        self.java_file().push_context(("java_file", 0))
+    pub fn parse(s: &'a str) -> ParseResult<JavaFile> {
+        let mut parser = Self::new(s)?;
+        parser.java_file().push_context(("java_file", 0))
     }
 
     pub(super) fn get_next_token(&mut self) -> IndexedToken<'a> {
