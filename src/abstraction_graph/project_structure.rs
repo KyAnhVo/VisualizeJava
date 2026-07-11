@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::{collections::HashMap, path::Path, rc::Rc};
 use std::{fs, io};
 
-use crate::parser::parser::Parser;
 use crate::types::{
     AccessModifier, ImportObject, JavaFile, Member, Modifiers, ParseErr, QualifiedName, Type,
     TypeKind,
@@ -24,33 +23,33 @@ pub struct FlattenType {
 }
 
 impl FlattenType {
-    pub fn from_file(file: JavaFile) -> Vec<Self> {
-        let import_objs: Rc<[ImportObject]> = Rc::from(file.imported_objects);
+    pub fn from_file(file: &JavaFile) -> Vec<Self> {
+        let import_objs: Rc<[ImportObject]> = Rc::from(file.imported_objects.clone());
         let mut res: Vec<Self> = vec![];
-        for typeclass in file.type_decls {
-            res.append(&mut Self::from_type(typeclass, import_objs.clone()));
+        for typeclass in file.type_decls.iter() {
+            res.append(&mut Self::from_type(&typeclass, import_objs.clone()));
         }
         res
     }
 
     /// Flattens a type into a vector of types
-    pub fn from_type(typeclass: Type, import_objs: Rc<[ImportObject]>) -> Vec<Self> {
+    pub fn from_type(typeclass: &Type, import_objs: Rc<[ImportObject]>) -> Vec<Self> {
         let import_objs: Rc<[ImportObject]> = Rc::from(import_objs);
         Self::recursive_from_type(typeclass, import_objs.clone(), AccessModifier::Public)
     }
 
     fn recursive_from_type(
-        typeclass: Type,
+        typeclass: &Type,
         import_objs: Rc<[ImportObject]>,
         min_visibility: AccessModifier,
     ) -> Vec<Self> {
-        let name = typeclass.name;
+        let name = typeclass.name.clone();
         let modifiers = Modifiers {
-            modifiers: typeclass.modifiers.modifiers,
+            modifiers: typeclass.modifiers.modifiers.clone(),
             access_modifier: typeclass.modifiers.access_modifier.min(min_visibility),
         };
-        let members: Rc<[Member]> = Rc::from(typeclass.body.members);
-        let type_kind = typeclass.type_kind;
+        let members: Rc<[Member]> = Rc::from(typeclass.body.members.clone());
+        let type_kind = typeclass.type_kind.clone();
 
         let flatten_type = Self {
             name,
@@ -64,7 +63,7 @@ impl FlattenType {
         let mut inner_types: Vec<Self> = typeclass
             .body
             .subtypes
-            .into_iter()
+            .iter()
             .map(|typeclass| {
                 Self::recursive_from_type(typeclass, import_objs.clone(), modifiers.access_modifier)
             })
@@ -83,35 +82,17 @@ impl FlattenType {
 pub struct Project(HashMap<QualifiedName, Vec<FlattenType>>);
 
 impl Project {
-    pub fn new(dir: &str) -> Result<Self, ProjErr> {
-        let java_files = Self::get_java_files(PathBuf::from(dir).as_path())
-            .map_err(|err| ProjErr::IoErr(err))?;
-
-        let mut hashmap: HashMap<QualifiedName, Vec<FlattenType>> = HashMap::new();
-
-        for file in java_files {
-            let content: String = fs::read_to_string(file).map_err(|err| ProjErr::IoErr(err))?;
-            let ast = Parser::parse(&content).map_err(|err| ProjErr::ParseErr(err))?;
-            hashmap
-                .entry(ast.package_name.clone())
-                .or_default()
-                .append(&mut FlattenType::from_file(ast));
-        }
-
-        Ok(Self(hashmap))
-    }
-
-    fn get_java_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
-        if !dir.is_dir() {
-            if dir.extension().is_some_and(|x| x.eq("java")) {
-                return Ok(vec![dir.to_path_buf()]);
+    fn get_java_files(root_dir: &Path) -> io::Result<Vec<PathBuf>> {
+        if !root_dir.is_dir() {
+            if root_dir.extension().is_some_and(|x| x.eq("java")) {
+                return Ok(vec![root_dir.to_path_buf()]);
             } else {
                 return Ok(vec![]);
             }
         }
 
         let mut v: Vec<PathBuf> = vec![];
-        let entries = fs::read_dir(dir)?;
+        let entries = fs::read_dir(root_dir)?;
         for entry in entries {
             let entry = entry?;
             let path = entry.path();
@@ -152,7 +133,7 @@ mod test {
         .unwrap();
         let mut res: Vec<FlattenType> = vec![];
         let import_objs: Rc<[ImportObject]> = Rc::from(file.imported_objects);
-        for typeclass in file.type_decls {
+        for typeclass in file.type_decls.iter() {
             res.append(&mut FlattenType::from_type(typeclass, import_objs.clone()));
         }
         assert_eq!(

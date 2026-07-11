@@ -1,8 +1,10 @@
 # Grammar for Java that we will be using (also used as checklist hehe)
 
+
 #### Note:
 Donzo     == `[x]`
 Not done  == `[ ]`
+Also checklist out of date
 
 ### util stuffs that everything uses
 ```
