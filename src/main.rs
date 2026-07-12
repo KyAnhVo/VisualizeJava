@@ -1,4 +1,5 @@
 pub mod abstraction_graph;
+pub mod name_resolution;
 pub mod parser;
 pub mod types;
 

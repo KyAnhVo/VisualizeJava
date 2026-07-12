@@ -74,35 +74,6 @@ impl FlattenType {
     }
 }
 
-/// A Project is an wrapper for a hashmap
-/// ```
-/// f: QualifiedName -> Rc<[FlattenType]>
-/// ```
-/// where semantically it maps a package name to all of its declared types.
-pub struct Project(HashMap<QualifiedName, Vec<FlattenType>>);
-
-impl Project {
-    fn get_java_files(root_dir: &Path) -> io::Result<Vec<PathBuf>> {
-        if !root_dir.is_dir() {
-            if root_dir.extension().is_some_and(|x| x.eq("java")) {
-                return Ok(vec![root_dir.to_path_buf()]);
-            } else {
-                return Ok(vec![]);
-            }
-        }
-
-        let mut v: Vec<PathBuf> = vec![];
-        let entries = fs::read_dir(root_dir)?;
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            v.append(&mut Self::get_java_files(&path)?);
-        }
-
-        Ok(v)
-    }
-}
-
 #[cfg(test)]
 mod test {
     use crate::parser::parser::Parser;
