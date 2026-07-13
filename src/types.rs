@@ -116,6 +116,7 @@ pub struct TypeParam {
 pub enum MemberKind {
     Property {
         reftype: RefType,
+        arr_dim: u8,
     },
     Method {
         type_param_list: TypeParamList,

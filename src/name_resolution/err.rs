@@ -1,21 +1,16 @@
-use std::io;
+use std::{io, path::PathBuf};
 
 use crate::types::ParseErr;
 
+#[derive(Debug)]
 pub enum ReadProjectErr {
     IoErr(io::Error),
-    ParseErr(ParseErr),
+    ParseErr(ParseErr, PathBuf),
     SemanticErr(&'static str),
 }
 
 impl From<io::Error> for ReadProjectErr {
     fn from(e: io::Error) -> Self {
         ReadProjectErr::IoErr(e)
-    }
-}
-
-impl From<ParseErr> for ReadProjectErr {
-    fn from(e: ParseErr) -> Self {
-        Self::ParseErr(e)
     }
 }

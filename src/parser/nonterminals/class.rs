@@ -79,6 +79,9 @@ impl<'a> Parser<'a> {
             .members(name.clone(), name.0.last().unwrap().to_owned())
             .push_context(ctx)?;
         consume_token!(self, ctx, RBrace, "RBrace");
+        while self.peek_next_token().token == Semicolon {
+            self.get_next_token();
+        }
 
         // use default modifiers and annotation
         let typeclass = Type {

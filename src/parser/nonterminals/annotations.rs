@@ -57,6 +57,10 @@ impl<'a> Parser<'a> {
                     self.get_next_token();
                     break;
                 }
+                Semicolon => {
+                    self.get_next_token();
+                    continue;
+                }
                 At | Keyword(_) | Identifier(_) => {
                     let annotations = self.annotations().push_context(ctx)?;
                     self.modifiers().push_context(ctx)?; // dont care for this, just for safety.
@@ -145,7 +149,10 @@ impl<'a> Parser<'a> {
                                     consume_token!(self, ctx, Semicolon, "Semicolon");
                                     body.members.push(Member {
                                         name: name.0.last().cloned().unwrap(),
-                                        member_kind: MemberKind::Property { reftype: typeclass },
+                                        member_kind: MemberKind::Property {
+                                            reftype: typeclass,
+                                            arr_dim: 0,
+                                        },
                                         annotations,
                                         modifiers,
                                     });
@@ -224,6 +231,9 @@ impl<'a> Parser<'a> {
             }
         }
 
+        while self.peek_next_token().token == Semicolon {
+            self.get_next_token();
+        }
         Ok((
             TypeKind::Annotation {
                 annotation_properties: annotation_elements,

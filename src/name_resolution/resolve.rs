@@ -1,75 +1,13 @@
-/** resolve.rs
-* The idea of this file is to resolve name for a project
-*
-* Before the algorithm, we first understand how Java does its name resolution. Here is the order:
-* - Type declared in the same file
-* - Single type import
-* - Type declared in the same package
-* - Wildcard import
-* - java.lang default import
-*
-* So the idea is that we have a scope table such that:
-* - Scope[name] = (package, typename)
-* And we set up in the reverse direction:
-* - Put java.lang classes in first
-* - Put wildcard imports in
-* - Put types declared in the same package in,
-* - Put single type imports in
-* - Put types declared in the same file in.
-* For which put in means fill in if not there, or override if there.
-* For example, take the following code:
-* ```
-* package com.current; // where we have a different file of same package with Character class
-* import com.example.util.*; // have a Character class
-* import com.example.npc.Character;
-* public class Character {...}
-* ```
-* We consider Scope["Vector"]:
-* 1. "Character"
-* 2. java.lang.Character
-* 3. com.example.util.Character
-* 4. com.example.npc.Character;
-* 5. com.example.npc.Character; (current file)
-* NOTE 1: Although, for package building, we would sweep over the files in the same package
-* and verify that no 2 top level classes of a class have the same name so 4 and 5 are
-* not necessarily clashing / or raise error right away.
-* NOTE 2: Also, we would not consider java.lang since it is over our scope and we do not want
-* to draw abstraction/dependency edges to and from java.lang and anything not inside project
-* file.
-*
-*
-* Here is the pseudocode for the algo algorithm:
-*
-* Phase 1: Flatten
-* For each file:
-* - Recursively flatten the types
-* - Put the file with all types at 1st level (so file[type].members is empty) into its
-*   corresponding package: Map<Package Name -> Vector<Files>>
-*
-* Phas 2: Name Resolution
-* For each file:
-* - First, we construct Scope as described above.
-* - Then we do ResolveType recursively.
-* ResolveType:
-* - Resolve parent type
-* - Put generic type of class in Scope
-* - Sweep over parent class inner types, put parent class protected/public inner types into scope.
-* - Sweep over current class inner types, put them into Scope.
-* - For each member (function / variable):
-*   - Resolve types for parameters/etc.
-* - For each subtype:
-*   ResolveSubtype(child)
-*/
 use crate::name_resolution::err::ReadProjectErr;
 use crate::name_resolution::file_util::{Stack, get_java_files_recursive};
 use crate::parser;
 use crate::types::{
     AccessModifier, ImportObject, JavaFile, Member, Modifiers, QualifiedName, Type, TypeKind,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
-use std::{fs, io};
 
 #[derive(Debug)]
 pub(crate) struct FlattenProject(HashMap<QualifiedName, FlattenPackage>);
@@ -79,7 +17,9 @@ impl FlattenProject {
         let files = get_java_files_recursive(&root_dir.to_path_buf(), &root_dir.to_path_buf())?;
         let mut proj: Self = Self(HashMap::new());
         for (path, _) in files.into_iter() {
-            let ast = parser::parser::Parser::parse(fs::read_to_string(path).unwrap().as_str())?;
+            let ast =
+                parser::parser::Parser::parse(fs::read_to_string(path.clone()).unwrap().as_str())
+                    .map_err(|e| ReadProjectErr::ParseErr(e, path))?;
             let file = FlattenFile::from_file(&ast)?;
             match proj.0.get_mut(&ast.package_name) {
                 None => {
@@ -167,20 +107,6 @@ impl FlattenFile {
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct FlattenPackage(Vec<FlattenFile>);
-#[derive(Debug, PartialEq)]
-pub(crate) struct PackagedTypeName {
-    pub package: QualifiedName,
-    pub typename: QualifiedName,
-}
-
-impl PackagedTypeName {
-    /// Returns the fully qualified name of the packaged type
-    pub fn fqn(&self) -> QualifiedName {
-        let mut v = self.package.0.clone();
-        v.extend(self.typename.0.clone());
-        QualifiedName(v)
-    }
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FlattenType {
@@ -193,7 +119,7 @@ pub struct FlattenType {
 
 #[derive(Debug)]
 struct Scope {
-    map: HashMap<QualifiedName, Stack<PackagedTypeName>>,
+    map: HashMap<QualifiedName, Stack<QualifiedName>>,
 }
 
 impl Scope {
@@ -203,17 +129,17 @@ impl Scope {
         }
     }
 
-    fn push(&mut self, name: &QualifiedName, fqn: PackagedTypeName) {
+    fn push(&mut self, name: &QualifiedName, fqn: QualifiedName) {
         if self.map.contains_key(name) {
             self.map.get_mut(name).unwrap().push(fqn);
         } else {
-            let mut stack = Stack::<PackagedTypeName>::new();
+            let mut stack = Stack::<QualifiedName>::new();
             stack.push(fqn);
             self.map.insert(name.clone(), stack);
         }
     }
 
-    fn pop(&mut self, name: &QualifiedName) -> Option<PackagedTypeName> {
+    fn pop(&mut self, name: &QualifiedName) -> Option<QualifiedName> {
         if self.map.contains_key(name) && !self.map.get(name).unwrap().is_empty() {
             self.map.get_mut(name).unwrap().pop()
         } else {
@@ -221,7 +147,7 @@ impl Scope {
         }
     }
 
-    fn pop_and_check(&mut self, name: &QualifiedName, fqn: PackagedTypeName) -> bool {
+    fn pop_and_check(&mut self, name: &QualifiedName, fqn: QualifiedName) -> bool {
         self.pop(name).is_some_and(|top_fqn| fqn == top_fqn)
     }
 }
@@ -232,6 +158,8 @@ impl Scope {
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
     use crate::parser::parser::Parser;
 
     use super::*;
@@ -301,5 +229,13 @@ mod test {
         assert_eq!(res[1].members[0].name, "id");
         assert_eq!(res[1].members[1].name, "left");
         assert_eq!(res[1].members[2].name, "right");
+    }
+
+    #[test]
+    fn test_flatten_proj() {
+        println!(
+            "{:#?}",
+            FlattenProject::new(PathBuf::from_str("test_target_2").unwrap())
+        );
     }
 }

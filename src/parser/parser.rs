@@ -403,13 +403,7 @@ impl<'a> Parser<'a> {
                 _ => false,
             };
 
-            if self.get_next_token().token != Semicolon {
-                return Err(ParseErrType::UnexpectedToken {
-                    expected: "Semicolon",
-                    got: vec![self.get_current_token().token.to_owned_token()],
-                }
-                .to_stack_parse_err(self.get_current_token().addr, ctx));
-            }
+            consume_token!(self, ctx, Semicolon, "Semicolon");
 
             v.push(ImportObject {
                 name,
@@ -425,6 +419,11 @@ impl<'a> Parser<'a> {
     /// <interface_decl> | <annotation_decl> )`
     pub(crate) fn type_decl(&mut self, prefix: QualifiedName) -> ParseResult<Type> {
         let ctx = ("type_decl", self.peek_next_token().addr);
+
+        while self.peek_next_token().token == Semicolon {
+            self.get_next_token();
+        }
+
         // {<annotation>}
         let annotation = self.annotations().push_context(ctx)?;
 
@@ -448,6 +447,9 @@ impl<'a> Parser<'a> {
         typeclass.modifiers = modifiers;
         typeclass.annotation = annotation;
 
+        while self.peek_next_token().token == Semicolon {
+            self.get_next_token();
+        }
         Ok(typeclass)
     }
 }
@@ -480,5 +482,21 @@ mod test {
         parser.get_next_token();
         parser.qualified_name().unwrap();
         assert!(!parser.check_end_assignment_comma().unwrap());
+    }
+
+    fn test_parser(src: &str) {
+        let java_file = std::fs::read_to_string(src).unwrap();
+        let ast = Parser::parse(&java_file).unwrap();
+        // println!("{:#?}", ast);
+    }
+
+    #[test]
+    fn test_parser_1() {
+        test_parser("test_target/legacy/properties/DataSourcePropertiesBackwardCompatibility.java");
+    }
+
+    #[test]
+    fn test_parser_2() {
+        test_parser("test_target/legacy/properties/PortalProperties.java");
     }
 }

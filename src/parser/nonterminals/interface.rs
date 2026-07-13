@@ -116,6 +116,9 @@ impl<'a> Parser<'a> {
             }
         }
 
+        while self.peek_next_token().token == Semicolon {
+            self.get_next_token();
+        }
         Ok(body)
     }
 }
@@ -148,7 +151,7 @@ mod test {
         ",
         )
         .unwrap();
-        let _res = parser.type_decl(QualifiedName(vec![])).unwrap();
+        let res = parser.type_decl(QualifiedName(vec![])).unwrap();
         // println!("res:\n {:#?}", res);
     }
 }

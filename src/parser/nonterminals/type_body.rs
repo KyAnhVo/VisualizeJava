@@ -25,6 +25,11 @@ impl<'a> Parser<'a> {
                     .to_stack_parse_err(self.get_current_token().addr, ctx));
             }
 
+            if self.peek_next_token().token == Semicolon {
+                self.get_next_token();
+                continue;
+            }
+
             let annotations: Vec<Annotation> = self.annotations().push_context(ctx)?;
             let modifiers = self.modifiers().push_context(ctx)?;
 
@@ -67,9 +72,11 @@ impl<'a> Parser<'a> {
                 }
                 // Members: method with type_param
                 (LessThan, _) => {
-                    // <type_param_list> <voidable_type> IDENTIFIER <arg_list> <method_body>
+                    // <type_param_list> <voidable_type> IDENTIFIER <type_arg_list> <arg_list> <method_body>
                     let type_param_list = self.type_param_list().push_context(ctx)?;
-                    if self.peek_next_token().token == Identifier(classname.as_str()) {
+                    if self.peek_next_token().token == Identifier(classname.as_str())
+                        && self.peek_token_offset(1).token == LParen
+                    {
                         let name = match self.get_next_token().token {
                             Identifier(s) => s,
                             _ => unreachable!(),
@@ -256,7 +263,17 @@ impl<'a> Parser<'a> {
                                 modifiers,
                             });
                         }
-                        Assignment("=") | Comma | Semicolon => {
+                        Assignment("=") | Comma | Semicolon | LBracket => {
+                            let arr_dim = {
+                                let mut x = reftype.clone()?.arr_dim;
+                                while self.peek_next_token().token == LBracket {
+                                    consume_token!(self, ctx, LBracket, "LBracket");
+                                    consume_token!(self, ctx, RBracket, "RBracket");
+                                    x += 1;
+                                }
+                                x
+                            };
+
                             // resolve assignment
                             // = <skip_assignment> {"," IDENTIFIER ["=" <skip_assignment>]} ";"
 
@@ -274,7 +291,6 @@ impl<'a> Parser<'a> {
                                             self.skip_brace(LBracket, RBracket).push_context(ctx)?
                                         }
                                         Semicolon => {
-                                            self.get_next_token();
                                             break;
                                         }
                                         Comma
@@ -295,13 +311,15 @@ impl<'a> Parser<'a> {
                                 name: name.to_owned(),
                                 member_kind: MemberKind::Property {
                                     reftype: reftype.clone()?,
+                                    arr_dim,
                                 },
                                 annotations: annotations.clone(),
                                 modifiers: modifiers.clone(),
                             });
 
                             // {"," IDENTIFIER ["=" <skip_assignment>]} ";"
-                            while self.get_next_token().token == Comma {
+                            while self.peek_next_token().token == Comma {
+                                self.get_next_token();
                                 // IDENTIFIER
                                 let Identifier(name) = self.get_next_token().token else {
                                     return Err(ParseErrType::UnexpectedToken {
@@ -309,6 +327,16 @@ impl<'a> Parser<'a> {
                                         got: vec![self.get_current_token().token.to_owned_token()],
                                     }
                                     .to_stack_parse_err(self.get_current_token().addr, ctx));
+                                };
+
+                                let arr_dim = {
+                                    let mut x = reftype.clone()?.arr_dim;
+                                    while self.peek_next_token().token == LBracket {
+                                        self.get_next_token();
+                                        consume_token!(self, ctx, RBracket, "RBracket");
+                                        x += 1;
+                                    }
+                                    x
                                 };
 
                                 match self.peek_next_token().token {
@@ -350,11 +378,13 @@ impl<'a> Parser<'a> {
                                     name: name.to_owned(),
                                     member_kind: MemberKind::Property {
                                         reftype: reftype.clone()?,
+                                        arr_dim,
                                     },
                                     annotations: annotations.clone(),
                                     modifiers: modifiers.clone(),
                                 });
                             }
+                            consume_token!(self, ctx, Semicolon, "Semicolon");
                         }
                         token => {
                             return Err(ParseErrType::UnexpectedToken {
