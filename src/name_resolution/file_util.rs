@@ -2,6 +2,37 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+/// implements a stack. Purely for semantic reasons.
+#[derive(Debug)]
+pub(crate) struct Stack<T> {
+    item: Vec<T>,
+}
+impl<T> Stack<T> {
+    pub(crate) fn new() -> Self {
+        Self { item: Vec::new() }
+    }
+
+    pub(crate) fn push(&mut self, obj: T) {
+        self.item.push(obj);
+    }
+
+    pub(crate) fn pop(&mut self) -> Option<T> {
+        self.item.pop()
+    }
+
+    pub(crate) fn peek(&self) -> Option<&T> {
+        self.item.last()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.item.is_empty()
+    }
+}
+impl<T> Default for Stack<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 pub(crate) fn get_java_files_recursive(
     dir: &Path,
     root_dir: &Path,

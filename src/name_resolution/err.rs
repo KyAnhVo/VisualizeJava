@@ -5,6 +5,7 @@ use crate::types::ParseErr;
 pub enum ReadProjectErr {
     IoErr(io::Error),
     ParseErr(ParseErr),
+    SemanticErr(&'static str),
 }
 
 impl From<io::Error> for ReadProjectErr {

@@ -61,12 +61,12 @@
 *   ResolveSubtype(child)
 */
 use crate::name_resolution::err::ReadProjectErr;
-use crate::name_resolution::file_util::get_java_files_recursive;
+use crate::name_resolution::file_util::{Stack, get_java_files_recursive};
 use crate::parser;
 use crate::types::{
     AccessModifier, ImportObject, JavaFile, Member, Modifiers, QualifiedName, Type, TypeKind,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::{fs, io};
@@ -80,7 +80,7 @@ impl FlattenProject {
         let mut proj: Self = Self(HashMap::new());
         for (path, _) in files.into_iter() {
             let ast = parser::parser::Parser::parse(fs::read_to_string(path).unwrap().as_str())?;
-            let file = FlattenFile::from_file(&ast);
+            let file = FlattenFile::from_file(&ast)?;
             match proj.0.get_mut(&ast.package_name) {
                 None => {
                     proj.0
@@ -102,16 +102,25 @@ pub(crate) struct Package {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct FlattenFile(Vec<FlattenType>);
+pub(crate) struct FlattenFile(HashMap<QualifiedName, FlattenType>);
 
 impl FlattenFile {
-    pub fn from_file(file: &JavaFile) -> Self {
+    pub fn from_file(file: &JavaFile) -> Result<Self, ReadProjectErr> {
         let import_objs: Rc<[ImportObject]> = Rc::from(file.imported_objects.clone());
-        let mut res: Vec<FlattenType> = vec![];
+        let mut res: HashMap<QualifiedName, FlattenType> = HashMap::new();
         for typeclass in file.type_decls.iter() {
-            res.append(&mut Self::from_type(&typeclass, import_objs.clone()));
+            let flatten_types = Self::from_type(&typeclass, import_objs.clone());
+            for flatten_type in flatten_types.into_iter() {
+                if res.contains_key(&flatten_type.name) {
+                    return Err(ReadProjectErr::SemanticErr(
+                        "duplicate type names in the same file",
+                    ));
+                } else {
+                    res.insert(flatten_type.name.clone(), flatten_type);
+                }
+            }
         }
-        Self(res)
+        Ok(Self(res))
     }
 
     /// Flattens a type into a vector of types
@@ -173,7 +182,7 @@ impl PackagedTypeName {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct FlattenType {
     pub name: QualifiedName,
     pub modifiers: Modifiers,
@@ -183,7 +192,39 @@ pub struct FlattenType {
 }
 
 #[derive(Debug)]
-pub struct NameMap(HashMap<QualifiedName, PackagedTypeName>);
+struct Scope {
+    map: HashMap<QualifiedName, Stack<PackagedTypeName>>,
+}
+
+impl Scope {
+    fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+        }
+    }
+
+    fn push(&mut self, name: &QualifiedName, fqn: PackagedTypeName) {
+        if self.map.contains_key(name) {
+            self.map.get_mut(name).unwrap().push(fqn);
+        } else {
+            let mut stack = Stack::<PackagedTypeName>::new();
+            stack.push(fqn);
+            self.map.insert(name.clone(), stack);
+        }
+    }
+
+    fn pop(&mut self, name: &QualifiedName) -> Option<PackagedTypeName> {
+        if self.map.contains_key(name) && !self.map.get(name).unwrap().is_empty() {
+            self.map.get_mut(name).unwrap().pop()
+        } else {
+            None
+        }
+    }
+
+    fn pop_verify(&mut self, name: &QualifiedName, fqn: PackagedTypeName) -> bool {
+        self.pop(name).is_some_and(|top_fqn| fqn == top_fqn)
+    }
+}
 
 // ---------------------------------------------------------------------------
 // ------------------------------------ TEST ---------------------------------
