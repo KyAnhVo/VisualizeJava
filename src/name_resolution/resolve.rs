@@ -221,7 +221,7 @@ impl Scope {
         }
     }
 
-    fn pop_verify(&mut self, name: &QualifiedName, fqn: PackagedTypeName) -> bool {
+    fn pop_and_check(&mut self, name: &QualifiedName, fqn: PackagedTypeName) -> bool {
         self.pop(name).is_some_and(|top_fqn| fqn == top_fqn)
     }
 }
