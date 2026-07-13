@@ -35,10 +35,12 @@ We consider Scope[Character]:
 3. com.example.util.Character
 4. com.example.npc.Character;
 5. com.example.npc.Character; (current file)
-### NOTE 1: Although, for package building, we would sweep over the files in the same package
+### NOTE 1: 
+Although, for package building, we would sweep over the files in the same package
 and verify that no 2 top level classes of a class have the same name so 4 and 5 are
 not necessarily clashing / or raise error right away.
-### NOTE 2: Also, we would not consider java.lang since it is over our scope and we do not want
+### NOTE 2: 
+Also, we would not consider java.lang since it is over our scope and we do not want
 to draw abstraction/dependency edges to and from java.lang and anything not inside project
 file.
 
@@ -56,7 +58,8 @@ For each file:
 For each file:
 - First, we construct Scope as described above.
 - Then we do ResolveType recursively.
-ResolveType:
+
+#### ResolveType:
 - Put generic type of class in Scope
 - Resolve parent type
 - Sweep over parent class inner types, put parent class protected/public inner types into scope.
