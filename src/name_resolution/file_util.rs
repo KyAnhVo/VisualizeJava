@@ -2,7 +2,10 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-fn get_java_files_recursive(dir: &Path, root_dir: &Path) -> io::Result<Vec<(PathBuf, String)>> {
+pub(crate) fn get_java_files_recursive(
+    dir: &Path,
+    root_dir: &Path,
+) -> io::Result<Vec<(PathBuf, String)>> {
     if !dir.is_dir() {
         if dir.extension().is_some_and(|x| x.eq("java")) {
             return Ok(vec![(
