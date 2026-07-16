@@ -76,6 +76,34 @@ pub struct TypeArgList(pub Vec<TypeArg>);
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct QualifiedName(pub Vec<String>);
 
+impl QualifiedName {
+    /// get prefix [0..to)
+    /// Note that prefix(i) + suffix(i) = original
+    pub fn get_prefix(&self, to: usize) -> Option<Self> {
+        Some(Self(self.0.get(0..to)?.to_owned()))
+    }
+
+    /// get suffix [to..end]
+    /// Note that prefix(i) + suffix(i) = original
+    pub fn get_suffix(&self, from: usize) -> Option<Self> {
+        Some(Self(self.0.get(from..)?.to_owned()))
+    }
+
+    /// Check if self has prefix as a proper prefix.
+    ///
+    /// Proper prefix is defined as: s is a proper
+    /// prefix of S if S = s + k for some nonempty
+    /// string k.
+    pub fn has_prefix(&self, prefix: &QualifiedName) -> bool {
+        self.0.len() > prefix.0.len()
+            && prefix
+                .0
+                .iter()
+                .enumerate()
+                .all(|(ind, s)| s == &self.0[ind])
+    }
+}
+
 /// A struct to represent type usages with generic,
 /// e.g. `java.util.Hashtable<Integer, ? extends com.util.MyClass>`
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -103,7 +131,7 @@ pub enum VoidableType {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeParamList(pub Vec<TypeParam>);
 
-/// A type param is an input type (class `BinaryTree<K Comparable<K>, V>`,
+/// A type param is an input type (class `BinaryTree<K extends Comparable<K>, V>`,
 /// then `<K extends Comparable<K>>` and `<V>` are type params)
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeParam {

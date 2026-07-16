@@ -5,6 +5,7 @@ use crate::types::{
     AccessModifier, ImportObject, JavaFile, Member, Modifiers, QualifiedName, Type, TypeKind,
 };
 use std::collections::HashMap;
+use std::collections::hash_map::Keys;
 use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -13,7 +14,7 @@ use std::rc::Rc;
 pub struct FlattenProject(HashMap<QualifiedName, FlattenPackage>);
 
 impl FlattenProject {
-    pub(crate) fn new(root_dir: PathBuf) -> Result<Self, ReadProjectErr> {
+    pub fn new(root_dir: PathBuf) -> Result<Self, ReadProjectErr> {
         let files = get_java_files_recursive(&root_dir.to_path_buf(), &root_dir.to_path_buf())?;
         let mut proj: Self = Self(HashMap::new());
         for (path, _) in files.into_iter() {
@@ -33,10 +34,23 @@ impl FlattenProject {
         }
         Ok(proj)
     }
+
+    pub fn packages_iter(
+        &self,
+    ) -> std::collections::hash_map::Keys<'_, QualifiedName, FlattenPackage> {
+        self.0.keys()
+    }
+    pub fn contains_package(&self, name: &QualifiedName) -> bool {
+        return self.0.contains_key(name);
+    }
+
+    pub fn get_package(&self, package_name: &QualifiedName) -> Option<&FlattenPackage> {
+        self.0.get(package_name)
+    }
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Package {
+pub struct Package {
     pub name: QualifiedName,
     pub files: Vec<JavaFile>,
 }
@@ -45,6 +59,17 @@ pub(crate) struct Package {
 pub(crate) struct FlattenFile(HashMap<QualifiedName, FlattenType>);
 
 impl FlattenFile {
+    pub fn contains(&self, fqn: &QualifiedName) -> bool {
+        self.0.contains_key(fqn)
+    }
+
+    pub fn iter(&self) -> Keys<'_, QualifiedName, FlattenType> {
+        self.0.keys()
+    }
+
+    pub fn get_type(&self, fqn: &QualifiedName) -> Option<&FlattenType> {
+        self.0.get(fqn)
+    }
     pub fn from_file(file: &JavaFile) -> Result<Self, ReadProjectErr> {
         let import_objs: Rc<[ImportObject]> = Rc::from(file.imported_objects.clone());
         let mut res: HashMap<QualifiedName, FlattenType> = HashMap::new();
@@ -106,7 +131,13 @@ impl FlattenFile {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct FlattenPackage(Vec<FlattenFile>);
+pub struct FlattenPackage(Vec<FlattenFile>);
+
+impl FlattenPackage {
+    pub(crate) fn iter(&self) -> std::slice::Iter<'_, FlattenFile> {
+        self.0.iter()
+    }
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FlattenType {
@@ -118,28 +149,31 @@ pub struct FlattenType {
 }
 
 #[derive(Debug)]
-pub(crate) struct Scope {
+pub struct Scope {
     map: HashMap<QualifiedName, Stack<QualifiedName>>,
 }
 
 impl Scope {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             map: HashMap::new(),
         }
     }
 
-    fn push(&mut self, name: &QualifiedName, fqn: QualifiedName) {
+    pub fn get(&self, name: &QualifiedName) -> Option<QualifiedName> {
+        self.map.get(name)?.peek().cloned()
+    }
+    pub fn push(&mut self, name: &QualifiedName, fqn: &QualifiedName) {
         if self.map.contains_key(name) {
-            self.map.get_mut(name).unwrap().push(fqn);
+            self.map.get_mut(name).unwrap().push(fqn.clone());
         } else {
             let mut stack = Stack::<QualifiedName>::new();
-            stack.push(fqn);
+            stack.push(fqn.clone());
             self.map.insert(name.clone(), stack);
         }
     }
 
-    fn pop(&mut self, name: &QualifiedName) -> Option<QualifiedName> {
+    pub fn pop(&mut self, name: &QualifiedName) -> Option<QualifiedName> {
         if self.map.contains_key(name) && !self.map.get(name).unwrap().is_empty() {
             self.map.get_mut(name).unwrap().pop()
         } else {
@@ -147,8 +181,12 @@ impl Scope {
         }
     }
 
-    fn pop_and_check(&mut self, name: &QualifiedName, fqn: QualifiedName) -> bool {
+    pub fn pop_and_check(&mut self, name: &QualifiedName, fqn: QualifiedName) -> bool {
         self.pop(name).is_some_and(|top_fqn| fqn == top_fqn)
+    }
+
+    pub fn pop_uncheck(&mut self, name: &QualifiedName) -> QualifiedName {
+        self.map.get_mut(name).unwrap().pop().unwrap()
     }
 }
 

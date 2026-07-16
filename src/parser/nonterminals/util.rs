@@ -42,14 +42,7 @@ impl<'a> Parser<'a> {
                 return Ok(v);
             }
 
-            // consume the Identifier
-            let Identifier(_) = self.get_next_token().token else {
-                return Err(ParseErrType::UnexpectedToken {
-                    expected: "IDENTIFIER",
-                    got: vec![self.get_current_token().token.to_owned_token()],
-                }
-                .to_stack_parse_err(self.get_current_token().addr, ctx));
-            };
+            consume_token!(self, ctx, Identifier(_), "IDENTIFIER");
 
             // {"[]"}
             while self.peek_next_token().token == LBracket {
@@ -124,21 +117,15 @@ impl<'a> Parser<'a> {
     /// `<ref_type> ::= <annotations> <qualified_name> <type_arg_lst> { "[]" }`
     pub(crate) fn ref_type(&mut self) -> ParseResult<RefType> {
         let ctx = ("ref_type", self.peek_next_token().addr);
-        // <qualified_name>
         self.annotations().push_context(ctx)?;
         let name: QualifiedName = self.qualified_name().push_context(ctx)?;
-
-        // <type_arg_lst>
         let type_arg_list = self.type_arg_list().push_context(ctx)?;
-
-        // { "[]" }
         let mut arr_dim: u8 = 0;
         while self.peek_next_token().token == LBracket {
             self.get_next_token();
             consume_token!(self, ctx, RBracket, "RBracket");
             arr_dim += 1;
         }
-
         Ok(RefType {
             name,
             type_arg_list,
@@ -149,25 +136,17 @@ impl<'a> Parser<'a> {
     /// `<type_arg_list> ::= "<" <type_arg> { "," <type_arg> } ">"`
     pub(crate) fn type_arg_list(&mut self) -> ParseResult<TypeArgList> {
         let ctx = ("type_arg_list", self.peek_next_token().addr);
-        // [ "<" ...
         if self.peek_next_token().token == LessThan {
             self.get_next_token();
         } else {
             return Ok(TypeArgList(vec![]));
         };
-
-        // <type_arg>
         let mut type_arg_list = TypeArgList(vec![self.type_arg().push_context(ctx)?]);
-
-        // {"," <type_arg>}
         while self.peek_next_token().token == Comma {
             self.get_next_token();
             type_arg_list.0.push(self.type_arg().push_context(ctx)?);
         }
-
-        // ... ">" ]
         self.consume_gt()?;
-
         Ok(type_arg_list)
     }
 
@@ -252,8 +231,6 @@ impl<'a> Parser<'a> {
     pub(crate) fn qualified_name(&mut self) -> ParseResult<QualifiedName> {
         let ctx = ("qualified_name", self.peek_next_token().addr);
         let mut name = QualifiedName(vec![]);
-
-        // IDENTIFIER
         let token = self.get_next_token();
         if let Identifier(s) = token.token {
             name.0.push(s.to_owned());
@@ -264,8 +241,6 @@ impl<'a> Parser<'a> {
             }
             .to_stack_parse_err(token.addr, ctx));
         }
-
-        // {"." IDENTIFIER}
         loop {
             match (
                 self.peek_token_offset(0).token,
@@ -316,10 +291,7 @@ impl<'a> Parser<'a> {
 
         let start_ind = self.get_current_token().addr;
 
-        // <qualified_name>
         let name = self.qualified_name().push_context(ctx)?;
-
-        // [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}" )]
         match self.peek_next_token().token {
             LBrace => {
                 self.get_next_token();
