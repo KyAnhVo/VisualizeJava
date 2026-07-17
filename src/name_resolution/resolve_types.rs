@@ -3,17 +3,17 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::name_resolution::err::ReadProjectErr;
-use crate::name_resolution::file_util::Stack;
-use crate::resolved_types::FullyQualifiedName;
 use crate::types;
 use crate::types::AccessModifier;
 use crate::types::QualifiedName;
 
 /// A mapping f of type PackageIndex is `f: PackageName -> PackageIndex`.
-pub struct PackageIndex(pub HashMap<QualifiedName, TypeIndex>);
+#[derive(Debug)]
+pub struct PackageIndex(HashMap<QualifiedName, TypeIndex>);
 
 impl PackageIndex {
-    fn from_ast_lst(value: Vec<types::JavaFile>) -> Result<Self, ReadProjectErr> {
+    /// From a list of all AST's in the file, generate a PackageIndex.
+    pub fn from_ast_lst(value: &Vec<types::JavaFile>) -> Result<Self, ReadProjectErr> {
         let mut myself = Self(HashMap::new());
 
         value.iter().try_for_each(|ast| {
@@ -26,9 +26,15 @@ impl PackageIndex {
 
         Ok(myself)
     }
+
+    /// Iterate over and get pairs of `(pkg name, TypeIndex)`
+    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, QualifiedName, TypeIndex> {
+        self.0.iter()
+    }
 }
 
 /// A mapping f of type TypeIndex is `f: TypeName (fqn) -> TypeIndexEntry`
+#[derive(Debug)]
 pub struct TypeIndex {
     pub package: QualifiedName,
     pub type_index: HashMap<QualifiedName, TypeIndexEntry>,
@@ -78,6 +84,7 @@ impl TypeIndex {
 }
 
 /// A TypeIndexEntry is a Name with Visibility.
+#[derive(Debug)]
 pub struct TypeIndexEntry {
     /// the fully qualified name of the type
     pub name: QualifiedName,
@@ -86,31 +93,3 @@ pub struct TypeIndexEntry {
     /// the file this type is read from
     pub from_file: Rc<PathBuf>,
 }
-
-/// A scope to resolve name with.
-pub struct Scope(pub HashMap<QualifiedName, Stack<FullyQualifiedName>>);
-
-impl Scope {
-    pub fn new() -> Self {
-        Self(HashMap::new())
-    }
-
-    pub fn push(&mut self, name: QualifiedName, fqn: FullyQualifiedName) {
-        self.0
-            .entry(name.clone())
-            .or_insert(Stack::new())
-            .push(fqn.clone());
-    }
-
-    /// pop returns the fqn in question, or None if
-    /// key is not there or the scope for that name is empty, either
-    /// way an error.
-    pub fn pop(&mut self, name: &QualifiedName) -> Option<FullyQualifiedName> {
-        self.0.get_mut(name)?.pop()
-    }
-
-    pub fn peek(&self, name: &QualifiedName) -> Option<&FullyQualifiedName> {
-        self.0.get(name)?.peek()
-    }
-}
-

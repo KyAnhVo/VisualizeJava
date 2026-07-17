@@ -4,15 +4,43 @@ pub mod parser;
 pub mod resolved_types;
 pub mod types;
 
-use std::{ffi::OsString, fs, path::PathBuf};
+use std::{
+    ffi::OsString,
+    fs::{self, File},
+    io::Write,
+    path::PathBuf,
+};
 
 use crate::{name_resolution::file_util::get_java_files, types::JavaFile};
 
+#[derive(Debug, Clone, Copy)]
+enum Flags {
+    DebugAst,
+    DebugFlattening,
+    DebugNameResolution,
+    None,
+}
+const FLAG: Flags = Flags::DebugFlattening;
+
 fn main() {
+    use std::time::Instant;
+    let start = Instant::now();
+
+    // Start program
+
     let env_vars: Vec<OsString> = std::env::args_os().collect();
-    assert!(env_vars.len() == 2, "Usage: <name> <src>");
+    assert!(
+        env_vars.len() == 2 || env_vars.len() == 3,
+        "Usage: <name> <src> [<output_file>]"
+    );
     let Ok(src) = env_vars[1].clone().into_string() else {
         panic!("requires UTF-8 dir");
+    };
+
+    let mut output_src: Box<dyn Write> = match env_vars.len() {
+        2 => Box::new(std::io::stdout()),
+        3 => Box::new(File::create(env_vars[2].clone().into_string().unwrap()).unwrap()),
+        _ => unreachable!(),
     };
 
     let src_dir: PathBuf = src.into();
@@ -20,6 +48,8 @@ fn main() {
         Ok(f) => f,
         Err(e) => panic!("cannot detect file: {:#?}", e),
     };
+
+    // Construct AST
     let mut asts: Vec<JavaFile> = vec![];
     files.iter().for_each(|file| {
         let src_str = fs::read_to_string(file).unwrap();
@@ -29,6 +59,17 @@ fn main() {
         };
         asts.push(ast);
     });
+    if let Flags::DebugAst = FLAG {
+        write!(output_src, "{:#?}", &asts).unwrap();
+    }
 
-    println!("{:#?}", asts);
+    // Construct type index
+    let pkg_ind = name_resolution::resolve_types::PackageIndex::from_ast_lst(&asts);
+    if let Flags::DebugFlattening = FLAG {
+        write!(output_src, "{:#?}", pkg_ind).unwrap();
+    }
+
+    // End program
+    let duration = start.elapsed();
+    println!("Time taken: {:?} microseconds", duration.as_micros());
 }

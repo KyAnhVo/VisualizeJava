@@ -1,11 +1,10 @@
 use std::rc::Rc;
 
-use crate::types::{AccessModifier, QualifiedName};
+use crate::types::{Modifiers, QualifiedName};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum PrimitiveType {
     Int,
-    String,
     Boolean,
     Char,
     Byte,
@@ -21,9 +20,10 @@ pub enum TypeSource {
         package: QualifiedName,
     },
     PrimitiveType(PrimitiveType),
-    /// Any type outside the project (java.*, javafx, third-party deps, etc).
+    /// Any type outside the project (java.*, javafx, third-party deps like Spring, etc).
     /// We don't resolve or distinguish these further, so no origin is tracked.
     ExternalDependencyType,
+    Generic,
 }
 
 /// A fully qualified name denotes a package and a type.
@@ -43,7 +43,6 @@ impl FullyQualifiedName {
             }
             TypeSource::PrimitiveType(ref prim) => match prim {
                 PrimitiveType::Int => QualifiedName(vec!["int".to_owned()]),
-                PrimitiveType::String => QualifiedName(vec!["string".to_owned()]),
                 PrimitiveType::Boolean => QualifiedName(vec!["boolean".to_owned()]),
                 PrimitiveType::Char => QualifiedName(vec!["char".to_owned()]),
                 PrimitiveType::Byte => QualifiedName(vec!["byte".to_owned()]),
@@ -53,6 +52,7 @@ impl FullyQualifiedName {
                 PrimitiveType::Double => QualifiedName(vec!["double".to_owned()]),
             },
             TypeSource::ExternalDependencyType => self.typename.clone(),
+            TypeSource::Generic => self.typename.clone(),
         }
     }
 }
@@ -94,12 +94,6 @@ pub struct TypeParamList(pub Vec<TypeParam>);
 pub struct Annotation {
     pub name: QualifiedName,
     pub s: String,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Modifiers {
-    pub modifiers: Vec<String>,
-    pub access_modifier: AccessModifier,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
