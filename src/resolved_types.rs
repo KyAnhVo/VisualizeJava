@@ -2,24 +2,58 @@ use std::rc::Rc;
 
 use crate::types::{AccessModifier, QualifiedName};
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum PrimitiveType {
+    Int,
+    String,
+    Boolean,
+    Char,
+    Byte,
+    Short,
+    Long,
+    Float,
+    Double,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum TypeSource {
+    InProjectType {
+        package: QualifiedName,
+    },
+    PrimitiveType(PrimitiveType),
+    /// Any type outside the project (java.*, javafx, third-party deps, etc).
+    /// We don't resolve or distinguish these further, so no origin is tracked.
+    ExternalDependencyType,
+}
+
 /// A fully qualified name denotes a package and a type.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct FullyQualifiedName {
-    /// None denotes no source (from the current project, maybe
-    /// from external dependency or from java.*)
-    pub package: Option<QualifiedName>,
+    pub source: TypeSource,
     pub typename: QualifiedName,
 }
 
 impl FullyQualifiedName {
     pub fn into_fqn(&self) -> QualifiedName {
-        let mut v = if let Some(p) = self.package.clone() {
-            p.0
-        } else {
-            vec![]
-        };
-        v.extend_from_slice(self.typename.0.as_ref());
-        return QualifiedName(v);
+        match self.source {
+            TypeSource::InProjectType { ref package } => {
+                let mut name = package.clone();
+                name.0.append(&mut self.typename.0.clone());
+                name
+            }
+            TypeSource::PrimitiveType(ref prim) => match prim {
+                PrimitiveType::Int => QualifiedName(vec!["int".to_owned()]),
+                PrimitiveType::String => QualifiedName(vec!["string".to_owned()]),
+                PrimitiveType::Boolean => QualifiedName(vec!["boolean".to_owned()]),
+                PrimitiveType::Char => QualifiedName(vec!["char".to_owned()]),
+                PrimitiveType::Byte => QualifiedName(vec!["byte".to_owned()]),
+                PrimitiveType::Short => QualifiedName(vec!["short".to_owned()]),
+                PrimitiveType::Long => QualifiedName(vec!["long".to_owned()]),
+                PrimitiveType::Float => QualifiedName(vec!["float".to_owned()]),
+                PrimitiveType::Double => QualifiedName(vec!["double".to_owned()]),
+            },
+            TypeSource::ExternalDependencyType => self.typename.clone(),
+        }
     }
 }
 
