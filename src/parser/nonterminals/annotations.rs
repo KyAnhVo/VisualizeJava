@@ -1,5 +1,6 @@
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
+use std::rc::Rc;
 
 // ---------------------------------------------------------------------
 // ----------------------- Annotation Nonterminals ---------------------
@@ -79,27 +80,27 @@ impl<'a> Parser<'a> {
                             let mut subtype = self.enum_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(subtype);
+                            body.subtypes.push(Rc::new(subtype));
                         }
                         (Keyword("class"), _) => {
                             let mut subtype = self.class_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(subtype);
+                            body.subtypes.push(Rc::new(subtype));
                         }
                         (Keyword("interface"), _) => {
                             let mut subtype =
                                 self.interface_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(subtype);
+                            body.subtypes.push(Rc::new(subtype));
                         }
                         (At, Keyword("interface")) => {
                             let mut subtype =
                                 self.annotation_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(subtype);
+                            body.subtypes.push(Rc::new(subtype));
                         }
                         (Identifier(_), _) => {
                             let typeclass = self.ref_type().push_context(ctx)?;
@@ -147,7 +148,7 @@ impl<'a> Parser<'a> {
                                         }
                                     }
                                     consume_token!(self, ctx, Semicolon, "Semicolon");
-                                    body.members.push(Member {
+                                    body.members.push(Rc::new(Member {
                                         name: name.0.last().cloned().unwrap(),
                                         member_kind: MemberKind::Property {
                                             reftype: typeclass,
@@ -155,7 +156,7 @@ impl<'a> Parser<'a> {
                                         },
                                         annotations,
                                         modifiers,
-                                    });
+                                    }));
                                 }
                                 LParen => {
                                     consume_token!(self, ctx, RParen, "RParen");

@@ -1,5 +1,3 @@
-use crate::types::*;
-
 use super::{
     lexer::Lexer,
     token::{
@@ -7,6 +5,8 @@ use super::{
         Token::{self, *},
     },
 };
+use crate::types::*;
+use std::{path::PathBuf, rc::Rc};
 pub struct Parser<'a> {
     pub(super) string: &'a str,
     tokens: Vec<IndexedToken<'a>>,
@@ -60,9 +60,9 @@ impl<'a> Parser<'a> {
 
     /// Parse the java file, return the structure of the file which can be
     /// thought of as a specialized AST
-    pub fn parse(s: &'a str) -> ParseResult<JavaFile> {
+    pub fn parse(s: &'a str, path: &PathBuf) -> ParseResult<JavaFile> {
         let mut parser = Self::new(s)?;
-        parser.java_file().push_context(("java_file", 0))
+        parser.java_file(path).push_context(("java_file", 0))
     }
 
     pub(super) fn get_next_token(&mut self) -> IndexedToken<'a> {
@@ -326,10 +326,10 @@ impl<'a> Parser<'a> {
 // Parsing
 impl<'a> Parser<'a> {
     /// `<java_file> ::= [<package_decl>] <import> {<type_decl>}`
-    fn java_file(&mut self) -> ParseResult<JavaFile> {
+    fn java_file(&mut self, path: &PathBuf) -> ParseResult<JavaFile> {
         let ctx = ("java_file", 0);
 
-        let mut type_decls: Vec<Type> = vec![];
+        let mut type_decls: Vec<Rc<Type>> = vec![];
 
         // <package_decl>
         let package_name = self.package_decl().push_context(ctx)?;
@@ -340,7 +340,11 @@ impl<'a> Parser<'a> {
         // {<type_decl>}
         let mut have_public_type = false;
         while self.peek_next_token().token != EOF {
-            type_decls.push(self.type_decl(package_name.clone()).push_context(ctx)?);
+            type_decls.push(
+                self.type_decl(package_name.clone())
+                    .push_context(ctx)?
+                    .into(),
+            );
             if type_decls.last().unwrap().modifiers.access_modifier == AccessModifier::Public {
                 if have_public_type {
                     return Err(ParseErrType::SemanticError("multiple public types")
@@ -355,6 +359,7 @@ impl<'a> Parser<'a> {
             package_name,
             imported_objects,
             type_decls,
+            file: Rc::new(path.clone()),
         })
     }
 
@@ -486,7 +491,7 @@ mod test {
 
     fn test_parser(src: &str) {
         let java_file = std::fs::read_to_string(src).unwrap();
-        let ast = Parser::parse(&java_file).unwrap();
+        let ast = Parser::parse(&java_file, &PathBuf::new()).unwrap();
         // println!("{:#?}", ast);
     }
 

@@ -1,5 +1,6 @@
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
+use std::rc::Rc;
 
 impl<'a> Parser<'a> {
     /// ```
@@ -259,13 +260,13 @@ impl<'a> Parser<'a> {
     }
 
     /// `<annotations> ::= {<annotations>}`
-    pub(crate) fn annotations(&mut self) -> ParseResult<Vec<Annotation>> {
+    pub(crate) fn annotations(&mut self) -> ParseResult<Vec<Rc<Annotation>>> {
         let ctx = ("annotations", self.peek_next_token().addr);
-        let mut v: Vec<Annotation> = vec![];
+        let mut v: Vec<Rc<Annotation>> = vec![];
         while self.peek_next_token().token == At
             && self.peek_token_offset(1).token != Keyword("interface")
         {
-            v.push(self.annotation().push_context(ctx)?);
+            v.push(Rc::new(self.annotation().push_context(ctx)?));
         }
         Ok(v)
     }

@@ -1,4 +1,6 @@
 use crate::parser::token::OwnedToken;
+use core::fmt;
+use std::{path::PathBuf, rc::Rc};
 
 //-----------------------------------------------------------------------
 //------------------ ERROR / RESULT TYPES -------------------------------
@@ -54,6 +56,10 @@ impl<'a, T> GenericParseResult<T> for ParseResult<T> {
     }
 }
 
+//-----------------------------------------------------------------------
+//----------------------- SEMANTIC TYPES --------------------------------
+//-----------------------------------------------------------------------
+
 /// A TypeArg has 4 values representing 4 different args:
 /// - Is(A) = `A`
 /// - Extends(A) = `? extends A`
@@ -73,7 +79,7 @@ pub enum TypeArg {
 pub struct TypeArgList(pub Vec<TypeArg>);
 
 /// A qualified name is a dotted name, e.g. `java.util.ArrayList`
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 pub struct QualifiedName(pub Vec<String>);
 
 impl QualifiedName {
@@ -101,6 +107,22 @@ impl QualifiedName {
                 .iter()
                 .enumerate()
                 .all(|(ind, s)| s == &self.0[ind])
+    }
+}
+
+impl fmt::Debug for QualifiedName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut v = String::new();
+        if self.0.len() == 0 {
+            f.write_str("0")
+        } else {
+            v += self.0[0].as_str();
+            self.0.iter().skip(1).for_each(|s| {
+                v.push('.');
+                v.push_str(s.as_str());
+            });
+            f.write_str(&v)
+        }
     }
 }
 
@@ -163,7 +185,7 @@ pub enum MemberKind {
 pub struct Member {
     pub name: String,
     pub member_kind: MemberKind,
-    pub annotations: Vec<Annotation>,
+    pub annotations: Vec<Rc<Annotation>>,
     pub modifiers: Modifiers,
 }
 
@@ -189,8 +211,8 @@ pub enum TypeKind {
 /// A type's body contains its members (not subtypes) and its subtypes.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeBody {
-    pub members: Vec<Member>,
-    pub subtypes: Vec<Type>,
+    pub members: Vec<Rc<Member>>,
+    pub subtypes: Vec<Rc<Type>>,
 }
 
 /// A type can be a class/enum/interface/annotation.
@@ -200,7 +222,7 @@ pub struct Type {
     pub modifiers: Modifiers,
     pub type_kind: TypeKind,
     pub body: TypeBody,
-    pub annotation: Vec<Annotation>,
+    pub annotation: Vec<Rc<Annotation>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -231,5 +253,20 @@ pub struct JavaFile {
     /// imported objects, could be com.etc.*
     pub imported_objects: Vec<ImportObject>,
     /// type declarations in the current file
-    pub type_decls: Vec<Type>,
+    pub type_decls: Vec<Rc<Type>>,
+    /// the file that reads this.
+    pub file: Rc<PathBuf>,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_access_modifier_ordering() {
+        use AccessModifier::*;
+        assert!(Public > Protected);
+        assert!(Protected > Default);
+        assert!(Default > Private);
+    }
 }

@@ -1,5 +1,6 @@
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
+use std::rc::Rc;
 
 impl<'a> Parser<'a> {
     /// `<type_body>      ::= "{" {<member_decl>} "}"`, where
@@ -30,7 +31,7 @@ impl<'a> Parser<'a> {
                 continue;
             }
 
-            let annotations: Vec<Annotation> = self.annotations().push_context(ctx)?;
+            let annotations = self.annotations().push_context(ctx)?;
             let modifiers = self.modifiers().push_context(ctx)?;
 
             match (
@@ -46,21 +47,21 @@ impl<'a> Parser<'a> {
                     let mut typeclass = self.class_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(typeclass);
+                    body.subtypes.push(Rc::new(typeclass));
                 }
                 // Types: enum
                 (Keyword("enum"), _) => {
                     let mut typeclass = self.enum_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(typeclass);
+                    body.subtypes.push(Rc::new(typeclass));
                 }
                 // Types: annotation
                 (At, Keyword("interface")) => {
                     let mut typeclass = self.annotation_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(typeclass);
+                    body.subtypes.push(Rc::new(typeclass));
                 }
 
                 // Types: interface
@@ -68,7 +69,7 @@ impl<'a> Parser<'a> {
                     let mut typeclass = self.interface_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(typeclass);
+                    body.subtypes.push(Rc::new(typeclass));
                 }
                 // Members: method with type_param
                 (LessThan, _) => {
@@ -96,7 +97,7 @@ impl<'a> Parser<'a> {
                         };
                         // must have body, since this is a constructor
                         self.skip_brace(LBrace, RBrace).push_context(ctx)?;
-                        body.members.push(Member {
+                        body.members.push(Rc::new(Member {
                             name: name.to_owned(),
                             member_kind: MemberKind::Constructor {
                                 type_param_list,
@@ -105,7 +106,7 @@ impl<'a> Parser<'a> {
                             },
                             annotations,
                             modifiers,
-                        })
+                        }))
                     } else {
                         let output = self.voidable_type().push_context(ctx)?;
                         let name = if let Identifier(s) = self.get_next_token().token {
@@ -148,7 +149,7 @@ impl<'a> Parser<'a> {
                                 .to_stack_parse_err(self.get_current_token().addr, ctx));
                             }
                         }
-                        body.members.push(Member {
+                        body.members.push(Rc::new(Member {
                             name: name.to_owned(),
                             member_kind: MemberKind::Method {
                                 type_param_list,
@@ -158,7 +159,7 @@ impl<'a> Parser<'a> {
                             },
                             annotations,
                             modifiers,
-                        })
+                        }))
                     }
                 }
                 // `classname <arg_list> ["throws" <ref_type> {"," <ref_type>}] <method_body>`
@@ -184,7 +185,7 @@ impl<'a> Parser<'a> {
                     self.skip_brace(LBrace, RBrace).push_context(ctx)?;
 
                     // donzo
-                    body.members.push(Member {
+                    body.members.push(Rc::new(Member {
                         name: name.to_owned(),
                         member_kind: MemberKind::Constructor {
                             type_param_list: TypeParamList(vec![]),
@@ -193,7 +194,7 @@ impl<'a> Parser<'a> {
                         },
                         annotations,
                         modifiers,
-                    })
+                    }))
                 }
                 // Members: either property or method
                 (Keyword("void"), _) | (Identifier(_), _) | (At, _) => {
@@ -251,17 +252,20 @@ impl<'a> Parser<'a> {
                                 }
                                 .to_stack_parse_err(self.peek_next_token().addr, ctx));
                             }
-                            body.members.push(Member {
-                                name: name.to_owned(),
-                                member_kind: MemberKind::Method {
-                                    type_param_list: TypeParamList(vec![]),
-                                    input,
-                                    output,
-                                    throws,
-                                },
-                                annotations,
-                                modifiers,
-                            });
+                            body.members.push(
+                                Member {
+                                    name: name.to_owned(),
+                                    member_kind: MemberKind::Method {
+                                        type_param_list: TypeParamList(vec![]),
+                                        input,
+                                        output,
+                                        throws,
+                                    },
+                                    annotations,
+                                    modifiers,
+                                }
+                                .into(),
+                            );
                         }
                         Assignment("=") | Comma | Semicolon | LBracket => {
                             let arr_dim = {
@@ -307,15 +311,18 @@ impl<'a> Parser<'a> {
                                 }
                             }
 
-                            body.members.push(Member {
-                                name: name.to_owned(),
-                                member_kind: MemberKind::Property {
-                                    reftype: reftype.clone()?,
-                                    arr_dim,
-                                },
-                                annotations: annotations.clone(),
-                                modifiers: modifiers.clone(),
-                            });
+                            body.members.push(
+                                Member {
+                                    name: name.to_owned(),
+                                    member_kind: MemberKind::Property {
+                                        reftype: reftype.clone()?,
+                                        arr_dim,
+                                    },
+                                    annotations: annotations.clone(),
+                                    modifiers: modifiers.clone(),
+                                }
+                                .into(),
+                            );
 
                             // {"," IDENTIFIER ["=" <skip_assignment>]} ";"
                             while self.peek_next_token().token == Comma {
@@ -374,15 +381,18 @@ impl<'a> Parser<'a> {
                                     }
                                 };
 
-                                body.members.push(Member {
-                                    name: name.to_owned(),
-                                    member_kind: MemberKind::Property {
-                                        reftype: reftype.clone()?,
-                                        arr_dim,
-                                    },
-                                    annotations: annotations.clone(),
-                                    modifiers: modifiers.clone(),
-                                });
+                                body.members.push(
+                                    Member {
+                                        name: name.to_owned(),
+                                        member_kind: MemberKind::Property {
+                                            reftype: reftype.clone()?,
+                                            arr_dim,
+                                        },
+                                        annotations: annotations.clone(),
+                                        modifiers: modifiers.clone(),
+                                    }
+                                    .into(),
+                                );
                             }
                             consume_token!(self, ctx, Semicolon, "Semicolon");
                         }
