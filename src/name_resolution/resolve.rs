@@ -67,6 +67,45 @@ impl Scope {
         }
     }
 
+    fn push_and_resolve_type_params(
+        &mut self,
+        og_type_param_list: types::TypeParamList,
+    ) -> (Vec<QualifiedName>, resolved_types::TypeParamList) {
+        let mut names: Vec<QualifiedName> = vec![];
+        let mut type_param_list: resolved_types::TypeParamList =
+            resolved_types::TypeParamList(vec![]);
+
+        // First, Add the type params to the list.
+        // Then, resolve the extends(etc.)
+
+        og_type_param_list.0.iter().for_each(|type_param| {
+            let name = QualifiedName(vec![type_param.name.clone()]);
+            self.push(
+                name.clone(),
+                FullyQualifiedName {
+                    source: TypeSource::Generic,
+                    typename: name.clone(),
+                },
+            );
+            names.push(name.clone());
+        });
+
+        og_type_param_list.0.iter().for_each(|type_param| {
+            type_param_list.0.push(resolved_types::TypeParam {
+                name: FullyQualifiedName {
+                    source: TypeSource::Generic,
+                    typename: QualifiedName(vec![type_param.name.clone()]),
+                },
+                extends_from: type_param
+                    .extends_from
+                    .iter()
+                    .map(|reftype| self.resolve_reftype(reftype))
+                    .collect(),
+            });
+        });
+
+        (names, type_param_list)
+    }
     fn resolve_annotations(
         &mut self,
         annotations: &Vec<Rc<types::Annotation>>,
@@ -125,13 +164,13 @@ impl Scope {
         &self,
         typearg_list: &types::TypeArgList,
     ) -> resolved_types::TypeArgList {
-        let mut res: resolved_types::TypeArgList = resolved_types::TypeArgList(vec![]);
-
-        typearg_list.0.iter().for_each(|typearg| {
-            res.0.push(self.resolve_type_arg(typearg));
-        });
-
-        res
+        resolved_types::TypeArgList(
+            typearg_list
+                .0
+                .iter()
+                .map(|type_arg| self.resolve_type_arg(type_arg))
+                .collect(),
+        )
     }
 
     fn resolve_type_arg(&self, typearg: &types::TypeArg) -> resolved_types::TypeArg {
