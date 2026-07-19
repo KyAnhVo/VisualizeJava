@@ -29,18 +29,14 @@ fn main() {
     // Start program
 
     let env_vars: Vec<OsString> = std::env::args_os().collect();
-    assert!(
-        env_vars.len() == 2 || env_vars.len() == 3,
-        "Usage: <name> <src> [<output_file>]"
-    );
-    let Ok(src) = env_vars[1].clone().into_string() else {
-        panic!("requires UTF-8 dir");
-    };
 
     let mut output_src: Box<dyn Write> = match env_vars.len() {
         2 => Box::new(std::io::stdout()),
         3 => Box::new(File::create(env_vars[2].clone().into_string().unwrap()).unwrap()),
-        _ => unreachable!(),
+        _ => panic!("Usage: <name> <src> [<output_file>]"),
+    };
+    let Ok(src) = env_vars[1].clone().into_string() else {
+        panic!("requires UTF-8 dir");
     };
 
     let src_dir: PathBuf = src.into();
@@ -61,12 +57,18 @@ fn main() {
     });
     if let Flags::DebugAst = FLAG {
         write!(output_src, "{:#?}", &asts).unwrap();
+        let duration = start.elapsed();
+        println!("Time taken: {:?} microseconds", duration.as_micros());
+        return;
     }
 
     // Construct type index
     let pkg_ind = name_resolution::resolve_types::PackageIndex::from_ast_lst(&asts);
     if let Flags::DebugFlattening = FLAG {
         write!(output_src, "{:#?}", pkg_ind).unwrap();
+        let duration = start.elapsed();
+        println!("Time taken: {:?} microseconds", duration.as_micros());
+        return;
     }
 
     // End program

@@ -37,13 +37,17 @@ impl Scope {
     pub fn peek(&self, name: &QualifiedName) -> Option<&FullyQualifiedName> {
         self.0.get(name)?.peek()
     }
+
+    /// pops every item of a frame off.
+    pub fn pop_frame(&mut self, frame: &ScopeFrame) {
+        frame.0.iter().for_each(|value| {
+            self.pop(value);
+        });
+    }
 }
 
-// ---------------------- Resolve here --------------------------
-
+// ------------------------- Resolving members and types ------------------------
 impl Scope {
-    // ------------------------- Resolving members and types ------------------------
-
     fn resolve_member(&mut self, member: &types::Member) -> resolved_types::Member {
         resolved_types::Member {
             name: member.name.clone(),
@@ -61,12 +65,45 @@ impl Scope {
                     input,
                     output,
                     throws,
-                } => unimplemented!(),
+                } => {
+                    let (scopeframe, resolve_type_params) =
+                        self.push_and_resolve_type_params(type_param_list);
+                    let res = resolved_types::MemberKind::Method {
+                        type_param_list: resolve_type_params,
+                        input: input
+                            .iter()
+                            .map(|reftype| self.resolve_reftype(reftype))
+                            .collect(),
+                        output: self.resolve_voidable_type(output),
+                        throws: throws
+                            .iter()
+                            .map(|reftype| self.resolve_reftype(reftype))
+                            .collect(),
+                    };
+                    self.pop_frame(&scopeframe);
+                    res
+                }
                 types::MemberKind::Constructor {
                     type_param_list,
                     input,
                     throws,
-                } => unimplemented!(),
+                } => {
+                    let (scopeframe, resolve_type_params) =
+                        self.push_and_resolve_type_params(type_param_list);
+                    let res = resolved_types::MemberKind::Constructor {
+                        type_param_list: resolve_type_params,
+                        input: input
+                            .iter()
+                            .map(|reftype| self.resolve_reftype(reftype))
+                            .collect(),
+                        throws: throws
+                            .iter()
+                            .map(|reftype| self.resolve_reftype(reftype))
+                            .collect(),
+                    };
+                    self.pop_frame(&scopeframe);
+                    res
+                }
             },
         }
     }
@@ -74,7 +111,7 @@ impl Scope {
     /// Pushes the type param, in, and get the type param for pop
     fn push_and_resolve_type_params(
         &mut self,
-        og_type_param_list: types::TypeParamList,
+        og_type_param_list: &types::TypeParamList,
     ) -> (ScopeFrame, resolved_types::TypeParamList) {
         let mut names: ScopeFrame = ScopeFrame(vec![]);
         let mut type_param_list: resolved_types::TypeParamList =
@@ -118,6 +155,17 @@ impl Scope {
         unimplemented!()
     }
 
+    fn resolve_voidable_type(
+        &self,
+        voidable: &types::VoidableType,
+    ) -> resolved_types::VoidableType {
+        match voidable {
+            types::VoidableType::Void => resolved_types::VoidableType::Void,
+            types::VoidableType::RefType(s) => {
+                resolved_types::VoidableType::RefType(self.resolve_reftype(s))
+            }
+        }
+    }
     fn resolve_reftype(&self, reftype: &types::RefType) -> resolved_types::RefType {
         let name: FullyQualifiedName = match self.peek(&reftype.name) {
             None => match (reftype.name.0.len(), reftype.name.0[0].as_str()) {
