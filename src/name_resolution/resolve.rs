@@ -4,6 +4,10 @@ use crate::types::{self, QualifiedName};
 use std::collections::HashMap;
 use std::rc::Rc;
 
+/// A scope frame is, imagine each time you enter a scope, the new types/names
+/// introduced there is called a scope frame.
+pub struct ScopeFrame(pub Vec<QualifiedName>);
+
 /// A scope to resolve name with.
 pub struct Scope(pub HashMap<QualifiedName, Stack<FullyQualifiedName>>);
 
@@ -67,11 +71,12 @@ impl Scope {
         }
     }
 
+    /// Pushes the type param, in, and get the type param for pop
     fn push_and_resolve_type_params(
         &mut self,
         og_type_param_list: types::TypeParamList,
-    ) -> (Vec<QualifiedName>, resolved_types::TypeParamList) {
-        let mut names: Vec<QualifiedName> = vec![];
+    ) -> (ScopeFrame, resolved_types::TypeParamList) {
+        let mut names: ScopeFrame = ScopeFrame(vec![]);
         let mut type_param_list: resolved_types::TypeParamList =
             resolved_types::TypeParamList(vec![]);
 
@@ -87,7 +92,7 @@ impl Scope {
                     typename: name.clone(),
                 },
             );
-            names.push(name.clone());
+            names.0.push(name.clone());
         });
 
         og_type_param_list.0.iter().for_each(|type_param| {
