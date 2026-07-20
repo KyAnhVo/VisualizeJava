@@ -36,6 +36,22 @@ impl PackageIndex {
     pub fn get_package(&self, name: &QualifiedName) -> Option<&TypeIndex> {
         self.0.get(name)
     }
+
+    /// get the package (TypeIndex) containing the type.
+    pub fn get_origin_package(&self, name: &QualifiedName) -> Option<&TypeIndex> {
+        for i in 1..name.len() {
+            let pkg = name.get_prefix(i).unwrap();
+            let Some(type_index) = self.get_package(&pkg) else {
+                continue;
+            };
+            let Some(_) = type_index.get_type(name) else {
+                continue;
+            };
+            return Some(type_index);
+        }
+
+        None
+    }
 }
 
 /// A mapping f of type TypeIndex is `f: TypeName (fqn) -> TypeIndexEntry`
@@ -52,10 +68,18 @@ impl TypeIndex {
             type_index: HashMap::new(),
         }
     }
+
+    pub fn get_type(&self, type_name: &QualifiedName) -> Option<&TypeIndexEntry> {
+        self.type_index.get(type_name)
+    }
     pub fn add_ast(&mut self, ast: &types::JavaFile) -> Result<(), ReadProjectErr> {
         ast.type_decls.iter().try_for_each(|typeclass| {
             self.add_ast_recursive(typeclass.clone(), ast.file.clone(), AccessModifier::Public)
         })
+    }
+
+    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, QualifiedName, TypeIndexEntry> {
+        self.type_index.iter()
     }
 
     fn add_ast_recursive(
@@ -80,6 +104,7 @@ impl TypeIndex {
                 name: typeclass.name.clone(),
                 visibility,
                 from_file: from_file.clone(),
+                modifiers: typeclass.modifiers.modifiers.clone(),
             },
         );
         typeclass.body.subtypes.iter().try_for_each(|inner_type| {
@@ -97,4 +122,6 @@ pub struct TypeIndexEntry {
     pub visibility: AccessModifier,
     /// the file this type is read from
     pub from_file: Rc<PathBuf>,
+    /// the modifiers (static, volatile, etc.)
+    pub modifiers: Vec<String>,
 }

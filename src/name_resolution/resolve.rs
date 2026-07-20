@@ -72,6 +72,34 @@ impl Scope {
                     // in that package search for all the types that is
                     // in it. Only put in scope the types with the prefix
                     // is import_object.name and public static.
+
+                    // get the type index
+                    let Some(type_index) = project.get_origin_package(&import_object.name) else {
+                        continue;
+                    };
+                    // iterate over the type index, get all packages with
+                    // prefix is name and is public static
+                    for (name, type_index_entry) in type_index.iter() {
+                        if !name.has_prefix(&import_object.name) {
+                            continue;
+                        }
+                        if type_index_entry.visibility != AccessModifier::Public {
+                            continue;
+                        }
+                        if !type_index_entry.modifiers.contains(&("static".to_owned())) {
+                            continue;
+                        }
+                        let typename = name.to_type_no_package(&import_object.name).unwrap();
+                        self.push(
+                            typename,
+                            FullyQualifiedName {
+                                source: TypeSource::InProjectType {
+                                    package: type_index.package.clone(),
+                                },
+                                typename: type_index_entry.name.clone(),
+                            },
+                        );
+                    }
                 }
                 (false, true) => {
                     // Non-static -> this implies that the name
@@ -88,10 +116,10 @@ impl Scope {
                             continue;
                         }
                         assert!(
-                            name.has_prefix(&ast.package_name),
+                            name.has_prefix(&import_object.name),
                             "type of package does not have package name as prefix"
                         );
-                        let typename = name.to_type_no_package(&ast.package_name).unwrap();
+                        let typename = name.to_type_no_package(&import_object.name).unwrap();
                         self.push(
                             typename,
                             FullyQualifiedName {
@@ -238,7 +266,19 @@ impl Scope {
         &mut self,
         annotations: &Vec<Rc<types::Annotation>>,
     ) -> Vec<resolved_types::Annotation> {
-        unimplemented!()
+        annotations
+            .iter()
+            .map(|annotation| resolved_types::Annotation {
+                name: match self.get_fqn(&annotation.name) {
+                    Some(fqn) => fqn.clone(),
+                    None => FullyQualifiedName {
+                        source: TypeSource::ExternalDependencyType,
+                        typename: annotation.name.clone(),
+                    },
+                },
+                s: annotation.s.clone(),
+            })
+            .collect()
     }
 
     fn resolve_voidable_type(
@@ -282,6 +322,10 @@ impl Scope {
                 },
                 (1, "boolean") => FullyQualifiedName {
                     source: TypeSource::PrimitiveType(PrimitiveType::Boolean),
+                    typename: reftype.name.clone(),
+                },
+                (1, "char") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Char),
                     typename: reftype.name.clone(),
                 },
                 (_, _) => FullyQualifiedName {

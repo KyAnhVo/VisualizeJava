@@ -92,7 +92,7 @@ pub struct TypeParamList(pub Vec<TypeParam>);
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Annotation {
-    pub name: QualifiedName,
+    pub name: FullyQualifiedName,
     pub s: String,
 }
 
