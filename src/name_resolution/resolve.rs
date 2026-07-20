@@ -1,7 +1,7 @@
 use crate::name_resolution::file_util::Stack;
 use crate::name_resolution::resolve_types::PackageIndex;
 use crate::resolved_types::{self, FullyQualifiedName, PrimitiveType, TypeSource};
-use crate::types::{self, QualifiedName};
+use crate::types::{self, AccessModifier, QualifiedName};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -30,16 +30,8 @@ impl Scope {
     /// pop returns the fqn in question, or None if
     /// key is not there or the scope for that name is empty, either
     /// way an error.
-    /// Also, if the stack is then empty after the pop,
-    /// remove the key.
-    /// We do this so that a check is_empty will verify that if we
-    /// should use ExternalDependency or InProjectType.
     pub fn pop(&mut self, name: &QualifiedName) -> Option<FullyQualifiedName> {
-        let res = self.0.get_mut(name)?.pop();
-        if self.0.get_mut(name)?.is_empty() {
-            self.0.remove(name);
-        }
-        res
+        self.0.get_mut(name)?.pop()
     }
 
     pub fn peek(&self, name: &QualifiedName) -> Option<&FullyQualifiedName> {
@@ -52,19 +44,65 @@ impl Scope {
             self.pop(value);
         });
     }
+
+    /// check if the name is in scope, and get is FQN.
+    pub fn get_fqn(&self, name: &QualifiedName) -> Option<&FullyQualifiedName> {
+        let stack = self.0.get(name)?;
+        stack.peek()
+    }
 }
 
 // ------------------------ Scope construction at file entry ---------------------
 // Notes:
-// 1.   add_same_pkg_import() will add the same file as
+// -    add_same_pkg_import() will add the same file as
 //      add_same_file(). The reason we still have add_same_file()
 //      is because if add_single_type_import overwrites that scope.
 impl Scope {
     fn add_wildcard_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
         for import_object in ast.imported_objects.iter() {
+            // package P; import P.*;
+            // just for safety but if anybody do this then touche' to them...
+            if import_object.name == ast.package_name {
+                continue;
+            }
             match (import_object.is_static, import_object.is_wildcard) {
-                (true, true) => {}
-                (false, true) => {}
+                (true, true) => {
+                    // static -> this imples that the name can be
+                    // of a type. Thus, we search for the package and
+                    // in that package search for all the types that is
+                    // in it. Only put in scope the types with the prefix
+                    // is import_object.name and public static.
+                }
+                (false, true) => {
+                    // Non-static -> this implies that the name
+                    // must then be a package.
+                    // check that there exists a package with that name.
+                    // iterate over the package's types and seperate the
+                    // package's name and the type name.
+                    let Some(pkg) = project.get_package(&import_object.name) else {
+                        // unknown / not-in-project package
+                        continue;
+                    };
+                    for (name, typeclass) in pkg.type_index.iter() {
+                        if typeclass.visibility != AccessModifier::Public {
+                            continue;
+                        }
+                        assert!(
+                            name.has_prefix(&ast.package_name),
+                            "type of package does not have package name as prefix"
+                        );
+                        let typename = name.to_type_no_package(&ast.package_name).unwrap();
+                        self.push(
+                            typename,
+                            FullyQualifiedName {
+                                source: TypeSource::InProjectType {
+                                    package: ast.package_name.clone(),
+                                },
+                                typename: name.clone(),
+                            },
+                        );
+                    }
+                }
                 _ => {}
             }
         }

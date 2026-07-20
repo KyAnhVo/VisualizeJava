@@ -31,6 +31,11 @@ impl PackageIndex {
     pub fn iter(&self) -> std::collections::hash_map::Iter<'_, QualifiedName, TypeIndex> {
         self.0.iter()
     }
+
+    /// Gets the TypeIndex of the file
+    pub fn get_package(&self, name: &QualifiedName) -> Option<&TypeIndex> {
+        self.0.get(name)
+    }
 }
 
 /// A mapping f of type TypeIndex is `f: TypeName (fqn) -> TypeIndexEntry`
@@ -88,7 +93,7 @@ impl TypeIndex {
 pub struct TypeIndexEntry {
     /// the fully qualified name of the type
     pub name: QualifiedName,
-    /// the visibility of the type. Not private.
+    /// the visibility of the type.
     pub visibility: AccessModifier,
     /// the file this type is read from
     pub from_file: Rc<PathBuf>,

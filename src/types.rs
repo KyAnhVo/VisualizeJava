@@ -1,4 +1,4 @@
-use crate::parser::token::OwnedToken;
+use crate::{parser::token::OwnedToken, resolved_types::FullyQualifiedName};
 use core::fmt;
 use std::{path::PathBuf, rc::Rc};
 
@@ -107,6 +107,19 @@ impl QualifiedName {
                 .iter()
                 .enumerate()
                 .all(|(ind, s)| s == &self.0[ind])
+    }
+
+    /// generates an postfix (typename in package) seperating from a package name.
+    pub fn to_type_no_package(&self, package: &QualifiedName) -> Option<QualifiedName> {
+        if !self.has_prefix(package) {
+            return None;
+        }
+        return self.get_suffix(package.0.len());
+    }
+
+    /// gets the length (amount of seperated names) from the QN
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 }
 
