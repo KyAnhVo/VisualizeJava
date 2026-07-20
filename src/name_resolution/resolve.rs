@@ -1,4 +1,5 @@
 use crate::name_resolution::file_util::Stack;
+use crate::name_resolution::resolve_types::PackageIndex;
 use crate::resolved_types::{self, FullyQualifiedName, PrimitiveType, TypeSource};
 use crate::types::{self, QualifiedName};
 use std::collections::HashMap;
@@ -12,7 +13,6 @@ pub struct ScopeFrame(pub Vec<QualifiedName>);
 pub struct Scope(pub HashMap<QualifiedName, Stack<FullyQualifiedName>>);
 
 // -------------------------- Util Functions --------------------------------
-
 impl Scope {
     /// Creates a new Scope with an empty hashmap.
     pub fn new() -> Self {
@@ -30,8 +30,16 @@ impl Scope {
     /// pop returns the fqn in question, or None if
     /// key is not there or the scope for that name is empty, either
     /// way an error.
+    /// Also, if the stack is then empty after the pop,
+    /// remove the key.
+    /// We do this so that a check is_empty will verify that if we
+    /// should use ExternalDependency or InProjectType.
     pub fn pop(&mut self, name: &QualifiedName) -> Option<FullyQualifiedName> {
-        self.0.get_mut(name)?.pop()
+        let res = self.0.get_mut(name)?.pop();
+        if self.0.get_mut(name)?.is_empty() {
+            self.0.remove(name);
+        }
+        res
     }
 
     pub fn peek(&self, name: &QualifiedName) -> Option<&FullyQualifiedName> {
@@ -43,6 +51,46 @@ impl Scope {
         frame.0.iter().for_each(|value| {
             self.pop(value);
         });
+    }
+}
+
+// ------------------------ Scope construction at file entry ---------------------
+// Notes:
+// 1.   add_same_pkg_import() will add the same file as
+//      add_same_file(). The reason we still have add_same_file()
+//      is because if add_single_type_import overwrites that scope.
+impl Scope {
+    fn add_wildcard_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+        for import_object in ast.imported_objects.iter() {
+            match (import_object.is_static, import_object.is_wildcard) {
+                (true, true) => {}
+                (false, true) => {}
+                _ => {}
+            }
+        }
+    }
+
+    fn add_same_pkg(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+        unimplemented!()
+    }
+
+    fn add_single_type_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+        unimplemented!()
+    }
+
+    fn add_same_file(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+        unimplemented!()
+    }
+
+    /// Constructs a scope object from a project and an AST.
+    /// Refer to name_resolution/README.md to understand how this works.
+    pub fn construct_baseline_scope(ast: &types::JavaFile, project: &PackageIndex) -> Self {
+        let mut scope = Self::new();
+        scope.add_wildcard_import(ast, project);
+        scope.add_same_pkg(ast, project);
+        scope.add_single_type_import(ast, project);
+        scope.add_same_file(ast, project);
+        scope
     }
 }
 
