@@ -47,21 +47,21 @@ impl<'a> Parser<'a> {
                     let mut typeclass = self.class_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    body.subtypes.push(typeclass);
                 }
                 // Types: enum
                 (Keyword("enum"), _) => {
                     let mut typeclass = self.enum_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    body.subtypes.push(typeclass);
                 }
                 // Types: annotation
                 (At, Keyword("interface")) => {
                     let mut typeclass = self.annotation_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    body.subtypes.push(typeclass);
                 }
 
                 // Types: interface
@@ -69,7 +69,7 @@ impl<'a> Parser<'a> {
                     let mut typeclass = self.interface_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    body.subtypes.push(typeclass);
                 }
                 // Members: method with type_param
                 (LessThan, _) => {
@@ -97,7 +97,7 @@ impl<'a> Parser<'a> {
                         };
                         // must have body, since this is a constructor
                         self.skip_brace(LBrace, RBrace).push_context(ctx)?;
-                        body.members.push(Rc::new(Member {
+                        body.members.push(Member {
                             name: name.to_owned(),
                             member_kind: MemberKind::Constructor {
                                 type_param_list,
@@ -106,7 +106,7 @@ impl<'a> Parser<'a> {
                             },
                             annotations,
                             modifiers,
-                        }))
+                        })
                     } else {
                         let output = self.voidable_type().push_context(ctx)?;
                         let name = if let Identifier(s) = self.get_next_token().token {
@@ -149,7 +149,7 @@ impl<'a> Parser<'a> {
                                 .to_stack_parse_err(self.get_current_token().addr, ctx));
                             }
                         }
-                        body.members.push(Rc::new(Member {
+                        body.members.push(Member {
                             name: name.to_owned(),
                             member_kind: MemberKind::Method {
                                 type_param_list,
@@ -159,7 +159,7 @@ impl<'a> Parser<'a> {
                             },
                             annotations,
                             modifiers,
-                        }))
+                        })
                     }
                 }
                 // `classname <arg_list> ["throws" <ref_type> {"," <ref_type>}] <method_body>`
@@ -185,7 +185,7 @@ impl<'a> Parser<'a> {
                     self.skip_brace(LBrace, RBrace).push_context(ctx)?;
 
                     // donzo
-                    body.members.push(Rc::new(Member {
+                    body.members.push(Member {
                         name: name.to_owned(),
                         member_kind: MemberKind::Constructor {
                             type_param_list: TypeParamList(vec![]),
@@ -194,7 +194,7 @@ impl<'a> Parser<'a> {
                         },
                         annotations,
                         modifiers,
-                    }))
+                    })
                 }
                 // Members: either property or method
                 (Keyword("void"), _) | (Identifier(_), _) | (At, _) => {

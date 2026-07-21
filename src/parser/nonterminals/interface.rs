@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
 
@@ -70,7 +72,7 @@ impl<'a> Parser<'a> {
             type_kind: TypeKind::Interface { extend_interfaces },
             annotation: vec![],
             modifiers: Modifiers {
-                modifiers: vec![],
+                modifiers: BTreeSet::new(),
                 access_modifier: AccessModifier::Default,
             },
         })
@@ -85,35 +87,28 @@ impl<'a> Parser<'a> {
         let ctx = ("interface_body", self.peek_next_token().addr);
 
         // typical "{" <members> "}"
-        if self.get_next_token().token != LBrace {
-            return Err(ParseErrType::UnexpectedToken {
-                expected: "LBrace",
-                got: vec![self.get_current_token().token.to_owned_token()],
-            }
-            .to_stack_parse_err(self.get_current_token().addr, ctx));
-        }
-
-        let body = self.members(prefix, classname).push_context(ctx)?;
-
-        if self.get_next_token().token != RBrace {
-            return Err(ParseErrType::UnexpectedToken {
-                expected: "RBrace",
-                got: vec![self.get_current_token().token.to_owned_token()],
-            }
-            .to_stack_parse_err(self.get_current_token().addr, ctx));
-        }
+        consume_token!(self, ctx, LBrace, "LBrace");
+        let mut body = self.members(prefix, classname).push_context(ctx)?;
+        consume_token!(self, ctx, RBrace, "RBrace");
 
         // Verify these stuffs:
         // - No constructor
-        // - CAN ADD MORE
         for member in body.members.iter() {
-            match member.member_kind {
-                MemberKind::Constructor { .. } => {
-                    return Err(ParseErrType::SemanticError("Constructor in interface")
-                        .to_stack_parse_err(ctx.1, ctx));
-                }
-                _ => {}
+            if let MemberKind::Constructor { .. } = member.member_kind.clone() {
+                return Err(ParseErrType::SemanticError("Constructor in interface")
+                    .to_stack_parse_err(ctx.1, ctx));
             }
+        }
+
+        // Add public static to inner types
+        for inner in body.subtypes.iter_mut() {
+            inner.modifiers.modifiers.insert("static".to_owned());
+            inner.modifiers.access_modifier =
+                if inner.modifiers.access_modifier == AccessModifier::Default {
+                    AccessModifier::Public
+                } else {
+                    inner.modifiers.access_modifier
+                };
         }
 
         while self.peek_next_token().token == Semicolon {

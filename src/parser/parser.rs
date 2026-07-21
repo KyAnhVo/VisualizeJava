@@ -329,7 +329,7 @@ impl<'a> Parser<'a> {
     fn java_file(&mut self, path: &PathBuf) -> ParseResult<JavaFile> {
         let ctx = ("java_file", 0);
 
-        let mut type_decls: Vec<Rc<Type>> = vec![];
+        let mut type_decls: Vec<Type> = vec![];
 
         // <package_decl>
         let package_name = self.package_decl().push_context(ctx)?;

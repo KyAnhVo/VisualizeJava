@@ -1,6 +1,6 @@
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
-use std::rc::Rc;
+use std::{collections::BTreeSet, rc::Rc};
 
 // ---------------------------------------------------------------------
 // ----------------------- Annotation Nonterminals ---------------------
@@ -33,7 +33,7 @@ impl<'a> Parser<'a> {
             body,
             annotation: vec![],
             modifiers: Modifiers {
-                modifiers: vec![],
+                modifiers: BTreeSet::new(),
                 access_modifier: AccessModifier::Default,
             },
         })
@@ -66,7 +66,7 @@ impl<'a> Parser<'a> {
                     let annotations = self.annotations().push_context(ctx)?;
                     self.modifiers().push_context(ctx)?; // dont care for this, just for safety.
                     let modifiers = Modifiers {
-                        modifiers: vec!["static".to_owned(), "final".to_owned()],
+                        modifiers: BTreeSet::from(["static".to_owned(), "final".to_owned()]),
                         access_modifier: AccessModifier::Public,
                     };
 
@@ -80,27 +80,27 @@ impl<'a> Parser<'a> {
                             let mut subtype = self.enum_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            body.subtypes.push(subtype);
                         }
                         (Keyword("class"), _) => {
                             let mut subtype = self.class_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            body.subtypes.push(subtype);
                         }
                         (Keyword("interface"), _) => {
                             let mut subtype =
                                 self.interface_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            body.subtypes.push(subtype);
                         }
                         (At, Keyword("interface")) => {
                             let mut subtype =
                                 self.annotation_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            body.subtypes.push(subtype);
                         }
                         (Identifier(_), _) => {
                             let typeclass = self.ref_type().push_context(ctx)?;
@@ -148,7 +148,7 @@ impl<'a> Parser<'a> {
                                         }
                                     }
                                     consume_token!(self, ctx, Semicolon, "Semicolon");
-                                    body.members.push(Rc::new(Member {
+                                    body.members.push(Member {
                                         name: name.0.last().cloned().unwrap(),
                                         member_kind: MemberKind::Property {
                                             reftype: typeclass,
@@ -156,7 +156,7 @@ impl<'a> Parser<'a> {
                                         },
                                         annotations,
                                         modifiers,
-                                    }));
+                                    });
                                 }
                                 LParen => {
                                     consume_token!(self, ctx, RParen, "RParen");
