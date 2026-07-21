@@ -56,7 +56,7 @@ impl Scope {
 // Notes:
 // -    add_same_pkg_import() will add the same file as
 //      add_same_file(). The reason we still have add_same_file()
-//      is because if add_single_type_import overwrites that scope.
+//      is because add_single_type_import might overwrite that scope.
 impl Scope {
     fn add_wildcard_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
         for import_object in ast.imported_objects.iter() {
@@ -137,7 +137,21 @@ impl Scope {
     }
 
     fn add_same_pkg(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
-        unimplemented!()
+        for (fqn, typeclass) in project.get_package(&ast.package_name).unwrap().iter() {
+            if typeclass.visibility == AccessModifier::Private {
+                continue;
+            }
+            let typename = fqn.to_type_no_package(&ast.package_name).unwrap();
+            self.push(
+                typename,
+                FullyQualifiedName {
+                    source: TypeSource::InProjectType {
+                        package: ast.package_name.clone(),
+                    },
+                    typename: fqn.clone(),
+                },
+            );
+        }
     }
 
     fn add_single_type_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {

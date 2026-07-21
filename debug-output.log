@@ -8,9 +8,9 @@ Ok(
                         name: library.annotations.Field,
                         visibility: Public,
                         from_file: "test_target_small/src/library/annotations/Field.java",
-                        modifiers: [
+                        modifiers: {
                             "public",
-                        ],
+                        },
                     },
                 },
             },
@@ -21,145 +21,64 @@ Ok(
                         name: library.util.LibraryUtils,
                         visibility: Public,
                         from_file: "test_target_small/src/library/util/LibraryUtils.java",
-                        modifiers: [
-                            "public",
+                        modifiers: {
                             "final",
-                        ],
-                    },
-                },
-            },
-            library.service: TypeIndex {
-                package: library.service,
-                type_index: {
-                    library.service.LibraryService: TypeIndexEntry {
-                        name: library.service.LibraryService,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/service/LibraryService.java",
-                        modifiers: [
                             "public",
-                        ],
-                    },
-                },
-            },
-            library.core: TypeIndex {
-                package: library.core,
-                type_index: {
-                    library.core.Constants: TypeIndexEntry {
-                        name: library.core.Constants,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/core/Constants.java",
-                        modifiers: [
-                            "public",
-                            "final",
-                        ],
-                    },
-                    library.core.Identifiable: TypeIndexEntry {
-                        name: library.core.Identifiable,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/core/Identifiable.java",
-                        modifiers: [
-                            "public",
-                        ],
-                    },
-                    library.core.Describable: TypeIndexEntry {
-                        name: library.core.Describable,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/core/Describable.java",
-                        modifiers: [
-                            "public",
-                        ],
-                    },
-                    library.core.Repository: TypeIndexEntry {
-                        name: library.core.Repository,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/core/Repository.java",
-                        modifiers: [
-                            "public",
-                        ],
+                        },
                     },
                 },
             },
             library.model: TypeIndex {
                 package: library.model,
                 type_index: {
-                    library.model.Loan: TypeIndexEntry {
-                        name: library.model.Loan,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/model/Loan.java",
-                        modifiers: [
-                            "public",
-                        ],
-                    },
-                    library.model.Genre: TypeIndexEntry {
-                        name: library.model.Genre,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/model/Genre.java",
-                        modifiers: [
-                            "public",
-                        ],
-                    },
-                    library.model.Book: TypeIndexEntry {
-                        name: library.model.Book,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/model/Book.java",
-                        modifiers: [
-                            "public",
-                        ],
-                    },
                     library.model.LoanStatus: TypeIndexEntry {
                         name: library.model.LoanStatus,
                         visibility: Public,
                         from_file: "test_target_small/src/library/model/LoanStatus.java",
-                        modifiers: [
+                        modifiers: {
                             "public",
-                        ],
-                    },
-                    library.model.Member: TypeIndexEntry {
-                        name: library.model.Member,
-                        visibility: Public,
-                        from_file: "test_target_small/src/library/model/Member.java",
-                        modifiers: [
-                            "public",
-                        ],
+                        },
                     },
                     library.model.Book.Builder: TypeIndexEntry {
                         name: library.model.Book.Builder,
                         visibility: Public,
                         from_file: "test_target_small/src/library/model/Book.java",
-                        modifiers: [
+                        modifiers: {
                             "public",
                             "static",
-                        ],
+                        },
                     },
-                },
-            },
-            library.repository: TypeIndex {
-                package: library.repository,
-                type_index: {
-                    library.repository.AbstractRepository: TypeIndexEntry {
-                        name: library.repository.AbstractRepository,
+                    library.model.Loan: TypeIndexEntry {
+                        name: library.model.Loan,
                         visibility: Public,
-                        from_file: "test_target_small/src/library/repository/AbstractRepository.java",
-                        modifiers: [
+                        from_file: "test_target_small/src/library/model/Loan.java",
+                        modifiers: {
                             "public",
-                            "abstract",
-                        ],
+                        },
                     },
-                    library.repository.BookRepository: TypeIndexEntry {
-                        name: library.repository.BookRepository,
+                    library.model.Genre: TypeIndexEntry {
+                        name: library.model.Genre,
                         visibility: Public,
-                        from_file: "test_target_small/src/library/repository/BookRepository.java",
-                        modifiers: [
+                        from_file: "test_target_small/src/library/model/Genre.java",
+                        modifiers: {
                             "public",
-                        ],
+                        },
                     },
-                    library.repository.MemberRepository: TypeIndexEntry {
-                        name: library.repository.MemberRepository,
+                    library.model.Book: TypeIndexEntry {
+                        name: library.model.Book,
                         visibility: Public,
-                        from_file: "test_target_small/src/library/repository/MemberRepository.java",
-                        modifiers: [
+                        from_file: "test_target_small/src/library/model/Book.java",
+                        modifiers: {
                             "public",
-                        ],
+                        },
+                    },
+                    library.model.Member: TypeIndexEntry {
+                        name: library.model.Member,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/model/Member.java",
+                        modifiers: {
+                            "public",
+                        },
                     },
                 },
             },
@@ -170,9 +89,90 @@ Ok(
                         name: library.app.Main,
                         visibility: Public,
                         from_file: "test_target_small/src/library/app/Main.java",
-                        modifiers: [
+                        modifiers: {
                             "public",
-                        ],
+                        },
+                    },
+                },
+            },
+            library.repository: TypeIndex {
+                package: library.repository,
+                type_index: {
+                    library.repository.MemberRepository: TypeIndexEntry {
+                        name: library.repository.MemberRepository,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/repository/MemberRepository.java",
+                        modifiers: {
+                            "public",
+                        },
+                    },
+                    library.repository.AbstractRepository: TypeIndexEntry {
+                        name: library.repository.AbstractRepository,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/repository/AbstractRepository.java",
+                        modifiers: {
+                            "abstract",
+                            "public",
+                        },
+                    },
+                    library.repository.BookRepository: TypeIndexEntry {
+                        name: library.repository.BookRepository,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/repository/BookRepository.java",
+                        modifiers: {
+                            "public",
+                        },
+                    },
+                },
+            },
+            library.service: TypeIndex {
+                package: library.service,
+                type_index: {
+                    library.service.LibraryService: TypeIndexEntry {
+                        name: library.service.LibraryService,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/service/LibraryService.java",
+                        modifiers: {
+                            "public",
+                        },
+                    },
+                },
+            },
+            library.core: TypeIndex {
+                package: library.core,
+                type_index: {
+                    library.core.Identifiable: TypeIndexEntry {
+                        name: library.core.Identifiable,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/core/Identifiable.java",
+                        modifiers: {
+                            "public",
+                        },
+                    },
+                    library.core.Repository: TypeIndexEntry {
+                        name: library.core.Repository,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/core/Repository.java",
+                        modifiers: {
+                            "public",
+                        },
+                    },
+                    library.core.Describable: TypeIndexEntry {
+                        name: library.core.Describable,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/core/Describable.java",
+                        modifiers: {
+                            "public",
+                        },
+                    },
+                    library.core.Constants: TypeIndexEntry {
+                        name: library.core.Constants,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/core/Constants.java",
+                        modifiers: {
+                            "final",
+                            "public",
+                        },
                     },
                 },
             },
