@@ -155,7 +155,33 @@ impl Scope {
     }
 
     fn add_single_type_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
-        unimplemented!()
+        for import_obj in ast.imported_objects.iter() {
+            if import_obj.is_wildcard {
+                continue;
+            }
+            let Some(pkg) = project.get_origin_package(&import_obj.name) else {
+                continue;
+            };
+            let Some(entry) = pkg.get_type(&import_obj.name) else {
+                if !import_obj.is_static {
+                    panic!("type not found");
+                }
+                continue;
+            };
+            if entry.visibility != AccessModifier::Public {
+                panic!("importing none-public type");
+            }
+            let typename = import_obj.name.to_type_no_package(&pkg.package).unwrap();
+            self.push(
+                typename.clone(),
+                FullyQualifiedName {
+                    source: TypeSource::InProjectType {
+                        package: pkg.package.clone(),
+                    },
+                    typename: typename.clone(),
+                },
+            );
+        }
     }
 
     fn add_same_file(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
