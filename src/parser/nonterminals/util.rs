@@ -1,6 +1,6 @@
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
-use std::rc::Rc;
+use std::{collections::BTreeSet, rc::Rc};
 
 impl<'a> Parser<'a> {
     /// ```
@@ -341,7 +341,7 @@ impl<'a> Parser<'a> {
         let ctx = ("modifiers", self.peek_next_token().addr);
 
         let mut modifiers = Modifiers {
-            modifiers: vec![],
+            modifiers: BTreeSet::new(),
             access_modifier: AccessModifier::Default,
         };
 
@@ -367,7 +367,7 @@ impl<'a> Parser<'a> {
                 if self.peek_token_offset(2).token != Keyword("sealed") {
                     break;
                 }
-                modifiers.modifiers.push("non-sealed".to_owned());
+                modifiers.modifiers.insert("non-sealed".to_owned());
                 self.get_next_token();
                 self.get_next_token();
                 self.get_next_token();
@@ -386,7 +386,7 @@ impl<'a> Parser<'a> {
                 break;
             }
             self.get_next_token();
-            modifiers.modifiers.push(s.to_owned());
+            modifiers.modifiers.insert(s.to_owned());
         }
 
         Ok(modifiers)
@@ -437,11 +437,11 @@ mod test {
         assert_eq!(
             parser.modifiers().unwrap(),
             Modifiers {
-                modifiers: vec![
+                modifiers: BTreeSet::from([
                     "public".to_owned(),
                     "static".to_owned(),
                     "abstract".to_owned()
-                ],
+                ]),
                 access_modifier: AccessModifier::Public
             }
         );

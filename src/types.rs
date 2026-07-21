@@ -1,6 +1,6 @@
-use crate::{parser::token::OwnedToken, resolved_types::FullyQualifiedName};
+use crate::parser::token::OwnedToken;
 use core::fmt;
-use std::{path::PathBuf, rc::Rc};
+use std::{collections::BTreeSet, path::PathBuf, rc::Rc};
 
 //-----------------------------------------------------------------------
 //------------------ ERROR / RESULT TYPES -------------------------------
@@ -224,8 +224,8 @@ pub enum TypeKind {
 /// A type's body contains its members (not subtypes) and its subtypes.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeBody {
-    pub members: Vec<Rc<Member>>,
-    pub subtypes: Vec<Rc<Type>>,
+    pub members: Vec<Member>,
+    pub subtypes: Vec<Type>,
 }
 
 /// A type can be a class/enum/interface/annotation.
@@ -255,7 +255,7 @@ pub enum AccessModifier {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Modifiers {
-    pub modifiers: Vec<String>,
+    pub modifiers: BTreeSet<String>,
     pub access_modifier: AccessModifier,
 }
 
@@ -266,7 +266,7 @@ pub struct JavaFile {
     /// imported objects, could be com.etc.*
     pub imported_objects: Vec<ImportObject>,
     /// type declarations in the current file
-    pub type_decls: Vec<Rc<Type>>,
+    pub type_decls: Vec<Type>,
     /// the file that reads this.
     pub file: Rc<PathBuf>,
 }

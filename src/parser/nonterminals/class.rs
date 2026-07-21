@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
 
@@ -87,7 +89,7 @@ impl<'a> Parser<'a> {
         let typeclass = Type {
             name,
             modifiers: Modifiers {
-                modifiers: vec![],
+                modifiers: BTreeSet::new(),
                 access_modifier: AccessModifier::Default,
             },
             type_kind,

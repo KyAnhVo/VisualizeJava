@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -74,7 +75,7 @@ impl TypeIndex {
     }
     pub fn add_ast(&mut self, ast: &types::JavaFile) -> Result<(), ReadProjectErr> {
         ast.type_decls.iter().try_for_each(|typeclass| {
-            self.add_ast_recursive(typeclass.clone(), ast.file.clone(), AccessModifier::Public)
+            self.add_ast_recursive(typeclass, ast.file.clone(), AccessModifier::Public)
         })
     }
 
@@ -84,7 +85,7 @@ impl TypeIndex {
 
     fn add_ast_recursive(
         &mut self,
-        typeclass: Rc<types::Type>,
+        typeclass: &types::Type,
         from_file: Rc<PathBuf>,
         current_min_access_modifier: AccessModifier,
     ) -> Result<(), ReadProjectErr> {
@@ -108,7 +109,7 @@ impl TypeIndex {
             },
         );
         typeclass.body.subtypes.iter().try_for_each(|inner_type| {
-            self.add_ast_recursive(inner_type.clone(), from_file.clone(), visibility)
+            self.add_ast_recursive(inner_type, from_file.clone(), visibility)
         })
     }
 }
@@ -123,5 +124,5 @@ pub struct TypeIndexEntry {
     /// the file this type is read from
     pub from_file: Rc<PathBuf>,
     /// the modifiers (static, volatile, etc.)
-    pub modifiers: Vec<String>,
+    pub modifiers: BTreeSet<String>,
 }
