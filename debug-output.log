@@ -1,1438 +1,178 @@
 Ok(
     PackageIndex(
         {
-            java.lang: TypeIndex {
-                package: java.lang,
+            library.annotations: TypeIndex {
+                package: library.annotations,
                 type_index: {
-                    java.lang.IllegalAccessException: TypeIndexEntry {
-                        name: java.lang.IllegalAccessException,
+                    library.annotations.Field: TypeIndexEntry {
+                        name: library.annotations.Field,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/IllegalAccessException.java",
-                    },
-                    java.lang.SecurityException: TypeIndexEntry {
-                        name: java.lang.SecurityException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/SecurityException.java",
-                    },
-                    java.lang.Readable: TypeIndexEntry {
-                        name: java.lang.Readable,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/Readable.java",
-                    },
-                    java.lang.Thread.UncaughtExceptionHandler: TypeIndexEntry {
-                        name: java.lang.Thread.UncaughtExceptionHandler,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/Thread.java",
-                    },
-                    java.lang.NoSuchMethodException: TypeIndexEntry {
-                        name: java.lang.NoSuchMethodException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/NoSuchMethodException.java",
-                    },
-                    java.lang.ClassNotFoundException: TypeIndexEntry {
-                        name: java.lang.ClassNotFoundException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/ClassNotFoundException.java",
-                    },
-                    java.lang.Thread: TypeIndexEntry {
-                        name: java.lang.Thread,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/Thread.java",
-                    },
-                    java.lang.InterruptedException: TypeIndexEntry {
-                        name: java.lang.InterruptedException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/InterruptedException.java",
-                    },
-                    java.lang.NoSuchFieldException: TypeIndexEntry {
-                        name: java.lang.NoSuchFieldException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/lang/NoSuchFieldException.java",
+                        from_file: "test_target_small/src/library/annotations/Field.java",
+                        modifiers: [
+                            "public",
+                        ],
                     },
                 },
             },
-            com.badlogic.gdx.graphics.glutils: TypeIndex {
-                package: com.badlogic.gdx.graphics.glutils,
+            library.util: TypeIndex {
+                package: library.util,
                 type_index: {
-                    com.badlogic.gdx.graphics.glutils.ETC1TextureData: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.ETC1TextureData,
+                    library.util.LibraryUtils: TypeIndexEntry {
+                        name: library.util.LibraryUtils,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/ETC1TextureData.java",
-                    },
-                    com.badlogic.gdx.graphics.glutils.IndexArray: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.IndexArray,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/IndexArray.java",
-                    },
-                    com.badlogic.gdx.graphics.glutils.VertexBufferObjectWithVAO: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.VertexBufferObjectWithVAO,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/VertexBufferObjectWithVAO.java",
-                    },
-                    com.badlogic.gdx.graphics.glutils.VertexArray: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.VertexArray,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/VertexArray.java",
-                    },
-                    com.badlogic.gdx.graphics.glutils.FileTextureData: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.FileTextureData,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/FileTextureData.java",
-                    },
-                    com.badlogic.gdx.graphics.glutils.IndexBufferObject: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.IndexBufferObject,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/IndexBufferObject.java",
-                    },
-                    com.badlogic.gdx.graphics.glutils.VertexBufferObject: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.VertexBufferObject,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/VertexBufferObject.java",
-                    },
-                    com.badlogic.gdx.graphics.glutils.InstanceBufferObject: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.glutils.InstanceBufferObject,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/glutils/InstanceBufferObject.java",
+                        from_file: "test_target_small/src/library/util/LibraryUtils.java",
+                        modifiers: [
+                            "public",
+                            "final",
+                        ],
                     },
                 },
             },
-            com.badlogic.gdx.graphics.profiling: TypeIndex {
-                package: com.badlogic.gdx.graphics.profiling,
+            library.service: TypeIndex {
+                package: library.service,
                 type_index: {
-                    com.badlogic.gdx.graphics.profiling.GLErrorListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.profiling.GLErrorListener,
+                    library.service.LibraryService: TypeIndexEntry {
+                        name: library.service.LibraryService,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/profiling/GLErrorListener.java",
+                        from_file: "test_target_small/src/library/service/LibraryService.java",
+                        modifiers: [
+                            "public",
+                        ],
                     },
                 },
             },
-            java.security: TypeIndex {
-                package: java.security,
+            library.core: TypeIndex {
+                package: library.core,
                 type_index: {
-                    java.security.AccessControlException: TypeIndexEntry {
-                        name: java.security.AccessControlException,
+                    library.core.Constants: TypeIndexEntry {
+                        name: library.core.Constants,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/security/AccessControlException.java",
+                        from_file: "test_target_small/src/library/core/Constants.java",
+                        modifiers: [
+                            "public",
+                            "final",
+                        ],
                     },
-                    java.security.Permission: TypeIndexEntry {
-                        name: java.security.Permission,
+                    library.core.Identifiable: TypeIndexEntry {
+                        name: library.core.Identifiable,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/security/Permission.java",
+                        from_file: "test_target_small/src/library/core/Identifiable.java",
+                        modifiers: [
+                            "public",
+                        ],
                     },
-                    java.security.PermissionCollection: TypeIndexEntry {
-                        name: java.security.PermissionCollection,
+                    library.core.Describable: TypeIndexEntry {
+                        name: library.core.Describable,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/security/PermissionCollection.java",
+                        from_file: "test_target_small/src/library/core/Describable.java",
+                        modifiers: [
+                            "public",
+                        ],
+                    },
+                    library.core.Repository: TypeIndexEntry {
+                        name: library.core.Repository,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/core/Repository.java",
+                        modifiers: [
+                            "public",
+                        ],
                     },
                 },
             },
-            com.badlogic.gdx.math: TypeIndex {
-                package: com.badlogic.gdx.math,
+            library.model: TypeIndex {
+                package: library.model,
                 type_index: {
-                    com.badlogic.gdx.math.Matrix4: TypeIndexEntry {
-                        name: com.badlogic.gdx.math.Matrix4,
+                    library.model.Loan: TypeIndexEntry {
+                        name: library.model.Loan,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/math/Matrix4.java",
+                        from_file: "test_target_small/src/library/model/Loan.java",
+                        modifiers: [
+                            "public",
+                        ],
+                    },
+                    library.model.Genre: TypeIndexEntry {
+                        name: library.model.Genre,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/model/Genre.java",
+                        modifiers: [
+                            "public",
+                        ],
+                    },
+                    library.model.Book: TypeIndexEntry {
+                        name: library.model.Book,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/model/Book.java",
+                        modifiers: [
+                            "public",
+                        ],
+                    },
+                    library.model.LoanStatus: TypeIndexEntry {
+                        name: library.model.LoanStatus,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/model/LoanStatus.java",
+                        modifiers: [
+                            "public",
+                        ],
+                    },
+                    library.model.Member: TypeIndexEntry {
+                        name: library.model.Member,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/model/Member.java",
+                        modifiers: [
+                            "public",
+                        ],
+                    },
+                    library.model.Book.Builder: TypeIndexEntry {
+                        name: library.model.Book.Builder,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/model/Book.java",
+                        modifiers: [
+                            "public",
+                            "static",
+                        ],
                     },
                 },
             },
-            java.util.regex: TypeIndex {
-                package: java.util.regex,
+            library.repository: TypeIndex {
+                package: library.repository,
                 type_index: {
-                    java.util.regex.Matcher: TypeIndexEntry {
-                        name: java.util.regex.Matcher,
+                    library.repository.AbstractRepository: TypeIndexEntry {
+                        name: library.repository.AbstractRepository,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/util/regex/Matcher.java",
+                        from_file: "test_target_small/src/library/repository/AbstractRepository.java",
+                        modifiers: [
+                            "public",
+                            "abstract",
+                        ],
                     },
-                    java.util.regex.Pattern: TypeIndexEntry {
-                        name: java.util.regex.Pattern,
+                    library.repository.BookRepository: TypeIndexEntry {
+                        name: library.repository.BookRepository,
                         visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/util/regex/Pattern.java",
+                        from_file: "test_target_small/src/library/repository/BookRepository.java",
+                        modifiers: [
+                            "public",
+                        ],
+                    },
+                    library.repository.MemberRepository: TypeIndexEntry {
+                        name: library.repository.MemberRepository,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/repository/MemberRepository.java",
+                        modifiers: [
+                            "public",
+                        ],
                     },
                 },
             },
-            java.nio: TypeIndex {
-                package: java.nio,
+            library.app: TypeIndex {
+                package: library.app,
                 type_index: {
-                    java.nio.LongArrayBuffer: TypeIndexEntry {
-                        name: java.nio.LongArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/LongArrayBuffer.java",
-                    },
-                    java.nio.BufferFactory: TypeIndexEntry {
-                        name: java.nio.BufferFactory,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/BufferFactory.java",
-                    },
-                    java.nio.FloatBuffer: TypeIndexEntry {
-                        name: java.nio.FloatBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/FloatBuffer.java",
-                    },
-                    java.nio.DirectReadOnlyIntBufferAdapter: TypeIndexEntry {
-                        name: java.nio.DirectReadOnlyIntBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadOnlyIntBufferAdapter.java",
-                    },
-                    java.nio.ReadOnlyBufferException: TypeIndexEntry {
-                        name: java.nio.ReadOnlyBufferException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyBufferException.java",
-                    },
-                    java.nio.DirectReadWriteShortBufferAdapter: TypeIndexEntry {
-                        name: java.nio.DirectReadWriteShortBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadWriteShortBufferAdapter.java",
-                    },
-                    java.nio.DoubleBuffer: TypeIndexEntry {
-                        name: java.nio.DoubleBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DoubleBuffer.java",
-                    },
-                    java.nio.LongBuffer: TypeIndexEntry {
-                        name: java.nio.LongBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/LongBuffer.java",
-                    },
-                    java.nio.ReadOnlyHeapByteBuffer: TypeIndexEntry {
-                        name: java.nio.ReadOnlyHeapByteBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyHeapByteBuffer.java",
-                    },
-                    java.nio.DirectByteBuffer: TypeIndexEntry {
-                        name: java.nio.DirectByteBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectByteBuffer.java",
-                    },
-                    java.nio.DirectReadWriteFloatBufferAdapter: TypeIndexEntry {
-                        name: java.nio.DirectReadWriteFloatBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadWriteFloatBufferAdapter.java",
-                    },
-                    java.nio.IntArrayBuffer: TypeIndexEntry {
-                        name: java.nio.IntArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/IntArrayBuffer.java",
-                    },
-                    java.nio.Buffer: TypeIndexEntry {
-                        name: java.nio.Buffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/Buffer.java",
-                    },
-                    java.nio.ByteBuffer: TypeIndexEntry {
-                        name: java.nio.ByteBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ByteBuffer.java",
-                    },
-                    java.nio.DirectReadWriteIntBufferAdapter: TypeIndexEntry {
-                        name: java.nio.DirectReadWriteIntBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadWriteIntBufferAdapter.java",
-                    },
-                    java.nio.ReadWriteDoubleArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadWriteDoubleArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadWriteDoubleArrayBuffer.java",
-                    },
-                    java.nio.CharToByteBufferAdapter: TypeIndexEntry {
-                        name: java.nio.CharToByteBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/CharToByteBufferAdapter.java",
-                    },
-                    java.nio.ReadOnlyShortArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadOnlyShortArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyShortArrayBuffer.java",
-                    },
-                    java.nio.DirectReadOnlyFloatBufferAdapter: TypeIndexEntry {
-                        name: java.nio.DirectReadOnlyFloatBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadOnlyFloatBufferAdapter.java",
-                    },
-                    java.nio.FloatToByteBufferAdapter: TypeIndexEntry {
-                        name: java.nio.FloatToByteBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/FloatToByteBufferAdapter.java",
-                    },
-                    java.nio.ReadWriteFloatArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadWriteFloatArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadWriteFloatArrayBuffer.java",
-                    },
-                    java.nio.ReadWriteShortArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadWriteShortArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadWriteShortArrayBuffer.java",
-                    },
-                    java.nio.CharSequenceAdapter: TypeIndexEntry {
-                        name: java.nio.CharSequenceAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/CharSequenceAdapter.java",
-                    },
-                    java.nio.FloatArrayBuffer: TypeIndexEntry {
-                        name: java.nio.FloatArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/FloatArrayBuffer.java",
-                    },
-                    java.nio.ByteOrder: TypeIndexEntry {
-                        name: java.nio.ByteOrder,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ByteOrder.java",
-                    },
-                    java.nio.HasArrayBufferView: TypeIndexEntry {
-                        name: java.nio.HasArrayBufferView,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/HasArrayBufferView.java",
-                    },
-                    java.nio.ShortArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ShortArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ShortArrayBuffer.java",
-                    },
-                    java.nio.ReadWriteIntArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadWriteIntArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadWriteIntArrayBuffer.java",
-                    },
-                    java.nio.ReadOnlyLongArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadOnlyLongArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyLongArrayBuffer.java",
-                    },
-                    java.nio.LongToByteBufferAdapter: TypeIndexEntry {
-                        name: java.nio.LongToByteBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/LongToByteBufferAdapter.java",
-                    },
-                    java.nio.DoubleToByteBufferAdapter: TypeIndexEntry {
-                        name: java.nio.DoubleToByteBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DoubleToByteBufferAdapter.java",
-                    },
-                    java.nio.ReadWriteLongArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadWriteLongArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadWriteLongArrayBuffer.java",
-                    },
-                    java.nio.IntToByteBufferAdapter: TypeIndexEntry {
-                        name: java.nio.IntToByteBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/IntToByteBufferAdapter.java",
-                    },
-                    java.nio.ByteBufferWrapper: TypeIndexEntry {
-                        name: java.nio.ByteBufferWrapper,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ByteBufferWrapper.java",
-                    },
-                    java.nio.BufferUnderflowException: TypeIndexEntry {
-                        name: java.nio.BufferUnderflowException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/BufferUnderflowException.java",
-                    },
-                    java.nio.ReadOnlyFloatArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadOnlyFloatArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyFloatArrayBuffer.java",
-                    },
-                    java.nio.DirectReadOnlyByteBuffer: TypeIndexEntry {
-                        name: java.nio.DirectReadOnlyByteBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadOnlyByteBuffer.java",
-                    },
-                    java.nio.BufferOverflowException: TypeIndexEntry {
-                        name: java.nio.BufferOverflowException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/BufferOverflowException.java",
-                    },
-                    java.nio.ShortBuffer: TypeIndexEntry {
-                        name: java.nio.ShortBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ShortBuffer.java",
-                    },
-                    java.nio.ReadOnlyCharArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadOnlyCharArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyCharArrayBuffer.java",
-                    },
-                    java.nio.CharBuffer: TypeIndexEntry {
-                        name: java.nio.CharBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/CharBuffer.java",
-                    },
-                    java.nio.ReadOnlyDoubleArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadOnlyDoubleArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyDoubleArrayBuffer.java",
-                    },
-                    java.nio.BaseByteBuffer: TypeIndexEntry {
-                        name: java.nio.BaseByteBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/BaseByteBuffer.java",
-                    },
-                    java.nio.DoubleArrayBuffer: TypeIndexEntry {
-                        name: java.nio.DoubleArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DoubleArrayBuffer.java",
-                    },
-                    java.nio.IntBuffer: TypeIndexEntry {
-                        name: java.nio.IntBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/IntBuffer.java",
-                    },
-                    java.nio.ReadOnlyIntArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadOnlyIntArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadOnlyIntArrayBuffer.java",
-                    },
-                    java.nio.ReadWriteHeapByteBuffer: TypeIndexEntry {
-                        name: java.nio.ReadWriteHeapByteBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadWriteHeapByteBuffer.java",
-                    },
-                    java.nio.InvalidMarkException: TypeIndexEntry {
-                        name: java.nio.InvalidMarkException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/InvalidMarkException.java",
-                    },
-                    java.nio.HeapByteBuffer: TypeIndexEntry {
-                        name: java.nio.HeapByteBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/HeapByteBuffer.java",
-                    },
-                    java.nio.StringByteBuffer: TypeIndexEntry {
-                        name: java.nio.StringByteBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/StringByteBuffer.java",
-                    },
-                    java.nio.DirectReadWriteByteBuffer: TypeIndexEntry {
-                        name: java.nio.DirectReadWriteByteBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadWriteByteBuffer.java",
-                    },
-                    java.nio.ShortToByteBufferAdapter: TypeIndexEntry {
-                        name: java.nio.ShortToByteBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ShortToByteBufferAdapter.java",
-                    },
-                    java.nio.CharArrayBuffer: TypeIndexEntry {
-                        name: java.nio.CharArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/CharArrayBuffer.java",
-                    },
-                    java.nio.ReadWriteCharArrayBuffer: TypeIndexEntry {
-                        name: java.nio.ReadWriteCharArrayBuffer,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/ReadWriteCharArrayBuffer.java",
-                    },
-                    java.nio.DirectReadOnlyShortBufferAdapter: TypeIndexEntry {
-                        name: java.nio.DirectReadOnlyShortBufferAdapter,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/DirectReadOnlyShortBufferAdapter.java",
-                    },
-                },
-            },
-            java.io: TypeIndex {
-                package: java.io,
-                type_index: {
-                    java.io.File: TypeIndexEntry {
-                        name: java.io.File,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/File.java",
-                    },
-                    java.io.RandomAccessFile.RafOutputStream: TypeIndexEntry {
-                        name: java.io.RandomAccessFile.RafOutputStream,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/RandomAccessFile.java",
-                    },
-                    java.io.StringReader: TypeIndexEntry {
-                        name: java.io.StringReader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/StringReader.java",
-                    },
-                    java.io.DataOutput: TypeIndexEntry {
-                        name: java.io.DataOutput,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/DataOutput.java",
-                    },
-                    java.io.InputStreamReader: TypeIndexEntry {
-                        name: java.io.InputStreamReader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/InputStreamReader.java",
-                    },
-                    java.io.StringWriter: TypeIndexEntry {
-                        name: java.io.StringWriter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/StringWriter.java",
-                    },
-                    java.io.BufferedInputStream: TypeIndexEntry {
-                        name: java.io.BufferedInputStream,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/BufferedInputStream.java",
-                    },
-                    java.io.DataInput: TypeIndexEntry {
-                        name: java.io.DataInput,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/DataInput.java",
-                    },
-                    java.io.DataOutputStream: TypeIndexEntry {
-                        name: java.io.DataOutputStream,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/DataOutputStream.java",
-                    },
-                    java.io.Writer: TypeIndexEntry {
-                        name: java.io.Writer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/Writer.java",
-                    },
-                    java.io.EOFException: TypeIndexEntry {
-                        name: java.io.EOFException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/EOFException.java",
-                    },
-                    java.io.BufferedWriter: TypeIndexEntry {
-                        name: java.io.BufferedWriter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/BufferedWriter.java",
-                    },
-                    java.io.FileFilter: TypeIndexEntry {
-                        name: java.io.FileFilter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/FileFilter.java",
-                    },
-                    java.io.RandomAccessFile.RafInputStream: TypeIndexEntry {
-                        name: java.io.RandomAccessFile.RafInputStream,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/RandomAccessFile.java",
-                    },
-                    java.io.FileWriter: TypeIndexEntry {
-                        name: java.io.FileWriter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/FileWriter.java",
-                    },
-                    java.io.RandomAccessFile: TypeIndexEntry {
-                        name: java.io.RandomAccessFile,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/RandomAccessFile.java",
-                    },
-                    java.io.FilenameFilter: TypeIndexEntry {
-                        name: java.io.FilenameFilter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/FilenameFilter.java",
-                    },
-                    java.io.FileNotFoundException: TypeIndexEntry {
-                        name: java.io.FileNotFoundException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/FileNotFoundException.java",
-                    },
-                    java.io.Reader: TypeIndexEntry {
-                        name: java.io.Reader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/Reader.java",
-                    },
-                    java.io.OutputStreamWriter: TypeIndexEntry {
-                        name: java.io.OutputStreamWriter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/OutputStreamWriter.java",
-                    },
-                    java.io.UTFDataFormatException: TypeIndexEntry {
-                        name: java.io.UTFDataFormatException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/UTFDataFormatException.java",
-                    },
-                    java.io.BufferedReader: TypeIndexEntry {
-                        name: java.io.BufferedReader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/BufferedReader.java",
-                    },
-                    java.io.DataInputStream: TypeIndexEntry {
-                        name: java.io.DataInputStream,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/io/DataInputStream.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.utils.async: TypeIndex {
-                package: com.badlogic.gdx.utils.async,
-                type_index: {
-                    com.badlogic.gdx.utils.async.AsyncExecutor: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.async.AsyncExecutor,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/async/AsyncExecutor.java",
-                    },
-                    com.badlogic.gdx.utils.async.AsyncTask: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.async.AsyncTask,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/async/AsyncTask.java",
-                    },
-                    com.badlogic.gdx.utils.async.AsyncResult: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.async.AsyncResult,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/async/AsyncResult.java",
-                    },
-                    com.badlogic.gdx.utils.async.ThreadUtils: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.async.ThreadUtils,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/async/ThreadUtils.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.graphics: TypeIndex {
-                package: com.badlogic.gdx.graphics,
-                type_index: {
-                    com.badlogic.gdx.graphics.Pixmap.Format: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.Pixmap.Format,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/Pixmap.java",
-                    },
-                    com.badlogic.gdx.graphics.Pixmap.Blending: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.Pixmap.Blending,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/Pixmap.java",
-                    },
-                    com.badlogic.gdx.graphics.Pixmap: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.Pixmap,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/Pixmap.java",
-                    },
-                    com.badlogic.gdx.graphics.Pixmap.Filter: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.Pixmap.Filter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/Pixmap.java",
-                    },
-                    com.badlogic.gdx.graphics.TextureData.Factory: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.TextureData.Factory,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/TextureData.java",
-                    },
-                    com.badlogic.gdx.graphics.Pixmap.DownloadPixmapResponseListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.Pixmap.DownloadPixmapResponseListener,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/Pixmap.java",
-                    },
-                    com.badlogic.gdx.graphics.TextureData.TextureDataType: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.TextureData.TextureDataType,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/TextureData.java",
-                    },
-                    com.badlogic.gdx.graphics.TextureData: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.TextureData,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/TextureData.java",
-                    },
-                    com.badlogic.gdx.graphics.Pixmap.DrawType: TypeIndexEntry {
-                        name: com.badlogic.gdx.graphics.Pixmap.DrawType,
-                        visibility: Private,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/graphics/Pixmap.java",
-                    },
-                },
-            },
-            com.badlogic.gwtref.gen: TypeIndex {
-                package: com.badlogic.gwtref.gen,
-                type_index: {
-                    com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.MethodStub: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.MethodStub,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheSourceCreator.java",
-                    },
-                    com.badlogic.gwtref.gen.ReflectionCacheGenerator: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheGenerator,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheGenerator.java",
-                    },
-                    com.badlogic.gwtref.gen.ReflectionCacheSourceCreator: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheSourceCreator,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheSourceCreator.java",
-                    },
-                    com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlockByString: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlockByString,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheSourceCreator.java",
-                    },
-                    com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlock: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlock,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheSourceCreator.java",
-                    },
-                    com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlockByString.KeyedCodeBlock: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlockByString.KeyedCodeBlock,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheSourceCreator.java",
-                    },
-                    com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlock.KeyedCodeBlock: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SwitchedCodeBlock.KeyedCodeBlock,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheSourceCreator.java",
-                    },
-                    com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SetterGetterStub: TypeIndexEntry {
-                        name: com.badlogic.gwtref.gen.ReflectionCacheSourceCreator.SetterGetterStub,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/gen/ReflectionCacheSourceCreator.java",
-                    },
-                },
-            },
-            com.badlogic.gwtref.client: TypeIndex {
-                package: com.badlogic.gwtref.client,
-                type_index: {
-                    com.badlogic.gwtref.client.IReflectionCache: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.IReflectionCache,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/IReflectionCache.java",
-                    },
-                    com.badlogic.gwtref.client.Parameter: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.Parameter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/Parameter.java",
-                    },
-                    com.badlogic.gwtref.client.Method: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.Method,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/Method.java",
-                    },
-                    com.badlogic.gwtref.client.Constructor: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.Constructor,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/Constructor.java",
-                    },
-                    com.badlogic.gwtref.client.ReflectionCache: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.ReflectionCache,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/ReflectionCache.java",
-                    },
-                    com.badlogic.gwtref.client.Type: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.Type,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/Type.java",
-                    },
-                    com.badlogic.gwtref.client.Field: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.Field,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/Field.java",
-                    },
-                    com.badlogic.gwtref.client.CachedTypeLookup: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.CachedTypeLookup,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/CachedTypeLookup.java",
-                    },
-                    com.badlogic.gwtref.client.IReflectionCache2: TypeIndexEntry {
-                        name: com.badlogic.gwtref.client.IReflectionCache2,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gwtref/client/IReflectionCache2.java",
-                    },
-                },
-            },
-            java.util.zip: TypeIndex {
-                package: java.util.zip,
-                type_index: {
-                    java.util.zip.GZIPInputStream: TypeIndexEntry {
-                        name: java.util.zip.GZIPInputStream,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/util/zip/GZIPInputStream.java",
-                    },
-                    java.util.zip.InflaterInputStream: TypeIndexEntry {
-                        name: java.util.zip.InflaterInputStream,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/util/zip/InflaterInputStream.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.backends.gwt: TypeIndex {
-                package: com.badlogic.gdx.backends.gwt,
-                type_index: {
-                    com.badlogic.gdx.backends.gwt.GwtGraphics.GwtMonitor: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGraphics.GwtMonitor,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGraphics.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtCursor: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtCursor,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtCursor.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtApplicationConfiguration.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtApplication: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtApplication,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtApplication.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.DefaultGwtInput: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.DefaultGwtInput,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/DefaultGwtInput.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGL30: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGL30,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGL30.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtPreferences: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtPreferences,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtPreferences.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtFiles: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtFiles,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtFiles.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtApplication.AgentInfo: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtApplication.AgentInfo,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtApplication.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtPermissions.GwtPermissionResult: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtPermissions.GwtPermissionResult,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtPermissions.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtApplicationLogger: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtApplicationLogger,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtApplicationLogger.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtFileHandle: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtFileHandle,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtFileHandle.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtInput: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtInput,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtInput.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtSensor.SensorRead: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtSensor.SensorRead,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtSensor.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtApplication.LoadingListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtApplication.LoadingListener,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtApplication.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGL20Debug: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGL20Debug,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGL20Debug.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtApplication.ResizeListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtApplication.ResizeListener,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtApplication.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.DefaultGwtAudio: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.DefaultGwtAudio,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/DefaultGwtAudio.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.DefaultGwtAudio.DeviceListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.DefaultGwtAudio.DeviceListener,
-                        visibility: Private,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/DefaultGwtAudio.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtNet: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtNet,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtNet.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGyroscope: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGyroscope,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGyroscope.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtAudio: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtAudio,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtAudio.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtClipboard: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtClipboard,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtClipboard.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtAccelerometer: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtAccelerometer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtAccelerometer.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGraphics.OrientationLockType: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGraphics.OrientationLockType,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGraphics.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtSensor.SensorError: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtSensor.SensorError,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtSensor.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtUtils: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtUtils,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtUtils.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtNet.HttpClientResponse: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtNet.HttpClientResponse,
-                        visibility: Private,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtNet.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtPermissions: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtPermissions,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtPermissions.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGraphics: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGraphics,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGraphics.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGL20.IntMap: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGL20.IntMap,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGL20.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGL20: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGL20,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGL20.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtGL30Debug: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtGL30Debug,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtGL30Debug.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtFeaturePolicy: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtFeaturePolicy,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtFeaturePolicy.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtClipboard.ClipboardWriteHandler: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtClipboard.ClipboardWriteHandler,
-                        visibility: Private,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtClipboard.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtSensor.SensorActivate: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtSensor.SensorActivate,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtSensor.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.GwtSensor: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.GwtSensor,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/GwtSensor.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.backends.gwt.webaudio: TypeIndex {
-                package: com.badlogic.gdx.backends.gwt.webaudio,
-                type_index: {
-                    com.badlogic.gdx.backends.gwt.webaudio.WebAudioAPIManager: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.webaudio.WebAudioAPIManager,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/webaudio/WebAudioAPIManager.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.webaudio.AudioControlGraph: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.webaudio.AudioControlGraph,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/webaudio/AudioControlGraph.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.webaudio.WebAudioAPISound: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.webaudio.WebAudioAPISound,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/webaudio/WebAudioAPISound.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.webaudio.WebAudioAPIMusic: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.webaudio.WebAudioAPIMusic,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/webaudio/WebAudioAPIMusic.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.webaudio.AudioControlGraphPool: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.webaudio.AudioControlGraphPool,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/webaudio/AudioControlGraphPool.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.utils.reflect: TypeIndex {
-                package: com.badlogic.gdx.utils.reflect,
-                type_index: {
-                    com.badlogic.gdx.utils.reflect.Constructor: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.reflect.Constructor,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/reflect/Constructor.java",
-                    },
-                    com.badlogic.gdx.utils.reflect.Annotation: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.reflect.Annotation,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/reflect/Annotation.java",
-                    },
-                    com.badlogic.gdx.utils.reflect.ArrayReflection: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.reflect.ArrayReflection,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/reflect/ArrayReflection.java",
-                    },
-                    com.badlogic.gdx.utils.reflect.Field: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.reflect.Field,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/reflect/Field.java",
-                    },
-                    com.badlogic.gdx.utils.reflect.ClassReflection: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.reflect.ClassReflection,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/reflect/ClassReflection.java",
-                    },
-                    com.badlogic.gdx.utils.reflect.Method: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.reflect.Method,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/reflect/Method.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.assets.loaders.resolvers: TypeIndex {
-                package: com.badlogic.gdx.assets.loaders.resolvers,
-                type_index: {
-                    com.badlogic.gdx.assets.loaders.resolvers.ResolutionFileResolver: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.loaders.resolvers.ResolutionFileResolver,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/loaders/resolvers/ResolutionFileResolver.java",
-                    },
-                    com.badlogic.gdx.assets.loaders.resolvers.ResolutionFileResolver.Resolution: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.loaders.resolvers.ResolutionFileResolver.Resolution,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/loaders/resolvers/ResolutionFileResolver.java",
-                    },
-                },
-            },
-            java.nio.channels: TypeIndex {
-                package: java.nio.channels,
-                type_index: {
-                    java.nio.channels.FileChannel: TypeIndexEntry {
-                        name: java.nio.channels.FileChannel,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/channels/FileChannel.java",
-                    },
-                    java.nio.channels.FileChannel.MapMode: TypeIndexEntry {
-                        name: java.nio.channels.FileChannel.MapMode,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/nio/channels/FileChannel.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.scenes.scene2d.utils: TypeIndex {
-                package: com.badlogic.gdx.scenes.scene2d.utils,
-                type_index: {
-                    com.badlogic.gdx.scenes.scene2d.utils.UIUtils: TypeIndexEntry {
-                        name: com.badlogic.gdx.scenes.scene2d.utils.UIUtils,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/scenes/scene2d/utils/UIUtils.java",
-                    },
-                },
-            },
-            java.net: TypeIndex {
-                package: java.net,
-                type_index: {
-                    java.net.URLEncoder: TypeIndexEntry {
-                        name: java.net.URLEncoder,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/net/URLEncoder.java",
-                    },
-                },
-            },
-            com.google.gwt.webgl.client: TypeIndex {
-                package: com.google.gwt.webgl.client,
-                type_index: {
-                    com.google.gwt.webgl.client.WebGLActiveInfo: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLActiveInfo,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLActiveInfo.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLShader: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLShader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLShader.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLUtil: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLUtil,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLUtil.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLContextAttributes: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLContextAttributes,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLContextAttributes.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLFramebuffer: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLFramebuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLFramebuffer.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLVertexArrayObject: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLVertexArrayObject,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLVertexArrayObject.java",
-                    },
-                    com.google.gwt.webgl.client.WebGL2RenderingContext: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGL2RenderingContext,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGL2RenderingContext.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLBuffer: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLBuffer.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLTexture: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLTexture,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLTexture.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLSampler: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLSampler,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLSampler.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLUniformLocation: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLUniformLocation,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLUniformLocation.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLTransformFeedback: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLTransformFeedback,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLTransformFeedback.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLRenderbuffer: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLRenderbuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLRenderbuffer.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLQuery: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLQuery,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLQuery.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLObject: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLObject,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLObject.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLRenderingContext: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLRenderingContext,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLRenderingContext.java",
-                    },
-                    com.google.gwt.webgl.client.WebGLProgram: TypeIndexEntry {
-                        name: com.google.gwt.webgl.client.WebGLProgram,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/google/gwt/webgl/client/WebGLProgram.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.assets.loaders: TypeIndex {
-                package: com.badlogic.gdx.assets.loaders,
-                type_index: {
-                    com.badlogic.gdx.assets.loaders.CubemapLoader.CubemapParameter: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.loaders.CubemapLoader.CubemapParameter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/loaders/CubemapLoader.java",
-                    },
-                    com.badlogic.gdx.assets.loaders.CubemapLoader: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.loaders.CubemapLoader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/loaders/CubemapLoader.java",
-                    },
-                    com.badlogic.gdx.assets.loaders.TextureLoader: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.loaders.TextureLoader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/loaders/TextureLoader.java",
-                    },
-                    com.badlogic.gdx.assets.loaders.TextureLoader.TextureParameter: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.loaders.TextureLoader.TextureParameter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/loaders/TextureLoader.java",
-                    },
-                    com.badlogic.gdx.assets.loaders.CubemapLoader.CubemapLoaderInfo: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.loaders.CubemapLoader.CubemapLoaderInfo,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/loaders/CubemapLoader.java",
-                    },
-                },
-            },
-            java.util: TypeIndex {
-                package: java.util,
-                type_index: {
-                    java.util.Locale: TypeIndexEntry {
-                        name: java.util.Locale,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/util/Locale.java",
-                    },
-                    java.util.StringTokenizer: TypeIndexEntry {
-                        name: java.util.StringTokenizer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/java/util/StringTokenizer.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.backends.gwt.preloader: TypeIndex {
-                package: com.badlogic.gdx.backends.gwt.preloader,
-                type_index: {
-                    com.badlogic.gdx.backends.gwt.preloader.FileWrapper: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.FileWrapper,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/FileWrapper.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.Preloader.Asset: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.Preloader.Asset,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/Preloader.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.DefaultAssetFilter: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.DefaultAssetFilter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/DefaultAssetFilter.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.Preloader.PreloaderCallback: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.Preloader.PreloaderCallback,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/Preloader.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.Preloader.PreloaderState: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.Preloader.PreloaderState,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/Preloader.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.PreloaderBundleGenerator.Asset: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.PreloaderBundleGenerator.Asset,
-                        visibility: Private,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/PreloaderBundleGenerator.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.AssetDownloader.ImgEventListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.AssetDownloader.ImgEventListener,
-                        visibility: Private,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/AssetDownloader.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.PreloaderBundleGenerator: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.PreloaderBundleGenerator,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/PreloaderBundleGenerator.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.LoaderCallback: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.LoaderCallback,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/LoaderCallback.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.AssetDownloader: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.AssetDownloader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/AssetDownloader.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.Preloader.FilePathFilter: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.Preloader.FilePathFilter,
-                        visibility: Private,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/Preloader.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.Preloader: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.Preloader,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/Preloader.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.AssetFilter: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.AssetFilter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/AssetFilter.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.PreloaderBundle: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.PreloaderBundle,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/PreloaderBundle.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.AssetFilter.AssetType: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.AssetFilter.AssetType,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/AssetFilter.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.Blob: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.Blob,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/Blob.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.preloader.AssetDownloader.AssetLoaderListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.preloader.AssetDownloader.AssetLoaderListener,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/preloader/AssetDownloader.java",
-                    },
-                },
-            },
-            com.google.gwt.corp.compatibility: TypeIndex {
-                package: com.google.gwt.corp.compatibility,
-                type_index: {
-                    com.google.gwt.corp.compatibility.StringToByteBuffer: TypeIndexEntry {
-                        name: com.google.gwt.corp.compatibility.StringToByteBuffer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/google/gwt/corp/compatibility/StringToByteBuffer.java",
-                    },
-                    com.google.gwt.corp.compatibility.Compatibility: TypeIndexEntry {
-                        name: com.google.gwt.corp.compatibility.Compatibility,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/google/gwt/corp/compatibility/Compatibility.java",
-                    },
-                    com.google.gwt.corp.compatibility.CompatibilityImpl: TypeIndexEntry {
-                        name: com.google.gwt.corp.compatibility.CompatibilityImpl,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/google/gwt/corp/compatibility/CompatibilityImpl.java",
-                    },
-                    com.google.gwt.corp.compatibility.Compatibility.Impl: TypeIndexEntry {
-                        name: com.google.gwt.corp.compatibility.Compatibility.Impl,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/google/gwt/corp/compatibility/Compatibility.java",
-                    },
-                    com.google.gwt.corp.compatibility.Endianness: TypeIndexEntry {
-                        name: com.google.gwt.corp.compatibility.Endianness,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/google/gwt/corp/compatibility/Endianness.java",
-                    },
-                    com.google.gwt.corp.compatibility.Numbers: TypeIndexEntry {
-                        name: com.google.gwt.corp.compatibility.Numbers,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/google/gwt/corp/compatibility/Numbers.java",
-                    },
-                    com.google.gwt.corp.compatibility.ConsolePrintStream: TypeIndexEntry {
-                        name: com.google.gwt.corp.compatibility.ConsolePrintStream,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/google/gwt/corp/compatibility/ConsolePrintStream.java",
-                    },
-                },
-            },
-            avian: TypeIndex {
-                package: avian,
-                type_index: {
-                    avian.Utf8: TypeIndexEntry {
-                        name: avian.Utf8,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/avian/Utf8.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.utils: TypeIndex {
-                package: com.badlogic.gdx.utils,
-                type_index: {
-                    com.badlogic.gdx.utils.SerializationException: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.SerializationException,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/SerializationException.java",
-                    },
-                    com.badlogic.gdx.utils.TextFormatter: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.TextFormatter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/TextFormatter.java",
-                    },
-                    com.badlogic.gdx.utils.NumberUtils: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.NumberUtils,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/NumberUtils.java",
-                    },
-                    com.badlogic.gdx.utils.Utf8Decoder: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.Utf8Decoder,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/Utf8Decoder.java",
-                    },
-                    com.badlogic.gdx.utils.Timer: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.Timer,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/Timer.java",
-                    },
-                    com.badlogic.gdx.utils.Timer.TimerThread: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.Timer.TimerThread,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/Timer.java",
-                    },
-                    com.badlogic.gdx.utils.BufferUtils: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.BufferUtils,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/BufferUtils.java",
-                    },
-                    com.badlogic.gdx.utils.Timer.Task: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.Timer.Task,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/Timer.java",
-                    },
-                    com.badlogic.gdx.utils.TimeUtils: TypeIndexEntry {
-                        name: com.badlogic.gdx.utils.TimeUtils,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/utils/TimeUtils.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.files: TypeIndex {
-                package: com.badlogic.gdx.files,
-                type_index: {
-                    com.badlogic.gdx.files.FileHandleStream: TypeIndexEntry {
-                        name: com.badlogic.gdx.files.FileHandleStream,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/files/FileHandleStream.java",
-                    },
-                    com.badlogic.gdx.files.FileHandle: TypeIndexEntry {
-                        name: com.badlogic.gdx.files.FileHandle,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/files/FileHandle.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.backends.gwt.widgets: TypeIndex {
-                package: com.badlogic.gdx.backends.gwt.widgets,
-                type_index: {
-                    com.badlogic.gdx.backends.gwt.widgets.ResizableWidget: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.ResizableWidget,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/ResizableWidget.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.widgets.ResizableWidgetCollection: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.ResizableWidgetCollection,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/ResizableWidgetCollection.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.widgets.ProgressBar.TextFormatter: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.ProgressBar.TextFormatter,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/ProgressBar.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.widgets.TextInputDialogBox: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.TextInputDialogBox,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/TextInputDialogBox.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.widgets.TextInputDialogBox.TextInputDialogListener: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.TextInputDialogBox.TextInputDialogListener,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/TextInputDialogBox.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.widgets.PlaceholderTextBox: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.PlaceholderTextBox,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/PlaceholderTextBox.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.widgets.ProgressBar: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.ProgressBar,
-                        visibility: Public,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/ProgressBar.java",
-                    },
-                    com.badlogic.gdx.backends.gwt.widgets.ResizableWidgetCollection.ResizableWidgetInfo: TypeIndexEntry {
-                        name: com.badlogic.gdx.backends.gwt.widgets.ResizableWidgetCollection.ResizableWidgetInfo,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/widgets/ResizableWidgetCollection.java",
-                    },
-                },
-            },
-            com.badlogic.gdx.assets: TypeIndex {
-                package: com.badlogic.gdx.assets,
-                type_index: {
-                    com.badlogic.gdx.assets.AssetLoadingTask: TypeIndexEntry {
-                        name: com.badlogic.gdx.assets.AssetLoadingTask,
-                        visibility: Default,
-                        from_file: "./test_target_2/src/com/badlogic/gdx/backends/gwt/emu/com/badlogic/gdx/assets/AssetLoadingTask.java",
+                    library.app.Main: TypeIndexEntry {
+                        name: library.app.Main,
+                        visibility: Public,
+                        from_file: "test_target_small/src/library/app/Main.java",
+                        modifiers: [
+                            "public",
+                        ],
                     },
                 },
             },
