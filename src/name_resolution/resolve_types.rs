@@ -126,3 +126,88 @@ pub struct TypeIndexEntry {
     /// the modifiers (static, volatile, etc.)
     pub modifiers: BTreeSet<String>,
 }
+
+#[cfg(test)]
+pub(crate) mod test {
+    use super::*;
+    use crate::name_resolution::file_util::get_java_files;
+    use crate::parser::parser::Parser;
+
+    /// Parses every .java file under `dir` and builds a PackageIndex from them.
+    pub(crate) fn load_project(dir: &str) -> (Vec<types::JavaFile>, PackageIndex) {
+        let files = get_java_files(&PathBuf::from(dir)).unwrap();
+        let asts: Vec<types::JavaFile> = files
+            .iter()
+            .map(|file| {
+                let src = std::fs::read_to_string(file).unwrap();
+                Parser::parse(&src, file).unwrap()
+            })
+            .collect();
+        let project = PackageIndex::from_ast_lst(&asts).unwrap();
+        (asts, project)
+    }
+
+    fn parse_src(src: &str) -> types::JavaFile {
+        Parser::parse(src, &PathBuf::new()).unwrap()
+    }
+
+    #[test]
+    fn test_package_count() {
+        let (_asts, project) = load_project("test_target_small");
+        assert_eq!(project.iter().count(), 7);
+    }
+
+    #[test]
+    fn test_flatten_recurses_into_nested_types() {
+        let (_asts, project) = load_project("test_target_small");
+        let pkg = project
+            .get_package(&QualifiedName(vec!["library".into(), "model".into()]))
+            .unwrap();
+        let builder_name = QualifiedName(vec![
+            "library".into(),
+            "model".into(),
+            "Book".into(),
+            "Builder".into(),
+        ]);
+        assert!(pkg.get_type(&builder_name).is_some());
+    }
+
+    #[test]
+    fn test_duplicate_type_name_errors() {
+        let src = "package dup.pkg;\npublic class Foo {\n}\n";
+        let ast1 = parse_src(src);
+        let ast2 = parse_src(src);
+        let result = PackageIndex::from_ast_lst(&vec![ast1, ast2]);
+        assert!(matches!(result, Err(ReadProjectErr::SemanticErr(_))));
+    }
+
+    #[test]
+    fn test_get_origin_package() {
+        let (_asts, project) = load_project("test_target_small");
+        let book = QualifiedName(vec!["library".into(), "model".into(), "Book".into()]);
+        let origin = project.get_origin_package(&book).unwrap();
+        assert_eq!(origin.package, QualifiedName(vec!["library".into(), "model".into()]));
+
+        let list = QualifiedName(vec!["java".into(), "util".into(), "List".into()]);
+        assert!(project.get_origin_package(&list).is_none());
+    }
+
+    #[test]
+    fn test_nested_type_visibility_clamps_to_parent() {
+        let src = "package vis.pkg;\npublic class Outer {\n    class Inner {\n    }\n}\n";
+        let ast = parse_src(src);
+        let project = PackageIndex::from_ast_lst(&vec![ast]).unwrap();
+        let pkg = project
+            .get_package(&QualifiedName(vec!["vis".into(), "pkg".into()]))
+            .unwrap();
+        let inner = pkg
+            .get_type(&QualifiedName(vec![
+                "vis".into(),
+                "pkg".into(),
+                "Outer".into(),
+                "Inner".into(),
+            ]))
+            .unwrap();
+        assert_eq!(inner.visibility, AccessModifier::Default);
+    }
+}
