@@ -55,17 +55,28 @@ For each file:
   corresponding package: Map<Package Name -> Vector<Files>>
 
 ### Phase 2: Name Resolution
-For each file:
-- First, we construct Scope as described above.
-- Then we do ResolveType recursively.
+Name resolution is done via BFS-ing the file.
 
-#### ResolveType:
-- Put generic type of class in Scope
-- Resolve parent type
-- Sweep over parent class inner types, put parent class protected/public inner types into scope.
-- Sweep over current class inner types, put them into Scope.
-- For each member (function / variable):
-  - Resolve types for parameters/etc.
-- For each subtype:
-  - ResolveType(child, some other params)
+#### Logic:
+The logic is as such:
+If `A` is an outer type of `B`, B depends on A.
+If `B extends A` or `B implements A`, B depends on A.
+From the 2 definitions, we construct a "depends on" graph, where `B depends on A` induces an edge `(A, B)`
+And the graph has no cycle for a compiled java program.
+Thus we solve type by BFS, which here is equivalent to topological ordered type stuff.
+
+#### Algorithm:
+Construct a FIFO queue TypeQueue
+Append all top level types of all the AST's in.
+while the queue is not empty:
+- dequeue the type, and:
+  - if any of the type's depends-on (here, `extends` or `implements` edge) is not resolved:
+    - enqueue it back to the list.
+  - else:
+    - resolve its generics, its parents, its members
+    - enqueue its inner types
+The termination condition is either:
+- the queue is empty, hence success
+- there is no new resolved type after 1 round, failure.
+
 

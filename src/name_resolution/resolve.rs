@@ -3,6 +3,7 @@ use crate::name_resolution::resolve_types::PackageIndex;
 use crate::resolved_types::{self, FullyQualifiedName, PrimitiveType, TypeSource};
 use crate::types::{self, AccessModifier, QualifiedName};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 /// A scope frame is, imagine each time you enter a scope, the new types/names
@@ -213,6 +214,35 @@ impl Scope {
 
 // ------------------------- Resolving members and types ------------------------
 impl Scope {
+    fn resolve_type(
+        &mut self,
+        typeclass: &types::Type,
+        pkg_name: &QualifiedName,
+        file: Rc<PathBuf>,
+    ) -> resolved_types::Type {
+        // NOTE: We note that, for `class A extends B implements C, D`, assume all `B, C, D` have an inner
+        // type `E` (`E` here can be `E1.E2...En`), then `A` calling `E` would not compile. Thus, since we have been assuming that
+        // the project compiles, we can assume that there exists no such `E`, or we error if there
+        // are 2 of such `E`.
+        //
+        // The general algo is as such:
+        //  - let GenFrame := Resolve the generic param and get the ScopeFrame
+        //  - Resolve and confirm that the extended/implemented type is:
+        //      - either same file, or
+        //      - at least Default, same package, or
+        //      - at least Protected, different package
+        //      - else panic.
+        //  - let ParentFrame := Collect all inner type names from the types up top
+        //    put into scope with the same visibility as above
+        //    and put it into scope
+        //  - let MyFrame := Collect all inner types and put it into scope (visibility doesn't matter)
+        //  - Resolve members
+        //  - Recursively resolve inner types
+        //  - Pop MyFrame
+        //  - Pop ParentFrame
+        //  - Pop GenFrame
+        unimplemented!();
+    }
     fn resolve_member(&mut self, member: &types::Member) -> resolved_types::Member {
         resolved_types::Member {
             name: member.name.clone(),
