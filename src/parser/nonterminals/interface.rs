@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, rc::Rc};
 
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
@@ -101,15 +101,30 @@ impl<'a> Parser<'a> {
         }
 
         // Add public static to inner types
-        for inner in body.subtypes.iter_mut() {
-            inner.modifiers.modifiers.insert("static".to_owned());
-            inner.modifiers.access_modifier =
-                if inner.modifiers.access_modifier == AccessModifier::Default {
-                    AccessModifier::Public
-                } else {
-                    inner.modifiers.access_modifier
-                };
-        }
+        body.subtypes = body
+            .subtypes
+            .iter()
+            .map(|subtype| {
+                let mut modifiers = subtype.modifiers.modifiers.clone();
+                modifiers.insert("static".to_owned());
+                let access_modifier =
+                    if subtype.modifiers.access_modifier == AccessModifier::Default {
+                        AccessModifier::Public
+                    } else {
+                        subtype.modifiers.access_modifier
+                    };
+                Rc::new(Type {
+                    name: subtype.name.clone(),
+                    modifiers: Modifiers {
+                        modifiers,
+                        access_modifier,
+                    },
+                    type_kind: subtype.type_kind.clone(),
+                    annotation: subtype.annotation.clone(),
+                    body: subtype.body.clone(),
+                })
+            })
+            .collect();
 
         while self.peek_next_token().token == Semicolon {
             self.get_next_token();

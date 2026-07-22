@@ -224,8 +224,8 @@ pub enum TypeKind {
 /// A type's body contains its members (not subtypes) and its subtypes.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeBody {
-    pub members: Vec<Member>,
-    pub subtypes: Vec<Type>,
+    pub members: Vec<Rc<Member>>,
+    pub subtypes: Vec<Rc<Type>>,
 }
 
 /// A type can be a class/enum/interface/annotation.
@@ -266,7 +266,7 @@ pub struct JavaFile {
     /// imported objects, could be com.etc.*
     pub imported_objects: Vec<ImportObject>,
     /// type declarations in the current file
-    pub type_decls: Vec<Type>,
+    pub type_decls: Vec<Rc<Type>>,
     /// the file that reads this.
     pub file: Rc<PathBuf>,
 }
