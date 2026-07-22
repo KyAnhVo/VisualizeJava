@@ -94,7 +94,7 @@ impl<'a> Parser<'a> {
             },
             type_kind,
             body,
-            annotation: vec![],
+            annotation: vec![].into(),
         };
 
         Ok(typeclass)

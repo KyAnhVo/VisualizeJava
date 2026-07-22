@@ -70,7 +70,7 @@ impl<'a> Parser<'a> {
             name,
             body,
             type_kind: TypeKind::Interface { extend_interfaces },
-            annotation: vec![],
+            annotation: vec![].into(),
             modifiers: Modifiers {
                 modifiers: BTreeSet::new(),
                 access_modifier: AccessModifier::Default,
@@ -158,7 +158,7 @@ mod test {
                 public float getDistance(Point x, Point y);
                 public float getNorm(Point x);
             }
-        ",
+            ",
         )
         .unwrap();
         let res = parser.type_decl(QualifiedName(vec![])).unwrap();

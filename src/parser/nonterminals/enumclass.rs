@@ -60,7 +60,7 @@ impl<'a> Parser<'a> {
                 enum_vals,
             },
             body,
-            annotation: vec![],
+            annotation: vec![].into(),
         })
     }
 
@@ -119,8 +119,8 @@ impl<'a> Parser<'a> {
 
         let body = match self.get_next_token().token {
             RBrace => TypeBody {
-                members: vec![],
-                subtypes: vec![],
+                members: vec![].into(),
+                subtypes: vec![].into(),
             },
             Semicolon => {
                 let res = self.members(prefix, classname).push_context(ctx)?;

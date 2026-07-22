@@ -14,10 +14,9 @@ impl<'a> Parser<'a> {
 
         // if the next token is not closing the body, then it must be still
         // a member.
-        let mut body = TypeBody {
-            members: vec![],
-            subtypes: vec![],
-        };
+
+        let mut members: Vec<Rc<Member>> = vec![];
+        let mut subtypes: Vec<Rc<Type>> = vec![];
 
         // {<member_decl>}, inside is the <member_decl>
         while self.peek_next_token().token != RBrace {
@@ -47,21 +46,21 @@ impl<'a> Parser<'a> {
                     let mut typeclass = self.class_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    subtypes.push(Rc::new(typeclass));
                 }
                 // Types: enum
                 (Keyword("enum"), _) => {
                     let mut typeclass = self.enum_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    subtypes.push(Rc::new(typeclass));
                 }
                 // Types: annotation
                 (At, Keyword("interface")) => {
                     let mut typeclass = self.annotation_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    subtypes.push(Rc::new(typeclass));
                 }
 
                 // Types: interface
@@ -69,7 +68,7 @@ impl<'a> Parser<'a> {
                     let mut typeclass = self.interface_decl(prefix.clone()).push_context(ctx)?;
                     typeclass.modifiers = modifiers;
                     typeclass.annotation = annotations;
-                    body.subtypes.push(Rc::new(typeclass));
+                    subtypes.push(Rc::new(typeclass));
                 }
                 // Members: method with type_param
                 (LessThan, _) => {
@@ -97,7 +96,7 @@ impl<'a> Parser<'a> {
                         };
                         // must have body, since this is a constructor
                         self.skip_brace(LBrace, RBrace).push_context(ctx)?;
-                        body.members.push(
+                        members.push(
                             Member {
                                 name: name.to_owned(),
                                 member_kind: MemberKind::Constructor {
@@ -152,7 +151,7 @@ impl<'a> Parser<'a> {
                                 .to_stack_parse_err(self.get_current_token().addr, ctx));
                             }
                         }
-                        body.members.push(
+                        members.push(
                             Member {
                                 name: name.to_owned(),
                                 member_kind: MemberKind::Method {
@@ -191,7 +190,7 @@ impl<'a> Parser<'a> {
                     self.skip_brace(LBrace, RBrace).push_context(ctx)?;
 
                     // donzo
-                    body.members.push(
+                    members.push(
                         Member {
                             name: name.to_owned(),
                             member_kind: MemberKind::Constructor {
@@ -261,7 +260,7 @@ impl<'a> Parser<'a> {
                                 }
                                 .to_stack_parse_err(self.peek_next_token().addr, ctx));
                             }
-                            body.members.push(
+                            members.push(
                                 Member {
                                     name: name.to_owned(),
                                     member_kind: MemberKind::Method {
@@ -320,7 +319,7 @@ impl<'a> Parser<'a> {
                                 }
                             }
 
-                            body.members.push(
+                            members.push(
                                 Member {
                                     name: name.to_owned(),
                                     member_kind: MemberKind::Property {
@@ -390,7 +389,7 @@ impl<'a> Parser<'a> {
                                     }
                                 };
 
-                                body.members.push(
+                                members.push(
                                     Member {
                                         name: name.to_owned(),
                                         member_kind: MemberKind::Property {
@@ -425,6 +424,9 @@ impl<'a> Parser<'a> {
             };
         }
         // consume the RBrace
-        Ok(body)
+        Ok(TypeBody {
+            members: members.into(),
+            subtypes: subtypes.into(),
+        })
     }
 }

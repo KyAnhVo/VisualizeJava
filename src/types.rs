@@ -198,7 +198,7 @@ pub enum MemberKind {
 pub struct Member {
     pub name: String,
     pub member_kind: MemberKind,
-    pub annotations: Vec<Rc<Annotation>>,
+    pub annotations: Rc<[Annotation]>,
     pub modifiers: Modifiers,
 }
 
@@ -224,8 +224,8 @@ pub enum TypeKind {
 /// A type's body contains its members (not subtypes) and its subtypes.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeBody {
-    pub members: Vec<Rc<Member>>,
-    pub subtypes: Vec<Rc<Type>>,
+    pub members: Rc<[Rc<Member>]>,
+    pub subtypes: Rc<[Rc<Type>]>,
 }
 
 /// A type can be a class/enum/interface/annotation.
@@ -235,7 +235,7 @@ pub struct Type {
     pub modifiers: Modifiers,
     pub type_kind: TypeKind,
     pub body: TypeBody,
-    pub annotation: Vec<Rc<Annotation>>,
+    pub annotation: Rc<[Annotation]>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

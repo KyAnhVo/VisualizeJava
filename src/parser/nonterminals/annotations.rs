@@ -31,7 +31,7 @@ impl<'a> Parser<'a> {
             name,
             type_kind,
             body,
-            annotation: vec![],
+            annotation: vec![].into(),
             modifiers: Modifiers {
                 modifiers: BTreeSet::new(),
                 access_modifier: AccessModifier::Default,
@@ -45,10 +45,9 @@ impl<'a> Parser<'a> {
     ) -> ParseResult<(TypeKind, TypeBody)> {
         let ctx = ("annotation_body", self.peek_next_token().addr);
         let mut annotation_elements: Vec<(String, RefType)> = vec![];
-        let mut body: TypeBody = TypeBody {
-            members: vec![],
-            subtypes: vec![],
-        };
+
+        let mut members: Vec<Rc<Member>> = vec![];
+        let mut subtypes: Vec<Rc<Type>> = vec![];
 
         consume_token!(self, ctx, LBrace, "LBrace");
 
@@ -80,27 +79,27 @@ impl<'a> Parser<'a> {
                             let mut subtype = self.enum_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            subtypes.push(Rc::new(subtype));
                         }
                         (Keyword("class"), _) => {
                             let mut subtype = self.class_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            subtypes.push(Rc::new(subtype));
                         }
                         (Keyword("interface"), _) => {
                             let mut subtype =
                                 self.interface_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            subtypes.push(Rc::new(subtype));
                         }
                         (At, Keyword("interface")) => {
                             let mut subtype =
                                 self.annotation_decl(prefix.clone()).push_context(ctx)?;
                             subtype.annotation = annotations;
                             subtype.modifiers = modifiers;
-                            body.subtypes.push(Rc::new(subtype));
+                            subtypes.push(Rc::new(subtype));
                         }
                         (Identifier(_), _) => {
                             let typeclass = self.ref_type().push_context(ctx)?;
@@ -148,7 +147,7 @@ impl<'a> Parser<'a> {
                                         }
                                     }
                                     consume_token!(self, ctx, Semicolon, "Semicolon");
-                                    body.members.push(
+                                    members.push(
                                         Member {
                                             name: name.0.last().cloned().unwrap(),
                                             member_kind: MemberKind::Property {
@@ -242,7 +241,10 @@ impl<'a> Parser<'a> {
             TypeKind::Annotation {
                 annotation_properties: annotation_elements,
             },
-            body,
+            TypeBody {
+                members: members.into(),
+                subtypes: subtypes.into(),
+            },
         ))
     }
 }

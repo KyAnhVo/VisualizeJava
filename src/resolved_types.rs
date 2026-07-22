@@ -119,7 +119,7 @@ pub enum MemberKind {
 pub struct Member {
     pub name: String,
     pub member_kind: MemberKind,
-    pub annotations: Vec<Annotation>,
+    pub annotations: Rc<[Annotation]>,
     pub modifiers: Modifiers,
 }
 

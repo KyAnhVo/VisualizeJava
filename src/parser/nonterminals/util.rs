@@ -260,15 +260,15 @@ impl<'a> Parser<'a> {
     }
 
     /// `<annotations> ::= {<annotations>}`
-    pub(crate) fn annotations(&mut self) -> ParseResult<Vec<Rc<Annotation>>> {
+    pub(crate) fn annotations(&mut self) -> ParseResult<Rc<[Annotation]>> {
         let ctx = ("annotations", self.peek_next_token().addr);
-        let mut v: Vec<Rc<Annotation>> = vec![];
+        let mut v: Vec<Annotation> = vec![];
         while self.peek_next_token().token == At
             && self.peek_token_offset(1).token != Keyword("interface")
         {
-            v.push(Rc::new(self.annotation().push_context(ctx)?));
+            v.push(self.annotation().push_context(ctx)?);
         }
-        Ok(v)
+        Ok(v.into())
     }
 
     /// `<annotation> ::= "@" <qualified_name> [( "(" <skip_parens> ")" )| ( "{" <skip_brace> "}"
