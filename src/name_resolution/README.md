@@ -16,7 +16,7 @@ Before the algorithm, we first understand how Java does its name resolution. Her
 So the idea is that we have a scope table such that:
 - Scope[name] = (package, typename)
 And we set up in the reverse direction:
-- Put java.lang classes in first
+- Put `java.lang` classes in first
 - Put wildcard imports in
 - Put types declared in the same package in,
 - Put single type imports in
@@ -30,18 +30,18 @@ import com.example.npc.Character;
 public class Character {...}
 ```
 We consider Scope[Character]:
-1. Character
-2. java.lang.Character
-3. com.example.util.Character
-4. com.example.npc.Character;
-5. com.example.npc.Character; (current file)
+1. `Character`
+2. `java.lang.Character`
+3. `com.example.util.Character`
+4. `com.example.npc.Character`
+5. `com.example.npc.Character` (current file)
 ### NOTE 1: 
 Although, for package building, we would sweep over the files in the same package
 and verify that no 2 top level classes of a class have the same name so 4 and 5 are
 not necessarily clashing / or raise error right away.
 ### NOTE 2: 
-Also, we would not consider java.lang since it is over our scope and we do not want
-to draw abstraction/dependency edges to and from java.lang and anything not inside project
+Also, we would not consider `java.lang` since it is over our scope and we do not want
+to draw abstraction/dependency edges to and from `java.lang` and anything not inside project
 file.
 
 ## Algorithm (pseudocode)
@@ -51,7 +51,7 @@ Here is the pseudocode for the algo algorithm:
 ### Phase 1: Flatten
 For each file:
 - Recursively flatten the types
-- Put the file with all types at 1st level (so file[type].members is empty) into its
+- Put the file with all types at 1st level (so `file[type].members` is empty) into its
   corresponding package: Map<Package Name -> Vector<Files>>
 
 ### Phase 2: Name Resolution
@@ -68,6 +68,10 @@ Thus we solve type by BFS, which here is equivalent to topological ordered type 
 `A<T extends A1, A2>` has no stake in this, since `A1` and `A2` resolution is trivial.
 
 #### Algorithm:
+
+##### High overview:
+
+```
 Construct a FIFO queue TypeQueue
 Append all top level types of all the AST's in.
 while the queue is not empty:
@@ -76,9 +80,31 @@ while the queue is not empty:
     - enqueue it back to the list.
   - else:
     - resolve its generics, its parents, its members
-    - enqueue its inner types. \
-The termination condition is either:
+    - enqueue its inner types.
+```
+
+##### Termination condition:
+```
 - the queue is empty, hence success
 - there is no new resolved type after 1 round, failure.
+```
 
+#### The cycle detection algorithm (early termination)
+```
+let early_term_counter = 0;
+while queue is not empty:
+  let type := dequeued element
+  if type cannot be resolved:
+    enqueue type
+    early_term_count := early_term_counter + 1
+  else:
+    enqueue children type
+    early_term_count := 0
 
+  if early_term_counter == queue length:
+    Cycle detected. Report error.
+
+No cycle. Resolution complete.
+```
+In fact, we identify that only the types in the queue and its inner types
+could have contributed to the cycle.
