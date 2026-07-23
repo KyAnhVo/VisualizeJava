@@ -8,10 +8,11 @@ help:
 	@ echo "  make help"
 	@ echo "    show commands"
 	@ echo ""
-	@ echo "  make run src=<path>"
+	@ echo "  make run src=<path> mode=<mode>"
 	@ echo "    runs the program with that directory."
 	@ echo "    Debug information stored in debug-output.log"
 	@ echo "    time it take"
+	@ echo " 		Mode: none, ast, flat, name-res"
 	@ echo ""
 	@ echo "  make test"
 	@ echo "    runs test suite."
@@ -26,5 +27,5 @@ test-with-stdout:
 	@ cargo test -- --test-threads=1 --nocapture
 
 run:
-	@ cargo run --release -- $(src) debug-output.log
+	@ cargo run --release -- $(src) debug-output.log $(mode)
 

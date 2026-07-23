@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::name_resolution::err::ReadProjectErr;
+use crate::resolved_types;
 use crate::types;
 use crate::types::AccessModifier;
 use crate::types::QualifiedName;
@@ -14,7 +15,7 @@ pub struct PackageIndex(HashMap<QualifiedName, TypeIndex>);
 
 impl PackageIndex {
     /// From a list of all AST's in the file, generate a PackageIndex.
-    pub fn from_ast_lst(value: &Vec<types::JavaFile>) -> Result<Self, ReadProjectErr> {
+    pub fn from_ast_lst(value: &Vec<Rc<types::JavaFile>>) -> Result<Self, ReadProjectErr> {
         let mut myself = Self(HashMap::new());
 
         value.iter().try_for_each(|ast| {
@@ -22,7 +23,7 @@ impl PackageIndex {
                 .0
                 .entry(ast.package_name.clone())
                 .or_insert(TypeIndex::new(&ast.package_name))
-                .add_ast(ast)
+                .add_ast(ast.clone())
         })?;
 
         Ok(myself)
@@ -73,9 +74,14 @@ impl TypeIndex {
     pub fn get_type(&self, type_name: &QualifiedName) -> Option<&TypeIndexEntry> {
         self.type_index.get(type_name)
     }
-    pub fn add_ast(&mut self, ast: &types::JavaFile) -> Result<(), ReadProjectErr> {
+    pub fn add_ast(&mut self, ast: Rc<types::JavaFile>) -> Result<(), ReadProjectErr> {
         ast.type_decls.iter().try_for_each(|typeclass| {
-            self.add_ast_recursive(typeclass, ast.file.clone(), AccessModifier::Public)
+            self.add_ast_recursive(
+                typeclass.clone(),
+                ast.clone(),
+                ast.file.clone(),
+                AccessModifier::Public,
+            )
         })
     }
 
@@ -85,7 +91,8 @@ impl TypeIndex {
 
     fn add_ast_recursive(
         &mut self,
-        typeclass: &types::Type,
+        typeclass: Rc<types::Type>,
+        ast_root: Rc<types::JavaFile>,
         from_file: Rc<PathBuf>,
         current_min_access_modifier: AccessModifier,
     ) -> Result<(), ReadProjectErr> {
@@ -106,10 +113,18 @@ impl TypeIndex {
                 visibility,
                 from_file: from_file.clone(),
                 modifiers: typeclass.modifiers.modifiers.clone(),
+                ast_root: ast_root.clone(),
+                unresolved_node: typeclass.clone(),
+                resolved_node: None,
             },
         );
         typeclass.body.subtypes.iter().try_for_each(|inner_type| {
-            self.add_ast_recursive(inner_type, from_file.clone(), visibility)
+            self.add_ast_recursive(
+                inner_type.clone(),
+                ast_root.clone(),
+                from_file.clone(),
+                visibility,
+            )
         })
     }
 }
@@ -125,6 +140,12 @@ pub struct TypeIndexEntry {
     pub from_file: Rc<PathBuf>,
     /// the modifiers (static, volatile, etc.)
     pub modifiers: BTreeSet<String>,
+    /// the root of the ast that contains this type
+    pub ast_root: Rc<types::JavaFile>,
+    /// the unresolved node of the AST that is this type
+    pub unresolved_node: Rc<types::Type>,
+    /// the resolved node of the AST that is this type
+    pub resolved_node: Option<Rc<resolved_types::Type>>,
 }
 
 #[cfg(test)]
@@ -134,13 +155,13 @@ pub(crate) mod test {
     use crate::parser::parser::Parser;
 
     /// Parses every .java file under `dir` and builds a PackageIndex from them.
-    pub(crate) fn load_project(dir: &str) -> (Vec<types::JavaFile>, PackageIndex) {
+    pub(crate) fn load_project(dir: &str) -> (Vec<Rc<types::JavaFile>>, PackageIndex) {
         let files = get_java_files(&PathBuf::from(dir)).unwrap();
-        let asts: Vec<types::JavaFile> = files
+        let asts: Vec<Rc<types::JavaFile>> = files
             .iter()
             .map(|file| {
                 let src = std::fs::read_to_string(file).unwrap();
-                Parser::parse(&src, file).unwrap()
+                Rc::new(Parser::parse(&src, file).unwrap())
             })
             .collect();
         let project = PackageIndex::from_ast_lst(&asts).unwrap();
@@ -177,7 +198,7 @@ pub(crate) mod test {
         let src = "package dup.pkg;\npublic class Foo {\n}\n";
         let ast1 = parse_src(src);
         let ast2 = parse_src(src);
-        let result = PackageIndex::from_ast_lst(&vec![ast1, ast2]);
+        let result = PackageIndex::from_ast_lst(&vec![Rc::new(ast1), Rc::new(ast2)]);
         assert!(matches!(result, Err(ReadProjectErr::SemanticErr(_))));
     }
 
@@ -186,7 +207,10 @@ pub(crate) mod test {
         let (_asts, project) = load_project("test_target_small");
         let book = QualifiedName(vec!["library".into(), "model".into(), "Book".into()]);
         let origin = project.get_origin_package(&book).unwrap();
-        assert_eq!(origin.package, QualifiedName(vec!["library".into(), "model".into()]));
+        assert_eq!(
+            origin.package,
+            QualifiedName(vec!["library".into(), "model".into()])
+        );
 
         let list = QualifiedName(vec!["java".into(), "util".into(), "List".into()]);
         assert!(project.get_origin_package(&list).is_none());
@@ -196,7 +220,7 @@ pub(crate) mod test {
     fn test_nested_type_visibility_clamps_to_parent() {
         let src = "package vis.pkg;\npublic class Outer {\n    class Inner {\n    }\n}\n";
         let ast = parse_src(src);
-        let project = PackageIndex::from_ast_lst(&vec![ast]).unwrap();
+        let project = PackageIndex::from_ast_lst(&vec![Rc::new(ast)]).unwrap();
         let pkg = project
             .get_package(&QualifiedName(vec!["vis".into(), "pkg".into()]))
             .unwrap();

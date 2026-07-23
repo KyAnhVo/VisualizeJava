@@ -64,6 +64,8 @@ If `B extends A` or `B implements A`, B depends on A.
 From the 2 definitions, we construct a "depends on" graph, where `B depends on A` induces an edge `(A, B)`
 And the graph has no cycle for a compiled java program.
 Thus we solve type by BFS, which here is equivalent to topological ordered type stuff.
+##### Note:
+`A<T extends A1, A2>` has no stake in this, since `A1` and `A2` resolution is trivial.
 
 #### Algorithm:
 Construct a FIFO queue TypeQueue
