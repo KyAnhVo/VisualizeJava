@@ -76,7 +76,7 @@ while the queue is not empty:
     - enqueue it back to the list.
   - else:
     - resolve its generics, its parents, its members
-    - enqueue its inner types
+    - enqueue its inner types. \
 The termination condition is either:
 - the queue is empty, hence success
 - there is no new resolved type after 1 round, failure.
