@@ -9,13 +9,18 @@ use crate::types;
 use crate::types::AccessModifier;
 use crate::types::QualifiedName;
 
+#[derive(Debug, PartialEq)]
+pub enum NameResolutionErr {
+    CyclicDependency,
+}
+
 /// A mapping f of type PackageIndex is `f: PackageName -> PackageIndex`.
 #[derive(Debug)]
 pub struct PackageIndex(HashMap<QualifiedName, TypeIndex>);
 
 impl PackageIndex {
     /// From a list of all AST's in the file, generate a PackageIndex.
-    pub fn from_ast_lst(value: &Vec<Rc<types::JavaFile>>) -> Result<Self, ReadProjectErr> {
+    pub fn from_ast_lst(value: &[Rc<types::JavaFile>]) -> Result<Self, ReadProjectErr> {
         let mut myself = Self(HashMap::new());
 
         value.iter().try_for_each(|ast| {

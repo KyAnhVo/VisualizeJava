@@ -3,7 +3,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 /// implements a stack. Purely for semantic reasons.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Stack<T> {
     item: Vec<T>,
 }
