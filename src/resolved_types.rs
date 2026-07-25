@@ -145,8 +145,8 @@ pub enum TypeKind {
 /// A type's body contains its members (not subtypes) and its subtypes.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TypeBody {
-    pub members: Vec<Member>,
-    pub subtypes: Vec<Type>,
+    pub members: Rc<[Rc<Member>]>,
+    pub subtypes: Rc<[Rc<Type>]>,
 }
 
 /// A type can be a class/enum/interface/annotation.

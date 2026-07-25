@@ -5,6 +5,8 @@ use std::rc::Rc;
 
 use crate::name_resolution::err::ReadProjectErr;
 use crate::resolved_types;
+use crate::resolved_types::FullyQualifiedName;
+use crate::resolved_types::TypeSource;
 use crate::types;
 use crate::types::AccessModifier;
 use crate::types::QualifiedName;
@@ -58,6 +60,26 @@ impl PackageIndex {
         }
 
         None
+    }
+
+    pub fn to_fqn(&self, fqn: &QualifiedName) -> Rc<[FullyQualifiedName]> {
+        let mut v: Vec<FullyQualifiedName> = vec![];
+        for i in 0..fqn.len() {
+            let pkgname = fqn.get_prefix(i).unwrap();
+            let Some(pkg) = self.get_package(&pkgname) else {
+                continue;
+            };
+            let Some(_) = pkg.get_type(fqn) else {
+                continue;
+            };
+            v.push(FullyQualifiedName {
+                source: TypeSource::InProjectType {
+                    package: pkgname.clone(),
+                },
+                typename: fqn.clone(),
+            });
+        }
+        v.into()
     }
 }
 

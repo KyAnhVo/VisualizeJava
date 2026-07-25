@@ -214,7 +214,11 @@ impl Scope {
 
 // ------------------------- Resolving members and types ------------------------
 impl Scope {
-    fn resolve_member(&mut self, member: &types::Member) -> resolved_types::Member {
+    pub fn resolve_member(
+        &mut self,
+        member: &types::Member,
+        project: &PackageIndex,
+    ) -> resolved_types::Member {
         resolved_types::Member {
             name: member.name.clone(),
             annotations: self.resolve_annotations(member.annotations.clone()),
@@ -222,7 +226,7 @@ impl Scope {
             member_kind: match &member.member_kind {
                 types::MemberKind::Property { reftype, arr_dim } => {
                     resolved_types::MemberKind::Property {
-                        reftype: self.resolve_reftype(&reftype),
+                        reftype: self.resolve_reftype(&reftype, project),
                         arr_dim: *arr_dim,
                     }
                 }
@@ -233,17 +237,17 @@ impl Scope {
                     throws,
                 } => {
                     let (scopeframe, resolve_type_params) =
-                        self.push_and_resolve_type_params(type_param_list);
+                        self.push_and_resolve_type_params(type_param_list, project);
                     let res = resolved_types::MemberKind::Method {
                         type_param_list: resolve_type_params,
                         input: input
                             .iter()
-                            .map(|reftype| self.resolve_reftype(reftype))
+                            .map(|reftype| self.resolve_reftype(reftype, project))
                             .collect(),
-                        output: self.resolve_voidable_type(output),
+                        output: self.resolve_voidable_type(output, project),
                         throws: throws
                             .iter()
-                            .map(|reftype| self.resolve_reftype(reftype))
+                            .map(|reftype| self.resolve_reftype(reftype, project))
                             .collect(),
                     };
                     self.pop_frame(&scopeframe);
@@ -255,16 +259,16 @@ impl Scope {
                     throws,
                 } => {
                     let (scopeframe, resolve_type_params) =
-                        self.push_and_resolve_type_params(type_param_list);
+                        self.push_and_resolve_type_params(type_param_list, project);
                     let res = resolved_types::MemberKind::Constructor {
                         type_param_list: resolve_type_params,
                         input: input
                             .iter()
-                            .map(|reftype| self.resolve_reftype(reftype))
+                            .map(|reftype| self.resolve_reftype(reftype, project))
                             .collect(),
                         throws: throws
                             .iter()
-                            .map(|reftype| self.resolve_reftype(reftype))
+                            .map(|reftype| self.resolve_reftype(reftype, project))
                             .collect(),
                     };
                     self.pop_frame(&scopeframe);
@@ -275,9 +279,10 @@ impl Scope {
     }
 
     /// Pushes the type param, in, and get the type param for pop
-    fn push_and_resolve_type_params(
+    pub fn push_and_resolve_type_params(
         &mut self,
         og_type_param_list: &types::TypeParamList,
+        project: &PackageIndex,
     ) -> (ScopeFrame, resolved_types::TypeParamList) {
         let mut names: ScopeFrame = ScopeFrame(vec![]);
         let mut type_param_list: resolved_types::TypeParamList =
@@ -307,14 +312,14 @@ impl Scope {
                 extends_from: type_param
                     .extends_from
                     .iter()
-                    .map(|reftype| self.resolve_reftype(reftype))
+                    .map(|reftype| self.resolve_reftype(reftype, project))
                     .collect(),
             });
         });
 
         (names, type_param_list)
     }
-    fn resolve_annotations(
+    pub fn resolve_annotations(
         &mut self,
         annotations: Rc<[types::Annotation]>,
     ) -> Rc<[resolved_types::Annotation]> {
@@ -333,18 +338,23 @@ impl Scope {
             .collect()
     }
 
-    fn resolve_voidable_type(
+    pub fn resolve_voidable_type(
         &self,
         voidable: &types::VoidableType,
+        project: &PackageIndex,
     ) -> resolved_types::VoidableType {
         match voidable {
             types::VoidableType::Void => resolved_types::VoidableType::Void,
             types::VoidableType::RefType(s) => {
-                resolved_types::VoidableType::RefType(self.resolve_reftype(s))
+                resolved_types::VoidableType::RefType(self.resolve_reftype(s, project))
             }
         }
     }
-    fn resolve_reftype(&self, reftype: &types::RefType) -> resolved_types::RefType {
+    pub fn resolve_reftype(
+        &self,
+        reftype: &types::RefType,
+        project: &PackageIndex,
+    ) -> resolved_types::RefType {
         let name: FullyQualifiedName = match self.peek(&reftype.name) {
             None => match (reftype.name.0.len(), reftype.name.0[0].as_str()) {
                 (0, _) => panic!("Type no name"),
@@ -380,40 +390,63 @@ impl Scope {
                     source: TypeSource::PrimitiveType(PrimitiveType::Char),
                     typename: reftype.name.clone(),
                 },
-                (_, _) => FullyQualifiedName {
-                    source: TypeSource::ExternalDependencyType,
-                    typename: reftype.name.clone(),
-                },
+                (_, _) => {
+                    let fqns = project.to_fqn(&reftype.name);
+                    if fqns.len() == 1 {
+                        return resolved_types::RefType {
+                            name: fqns[0].clone(),
+                            type_arg_list: self
+                                .resolve_type_arg_list(&reftype.type_arg_list, project),
+                            arr_dim: reftype.arr_dim,
+                        };
+                    }
+                    FullyQualifiedName {
+                        source: TypeSource::ExternalDependencyType,
+                        typename: reftype.name.clone(),
+                    }
+                }
             },
             Some(s) => s.clone(),
         };
 
         resolved_types::RefType {
             name,
-            type_arg_list: self.resolve_type_arg_list(&reftype.type_arg_list),
+            type_arg_list: self.resolve_type_arg_list(&reftype.type_arg_list, project),
             arr_dim: reftype.arr_dim,
         }
     }
 
-    fn resolve_type_arg_list(
+    pub fn resolve_type_arg_list(
         &self,
         typearg_list: &types::TypeArgList,
+        project: &PackageIndex,
     ) -> resolved_types::TypeArgList {
         resolved_types::TypeArgList(
             typearg_list
                 .0
                 .iter()
-                .map(|type_arg| self.resolve_type_arg(type_arg))
+                .map(|type_arg| self.resolve_type_arg(type_arg, project))
                 .collect(),
         )
     }
-
-    fn resolve_type_arg(&self, typearg: &types::TypeArg) -> resolved_types::TypeArg {
+    pub fn resolve_type_arg(
+        &self,
+        typearg: &types::TypeArg,
+        project: &PackageIndex,
+    ) -> resolved_types::TypeArg {
         match typearg {
-            types::TypeArg::Is(s) => resolved_types::TypeArg::Is(self.resolve_reftype(s)),
-            types::TypeArg::Extends(s) => resolved_types::TypeArg::Extends(self.resolve_reftype(s)),
-            types::TypeArg::Super(s) => resolved_types::TypeArg::Super(self.resolve_reftype(s)),
+            types::TypeArg::Is(s) => resolved_types::TypeArg::Is(self.resolve_reftype(s, project)),
+            types::TypeArg::Extends(s) => {
+                resolved_types::TypeArg::Extends(self.resolve_reftype(s, project))
+            }
+            types::TypeArg::Super(s) => {
+                resolved_types::TypeArg::Super(self.resolve_reftype(s, project))
+            }
             types::TypeArg::Wildcard => resolved_types::TypeArg::Wildcard,
         }
+    }
+
+    pub fn resolve_qualified_name(&self, name: &QualifiedName) -> FullyQualifiedName {
+        todo!("implement");
     }
 }
