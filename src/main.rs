@@ -84,7 +84,7 @@ fn main() {
     }
 
     // Construct type index
-    let pkg_ind = name_resolution::resolve_types::PackageIndex::from_ast_lst(&asts);
+    let pkg_ind = name_resolution::resolve_types::Project::from_ast_lst(&asts);
     if let Flags::DebugFlattening = flag {
         write!(output_src, "{:#?}", pkg_ind).unwrap();
         let duration = start.elapsed();

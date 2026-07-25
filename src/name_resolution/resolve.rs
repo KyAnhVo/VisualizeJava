@@ -6,7 +6,7 @@ use std::{
 use crate::{
     name_resolution::{
         err::ReadProjectErr,
-        resolve_types::{NameResolutionErr, PackageIndex},
+        resolve_types::{NameResolutionErr, Project},
         scope::Scope,
     },
     resolved_types::{FullyQualifiedName, TypeSource},
@@ -30,13 +30,13 @@ pub enum ResolveStatus {
 #[derive(Debug)]
 pub struct Resolver {
     pub queue: VecDeque<TypeQueueEntry>,
-    pub project: PackageIndex,
+    pub project: Project,
     early_termination_counter: usize,
 }
 
 impl Resolver {
     pub fn new(asts: &[Rc<types::JavaFile>]) -> Result<Self, ReadProjectErr> {
-        let project = PackageIndex::from_ast_lst(asts)?;
+        let project = Project::from_ast_lst(asts)?;
         let mut me: Self = Self {
             queue: VecDeque::new(),
             project,
@@ -81,7 +81,7 @@ impl Resolver {
 
     fn resolve_entry(&mut self, entry: &TypeQueueEntry) {}
 
-    fn entry_parents_resolved(&self, entry: &TypeQueueEntry, project: &PackageIndex) -> bool {
+    fn entry_parents_resolved(&self, entry: &TypeQueueEntry, project: &Project) -> bool {
         match &entry.type_node.type_kind {
             types::TypeKind::Class {
                 inherit_class,
@@ -110,7 +110,7 @@ impl Resolver {
         &self,
         entry: &TypeQueueEntry,
         reftype: &types::RefType,
-        project: &PackageIndex,
+        project: &Project,
     ) -> bool {
         let resolved_reftype = entry.type_member_scope.resolve_reftype(&reftype, project);
         let fqn = resolved_reftype.name;

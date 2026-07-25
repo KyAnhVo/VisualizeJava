@@ -18,9 +18,9 @@ pub enum NameResolutionErr {
 
 /// A mapping f of type PackageIndex is `f: PackageName -> PackageIndex`.
 #[derive(Debug)]
-pub struct PackageIndex(HashMap<QualifiedName, TypeIndex>);
+pub struct Project(HashMap<QualifiedName, Package>);
 
-impl PackageIndex {
+impl Project {
     /// From a list of all AST's in the file, generate a PackageIndex.
     pub fn from_ast_lst(value: &[Rc<types::JavaFile>]) -> Result<Self, ReadProjectErr> {
         let mut myself = Self(HashMap::new());
@@ -29,7 +29,7 @@ impl PackageIndex {
             myself
                 .0
                 .entry(ast.package_name.clone())
-                .or_insert(TypeIndex::new(&ast.package_name))
+                .or_insert(Package::new(&ast.package_name))
                 .add_ast(ast.clone())
         })?;
 
@@ -37,17 +37,17 @@ impl PackageIndex {
     }
 
     /// Iterate over and get pairs of `(pkg name, TypeIndex)`
-    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, QualifiedName, TypeIndex> {
+    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, QualifiedName, Package> {
         self.0.iter()
     }
 
     /// Gets the TypeIndex of the file
-    pub fn get_package(&self, name: &QualifiedName) -> Option<&TypeIndex> {
+    pub fn get_package(&self, name: &QualifiedName) -> Option<&Package> {
         self.0.get(name)
     }
 
     /// get the package (TypeIndex) containing the type.
-    pub fn get_origin_package(&self, name: &QualifiedName) -> Option<&TypeIndex> {
+    pub fn get_origin_package(&self, name: &QualifiedName) -> Option<&Package> {
         for i in 1..name.len() {
             let pkg = name.get_prefix(i).unwrap();
             let Some(type_index) = self.get_package(&pkg) else {
@@ -85,12 +85,12 @@ impl PackageIndex {
 
 /// A mapping f of type TypeIndex is `f: TypeName (fqn) -> TypeIndexEntry`
 #[derive(Debug)]
-pub struct TypeIndex {
+pub struct Package {
     pub package: QualifiedName,
     pub type_index: HashMap<QualifiedName, TypeIndexEntry>,
 }
 
-impl TypeIndex {
+impl Package {
     pub fn new(pkg_name: &QualifiedName) -> Self {
         Self {
             package: pkg_name.clone(),
@@ -182,7 +182,7 @@ pub(crate) mod test {
     use crate::parser::parser::Parser;
 
     /// Parses every .java file under `dir` and builds a PackageIndex from them.
-    pub(crate) fn load_project(dir: &str) -> (Vec<Rc<types::JavaFile>>, PackageIndex) {
+    pub(crate) fn load_project(dir: &str) -> (Vec<Rc<types::JavaFile>>, Project) {
         let files = get_java_files(&PathBuf::from(dir)).unwrap();
         let asts: Vec<Rc<types::JavaFile>> = files
             .iter()
@@ -191,7 +191,7 @@ pub(crate) mod test {
                 Rc::new(Parser::parse(&src, file).unwrap())
             })
             .collect();
-        let project = PackageIndex::from_ast_lst(&asts).unwrap();
+        let project = Project::from_ast_lst(&asts).unwrap();
         (asts, project)
     }
 
@@ -225,7 +225,7 @@ pub(crate) mod test {
         let src = "package dup.pkg;\npublic class Foo {\n}\n";
         let ast1 = parse_src(src);
         let ast2 = parse_src(src);
-        let result = PackageIndex::from_ast_lst(&vec![Rc::new(ast1), Rc::new(ast2)]);
+        let result = Project::from_ast_lst(&vec![Rc::new(ast1), Rc::new(ast2)]);
         assert!(matches!(result, Err(ReadProjectErr::SemanticErr(_))));
     }
 
@@ -247,7 +247,7 @@ pub(crate) mod test {
     fn test_nested_type_visibility_clamps_to_parent() {
         let src = "package vis.pkg;\npublic class Outer {\n    class Inner {\n    }\n}\n";
         let ast = parse_src(src);
-        let project = PackageIndex::from_ast_lst(&vec![Rc::new(ast)]).unwrap();
+        let project = Project::from_ast_lst(&vec![Rc::new(ast)]).unwrap();
         let pkg = project
             .get_package(&QualifiedName(vec!["vis".into(), "pkg".into()]))
             .unwrap();

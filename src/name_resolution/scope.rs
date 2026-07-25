@@ -1,5 +1,5 @@
 use crate::name_resolution::file_util::Stack;
-use crate::name_resolution::resolve_types::PackageIndex;
+use crate::name_resolution::resolve_types::Project;
 use crate::resolved_types::{self, FullyQualifiedName, PrimitiveType, TypeSource};
 use crate::types::{self, AccessModifier, QualifiedName};
 use std::collections::HashMap;
@@ -59,7 +59,7 @@ impl Scope {
 //      add_same_file(). The reason we still have add_same_file()
 //      is because add_single_type_import might overwrite that scope.
 impl Scope {
-    fn add_wildcard_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+    fn add_wildcard_import(&mut self, ast: &types::JavaFile, project: &Project) {
         for import_object in ast.imported_objects.iter() {
             // package P; import P.*;
             // just for safety but if anybody do this then touche' to them...
@@ -137,7 +137,7 @@ impl Scope {
         }
     }
 
-    fn add_same_pkg(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+    fn add_same_pkg(&mut self, ast: &types::JavaFile, project: &Project) {
         for (fqn, typeclass) in project.get_package(&ast.package_name).unwrap().iter() {
             if typeclass.visibility == AccessModifier::Private {
                 continue;
@@ -155,7 +155,7 @@ impl Scope {
         }
     }
 
-    fn add_single_type_import(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+    fn add_single_type_import(&mut self, ast: &types::JavaFile, project: &Project) {
         for import_obj in ast.imported_objects.iter() {
             if import_obj.is_wildcard {
                 continue;
@@ -182,7 +182,7 @@ impl Scope {
         }
     }
 
-    fn add_same_file(&mut self, ast: &types::JavaFile, project: &PackageIndex) {
+    fn add_same_file(&mut self, ast: &types::JavaFile, project: &Project) {
         for (name, entry) in project.get_package(&ast.package_name).unwrap().iter() {
             if entry.from_file != ast.file {
                 continue;
@@ -202,7 +202,7 @@ impl Scope {
 
     /// Constructs a scope object from a project and an AST.
     /// Refer to name_resolution/README.md to understand how this works.
-    pub fn construct_baseline_scope(ast: &types::JavaFile, project: &PackageIndex) -> Self {
+    pub fn construct_baseline_scope(ast: &types::JavaFile, project: &Project) -> Self {
         let mut scope = Self::new();
         scope.add_wildcard_import(ast, project);
         scope.add_same_pkg(ast, project);
@@ -217,7 +217,7 @@ impl Scope {
     pub fn resolve_member(
         &mut self,
         member: &types::Member,
-        project: &PackageIndex,
+        project: &Project,
     ) -> resolved_types::Member {
         resolved_types::Member {
             name: member.name.clone(),
@@ -282,7 +282,7 @@ impl Scope {
     pub fn push_and_resolve_type_params(
         &mut self,
         og_type_param_list: &types::TypeParamList,
-        project: &PackageIndex,
+        project: &Project,
     ) -> (ScopeFrame, resolved_types::TypeParamList) {
         let mut names: ScopeFrame = ScopeFrame(vec![]);
         let mut type_param_list: resolved_types::TypeParamList =
@@ -341,7 +341,7 @@ impl Scope {
     pub fn resolve_voidable_type(
         &self,
         voidable: &types::VoidableType,
-        project: &PackageIndex,
+        project: &Project,
     ) -> resolved_types::VoidableType {
         match voidable {
             types::VoidableType::Void => resolved_types::VoidableType::Void,
@@ -353,7 +353,7 @@ impl Scope {
     pub fn resolve_reftype(
         &self,
         reftype: &types::RefType,
-        project: &PackageIndex,
+        project: &Project,
     ) -> resolved_types::RefType {
         let name: FullyQualifiedName = match self.peek(&reftype.name) {
             None => match (reftype.name.0.len(), reftype.name.0[0].as_str()) {
@@ -419,7 +419,7 @@ impl Scope {
     pub fn resolve_type_arg_list(
         &self,
         typearg_list: &types::TypeArgList,
-        project: &PackageIndex,
+        project: &Project,
     ) -> resolved_types::TypeArgList {
         resolved_types::TypeArgList(
             typearg_list
@@ -432,7 +432,7 @@ impl Scope {
     pub fn resolve_type_arg(
         &self,
         typearg: &types::TypeArg,
-        project: &PackageIndex,
+        project: &Project,
     ) -> resolved_types::TypeArg {
         match typearg {
             types::TypeArg::Is(s) => resolved_types::TypeArg::Is(self.resolve_reftype(s, project)),
