@@ -157,7 +157,7 @@ pub enum ExportedTypeEntryName {
 pub struct ExportedInnerTypes(pub HashMap<QualifiedName, ExportedTypeEntry>);
 
 impl ExportedInnerTypes {
-    pub fn from_type(node: Rc<types::Type>, project: &mut Project) -> Self {
+    pub fn from_type(node: Rc<types::Type>, project: &Project) -> Self {
         use types::TypeKind::*;
         let (pkg, _) = project.get_origin_package(&node.name).unwrap();
         let mut res = Self::from_type_pre_inheritance(node.clone(), &pkg);
@@ -233,13 +233,23 @@ impl ExportedInnerTypes {
 
         for inheritance in inheritances.iter() {
             for (name, entry) in inheritance.0.iter() {
-                if let Some(entry) = self.0.get(name) {
+                if let Some(my_entry) = self.0.get(name) {
                     // if the name is in here already, then it might be
                     // from Own (shadow) or from another branch (implement/extend)
                     // of inheritance (ambiguous)
-                    match entry.name {
+                    match &my_entry.name {
                         Own(_) => {}
-                        Inherited(_) | Ambiguous => {
+                        Inherited(s) => match &entry.name {
+                            Inherited(s1) | Own(s1) => {
+                                if s != s1 {
+                                    self.0.get_mut(name).unwrap().name = Ambiguous;
+                                }
+                            }
+                            Ambiguous => {
+                                self.0.get_mut(name).unwrap().name = Ambiguous;
+                            }
+                        },
+                        Ambiguous => {
                             self.0.get_mut(name).unwrap().name = Ambiguous;
                         }
                     }

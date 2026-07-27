@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, rc::Rc};
 
 use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
@@ -45,9 +45,25 @@ impl<'a> Parser<'a> {
                 vec![]
             };
 
-        let (enum_vals, body) = self
+        let (enum_vals, mut body) = self
             .enum_body(name.clone(), name.0.last().unwrap().to_owned())
             .push_context(ctx)?;
+
+        body.subtypes = body
+            .subtypes
+            .iter()
+            .map(|subtype| {
+                let mut modifiers = subtype.modifiers.clone();
+                modifiers.modifiers.insert("static".to_owned());
+                Rc::new(Type {
+                    name: subtype.name.clone(),
+                    modifiers,
+                    type_kind: subtype.type_kind.clone(),
+                    annotation: subtype.annotation.clone(),
+                    body: subtype.body.clone(),
+                })
+            })
+            .collect();
 
         Ok(Type {
             name,
