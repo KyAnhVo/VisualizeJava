@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::name_resolution::err::ReadProjectErr;
+use crate::name_resolution::resolve::ExportedInnerTypes;
 use crate::resolved_types;
 use crate::resolved_types::FullyQualifiedName;
 use crate::resolved_types::TypeSource;
@@ -46,17 +47,21 @@ impl Project {
         self.0.get(name)
     }
 
-    /// get the package (TypeIndex) containing the type.
-    pub fn get_origin_package(&self, name: &QualifiedName) -> Option<&Package> {
+    pub fn get_mut_package(&mut self, name: &QualifiedName) -> Option<&mut Package> {
+        self.0.get_mut(name)
+    }
+
+    /// get the Package containing the type and the TypeIndex.
+    pub fn get_origin_package(&self, name: &QualifiedName) -> Option<(&Package, &TypeIndexEntry)> {
         for i in 1..name.len() {
             let pkg = name.get_prefix(i).unwrap();
             let Some(type_index) = self.get_package(&pkg) else {
                 continue;
             };
-            let Some(_) = type_index.get_type(name) else {
+            let Some(entry) = type_index.get_type(name) else {
                 continue;
             };
-            return Some(type_index);
+            return Some((type_index, entry));
         }
 
         None
@@ -101,6 +106,10 @@ impl Package {
     pub fn get_type(&self, type_name: &QualifiedName) -> Option<&TypeIndexEntry> {
         self.type_index.get(type_name)
     }
+
+    pub fn get_mut_type(&mut self, type_name: &QualifiedName) -> Option<&mut TypeIndexEntry> {
+        self.type_index.get_mut(type_name)
+    }
     pub fn add_ast(&mut self, ast: Rc<types::JavaFile>) -> Result<(), ReadProjectErr> {
         ast.type_decls.iter().try_for_each(|typeclass| {
             self.add_ast_recursive(
@@ -111,9 +120,20 @@ impl Package {
             )
         })
     }
-
     pub fn iter(&self) -> std::collections::hash_map::Iter<'_, QualifiedName, TypeIndexEntry> {
         self.type_index.iter()
+    }
+
+    pub fn get_fqn(&self, fqn: &QualifiedName) -> Option<FullyQualifiedName> {
+        let Some(_) = self.get_type(fqn) else {
+            return None;
+        };
+        Some(FullyQualifiedName {
+            source: TypeSource::InProjectType {
+                package: self.package.clone(),
+            },
+            typename: fqn.clone(),
+        })
     }
 
     fn add_ast_recursive(
@@ -136,13 +156,19 @@ impl Package {
         self.type_index.insert(
             typeclass.name.clone(),
             TypeIndexEntry {
-                name: typeclass.name.clone(),
+                name: FullyQualifiedName {
+                    source: TypeSource::InProjectType {
+                        package: ast_root.package_name.clone(),
+                    },
+                    typename: typeclass.name.clone(),
+                },
                 visibility,
                 from_file: from_file.clone(),
                 modifiers: typeclass.modifiers.modifiers.clone(),
                 ast_root: ast_root.clone(),
                 unresolved_node: typeclass.clone(),
                 resolved_node: None,
+                export_types: None,
             },
         );
         typeclass.body.subtypes.iter().try_for_each(|inner_type| {
@@ -157,10 +183,11 @@ impl Package {
 }
 
 /// A TypeIndexEntry is a Name with Visibility.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TypeIndexEntry {
+    // --------------------------- METADATA ----------------------------
     /// the fully qualified name of the type
-    pub name: QualifiedName,
+    pub name: FullyQualifiedName,
     /// the visibility of the type.
     pub visibility: AccessModifier,
     /// the file this type is read from
@@ -168,11 +195,15 @@ pub struct TypeIndexEntry {
     /// the modifiers (static, volatile, etc.)
     pub modifiers: BTreeSet<String>,
     /// the root of the ast that contains this type
+    // -------------------------- UNRESOLVED ---------------------------
     pub ast_root: Rc<types::JavaFile>,
     /// the unresolved node of the AST that is this type
     pub unresolved_node: Rc<types::Type>,
+    // ------------------------ RESOLVE METADATA -----------------------
     /// the resolved node of the AST that is this type
     pub resolved_node: Option<Rc<resolved_types::Type>>,
+    /// the data to propagate to children nodes
+    pub export_types: Option<ExportedInnerTypes>,
 }
 
 #[cfg(test)]
@@ -233,7 +264,7 @@ pub(crate) mod test {
     fn test_get_origin_package() {
         let (_asts, project) = load_project("test_target_small");
         let book = QualifiedName(vec!["library".into(), "model".into(), "Book".into()]);
-        let origin = project.get_origin_package(&book).unwrap();
+        let (origin, _) = project.get_origin_package(&book).unwrap();
         assert_eq!(
             origin.package,
             QualifiedName(vec!["library".into(), "model".into()])

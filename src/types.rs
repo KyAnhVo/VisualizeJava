@@ -95,12 +95,21 @@ impl QualifiedName {
         Some(Self(self.0.get(from..)?.to_owned()))
     }
 
+    pub fn has_prefix(&self, prefix: &QualifiedName) -> bool {
+        self.len() >= prefix.len()
+            && prefix
+                .0
+                .iter()
+                .enumerate()
+                .all(|(ind, s)| s == &self.0[ind])
+    }
+
     /// Check if self has prefix as a proper prefix.
     ///
     /// Proper prefix is defined as: s is a proper
     /// prefix of S if S = s + k for some nonempty
     /// string k.
-    pub fn has_prefix(&self, prefix: &QualifiedName) -> bool {
+    pub fn has_proper_prefix(&self, prefix: &QualifiedName) -> bool {
         self.0.len() > prefix.0.len()
             && prefix
                 .0
@@ -111,7 +120,7 @@ impl QualifiedName {
 
     /// generates an postfix (typename in package) seperating from a package name.
     pub fn to_type_no_package(&self, package: &QualifiedName) -> Option<QualifiedName> {
-        if !self.has_prefix(package) {
+        if !self.has_proper_prefix(package) {
             return None;
         }
         return self.get_suffix(package.0.len());

@@ -75,13 +75,13 @@ impl Scope {
                     // is import_object.name and public static.
 
                     // get the type index
-                    let Some(pkg) = project.get_origin_package(&import_object.name) else {
+                    let Some((pkg, _)) = project.get_origin_package(&import_object.name) else {
                         continue;
                     };
                     // iterate over the type index, get all packages with
                     // prefix is name and is public static
                     for (name, type_index_entry) in pkg.iter() {
-                        if !name.has_prefix(&import_object.name) {
+                        if !name.has_proper_prefix(&import_object.name) {
                             continue;
                         }
                         if type_index_entry.visibility != AccessModifier::Public {
@@ -91,15 +91,7 @@ impl Scope {
                             continue;
                         }
                         let typename = name.to_type_no_package(&import_object.name).unwrap();
-                        self.push(
-                            typename,
-                            FullyQualifiedName {
-                                source: TypeSource::InProjectType {
-                                    package: pkg.package.clone(),
-                                },
-                                typename: type_index_entry.name.clone(),
-                            },
-                        );
+                        self.push(typename, type_index_entry.name.clone());
                     }
                 }
                 (false, true) => {
@@ -117,7 +109,7 @@ impl Scope {
                             continue;
                         }
                         assert!(
-                            name.has_prefix(&import_object.name),
+                            name.has_proper_prefix(&import_object.name),
                             "type of package does not have package name as prefix"
                         );
                         let typename = name.to_type_no_package(&import_object.name).unwrap();
@@ -160,7 +152,7 @@ impl Scope {
             if import_obj.is_wildcard {
                 continue;
             }
-            let Some(pkg) = project.get_origin_package(&import_obj.name) else {
+            let Some((pkg, _)) = project.get_origin_package(&import_obj.name) else {
                 continue;
             };
             let Some(entry) = pkg.get_type(&import_obj.name) else {
@@ -284,7 +276,7 @@ impl Scope {
         og_type_param_list: &types::TypeParamList,
         project: &Project,
     ) -> (ScopeFrame, resolved_types::TypeParamList) {
-        let mut names: ScopeFrame = ScopeFrame(vec![]);
+        let mut scope_frame: ScopeFrame = ScopeFrame(vec![]);
         let mut type_param_list: resolved_types::TypeParamList =
             resolved_types::TypeParamList(vec![]);
 
@@ -300,7 +292,7 @@ impl Scope {
                     typename: name.clone(),
                 },
             );
-            names.0.push(name.clone());
+            scope_frame.0.push(name.clone());
         });
 
         og_type_param_list.0.iter().for_each(|type_param| {
@@ -317,7 +309,7 @@ impl Scope {
             });
         });
 
-        (names, type_param_list)
+        (scope_frame, type_param_list)
     }
     pub fn resolve_annotations(
         &mut self,
@@ -350,73 +342,19 @@ impl Scope {
             }
         }
     }
-    pub fn resolve_reftype(
+    fn resolve_reftype(
         &self,
         reftype: &types::RefType,
         project: &Project,
     ) -> resolved_types::RefType {
-        let name: FullyQualifiedName = match self.peek(&reftype.name) {
-            None => match (reftype.name.0.len(), reftype.name.0[0].as_str()) {
-                (0, _) => panic!("Type no name"),
-                (1, "byte") => FullyQualifiedName {
-                    source: TypeSource::PrimitiveType(PrimitiveType::Byte),
-                    typename: reftype.name.clone(),
-                },
-                (1, "short") => FullyQualifiedName {
-                    source: TypeSource::PrimitiveType(PrimitiveType::Short),
-                    typename: reftype.name.clone(),
-                },
-                (1, "int") => FullyQualifiedName {
-                    source: resolved_types::TypeSource::PrimitiveType(PrimitiveType::Int),
-                    typename: reftype.name.clone(),
-                },
-                (1, "long") => FullyQualifiedName {
-                    source: TypeSource::PrimitiveType(PrimitiveType::Long),
-                    typename: reftype.name.clone(),
-                },
-                (1, "float") => FullyQualifiedName {
-                    source: TypeSource::PrimitiveType(PrimitiveType::Float),
-                    typename: reftype.name.clone(),
-                },
-                (1, "double") => FullyQualifiedName {
-                    source: TypeSource::PrimitiveType(PrimitiveType::Double),
-                    typename: reftype.name.clone(),
-                },
-                (1, "boolean") => FullyQualifiedName {
-                    source: TypeSource::PrimitiveType(PrimitiveType::Boolean),
-                    typename: reftype.name.clone(),
-                },
-                (1, "char") => FullyQualifiedName {
-                    source: TypeSource::PrimitiveType(PrimitiveType::Char),
-                    typename: reftype.name.clone(),
-                },
-                (_, _) => {
-                    let fqns = project.to_fqn(&reftype.name);
-                    if fqns.len() == 1 {
-                        return resolved_types::RefType {
-                            name: fqns[0].clone(),
-                            type_arg_list: self
-                                .resolve_type_arg_list(&reftype.type_arg_list, project),
-                            arr_dim: reftype.arr_dim,
-                        };
-                    }
-                    FullyQualifiedName {
-                        source: TypeSource::ExternalDependencyType,
-                        typename: reftype.name.clone(),
-                    }
-                }
-            },
-            Some(s) => s.clone(),
-        };
-
         resolved_types::RefType {
-            name,
+            name: self.resolve_qualified_name(&reftype.name, project),
             type_arg_list: self.resolve_type_arg_list(&reftype.type_arg_list, project),
             arr_dim: reftype.arr_dim,
         }
     }
 
-    pub fn resolve_type_arg_list(
+    fn resolve_type_arg_list(
         &self,
         typearg_list: &types::TypeArgList,
         project: &Project,
@@ -429,7 +367,7 @@ impl Scope {
                 .collect(),
         )
     }
-    pub fn resolve_type_arg(
+    fn resolve_type_arg(
         &self,
         typearg: &types::TypeArg,
         project: &Project,
@@ -446,7 +384,56 @@ impl Scope {
         }
     }
 
-    pub fn resolve_qualified_name(&self, name: &QualifiedName) -> FullyQualifiedName {
-        todo!("implement");
+    /// In general, find an FQN for any QN.
+    pub fn resolve_qualified_name(
+        &self,
+        name: &QualifiedName,
+        project: &Project,
+    ) -> FullyQualifiedName {
+        if let Some(typename) = self.peek(name) {
+            typename.clone()
+        } else if let Some((_, typename)) = project.get_origin_package(name) {
+            typename.name.clone()
+        } else {
+            match (name.0.len(), name.0[0].as_str()) {
+                (0, _) => panic!("Type no name"),
+                (1, "byte") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Byte),
+                    typename: name.clone(),
+                },
+                (1, "short") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Short),
+                    typename: name.clone(),
+                },
+                (1, "int") => FullyQualifiedName {
+                    source: resolved_types::TypeSource::PrimitiveType(PrimitiveType::Int),
+                    typename: name.clone(),
+                },
+                (1, "long") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Long),
+                    typename: name.clone(),
+                },
+                (1, "float") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Float),
+                    typename: name.clone(),
+                },
+                (1, "double") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Double),
+                    typename: name.clone(),
+                },
+                (1, "boolean") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Boolean),
+                    typename: name.clone(),
+                },
+                (1, "char") => FullyQualifiedName {
+                    source: TypeSource::PrimitiveType(PrimitiveType::Char),
+                    typename: name.clone(),
+                },
+                (_, _) => FullyQualifiedName {
+                    source: TypeSource::ExternalDependencyType,
+                    typename: name.clone(),
+                },
+            }
+        }
     }
 }

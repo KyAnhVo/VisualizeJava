@@ -6,7 +6,7 @@ use std::{
 use crate::{
     name_resolution::{
         err::ReadProjectErr,
-        resolve_types::{NameResolutionErr, Project},
+        resolve_types::{NameResolutionErr, Package, Project},
         scope::Scope,
     },
     resolved_types::{FullyQualifiedName, TypeSource},
@@ -69,7 +69,7 @@ impl Resolver {
         let entry = self.queue.pop_front().unwrap();
         if self.entry_parents_resolved(&entry, &self.project) {
             self.early_termination_counter = 0;
-            // TODO: implement resolution
+            self.resolve_entry(&entry);
             unimplemented!()
         } else {
             self.early_termination_counter += 1;
@@ -79,7 +79,13 @@ impl Resolver {
         Ok(ResolveStatus::Unfinished)
     }
 
-    fn resolve_entry(&mut self, entry: &TypeQueueEntry) {}
+    fn resolve_entry(&mut self, entry: &TypeQueueEntry) {
+        let mut scope = &entry.type_member_scope;
+        let package = self
+            .project
+            .get_package(&entry.ast_root.package_name)
+            .unwrap();
+    }
 
     fn entry_parents_resolved(&self, entry: &TypeQueueEntry, project: &Project) -> bool {
         match &entry.type_node.type_kind {
@@ -112,8 +118,9 @@ impl Resolver {
         reftype: &types::RefType,
         project: &Project,
     ) -> bool {
-        let resolved_reftype = entry.type_member_scope.resolve_reftype(&reftype, project);
-        let fqn = resolved_reftype.name;
+        let fqn = entry
+            .type_member_scope
+            .resolve_qualified_name(&reftype.name, project);
         match fqn.source {
             TypeSource::InProjectType { package } => self.name_is_resolved(&fqn.typename, &package),
             _ => true,
@@ -131,4 +138,126 @@ impl Resolver {
     }
 }
 
-pub struct InnerTypeScope(pub HashMap<QualifiedName, (FullyQualifiedName, AccessModifier)>);
+#[derive(Debug, Clone)]
+pub struct ExportedTypeEntry {
+    pub name: ExportedTypeEntryName,
+    pub visibility: AccessModifier,
+    pub root_package: Rc<QualifiedName>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ExportedTypeEntryName {
+    Inherited(FullyQualifiedName),
+    Own(FullyQualifiedName),
+    Ambiguous,
+}
+
+/// ExportedInnerTypes is viewed by structs that will extend/implement it.
+#[derive(Debug, Clone)]
+pub struct ExportedInnerTypes(pub HashMap<QualifiedName, ExportedTypeEntry>);
+
+impl ExportedInnerTypes {
+    pub fn from_type(node: Rc<types::Type>, project: &mut Project) -> Self {
+        use types::TypeKind::*;
+        let (pkg, _) = project.get_origin_package(&node.name).unwrap();
+        let mut res = Self::from_type_pre_inheritance(node.clone(), &pkg);
+        let mut inheritance_import_vec: Vec<&Self> = vec![];
+        match &node.type_kind {
+            Class {
+                inherit_class,
+                implement_interfaces,
+            } => {
+                if let Some(s) = inherit_class {
+                    let name = &s.name;
+                    if let Some((_, ext_entry)) = project.get_origin_package(name) {
+                        inheritance_import_vec.push(ext_entry.export_types.as_ref().unwrap());
+                    }
+                }
+                for s in implement_interfaces.iter() {
+                    let name = &s.name;
+                    if let Some((_, ext_entry)) = project.get_origin_package(name) {
+                        inheritance_import_vec.push(ext_entry.export_types.as_ref().unwrap());
+                    }
+                }
+            }
+            Interface { extend_interfaces } => {
+                for s in extend_interfaces.iter() {
+                    let name = &s.name;
+                    if let Some((_, ext_entry)) = project.get_origin_package(name) {
+                        inheritance_import_vec.push(ext_entry.export_types.as_ref().unwrap());
+                    }
+                }
+            }
+            Enum {
+                implement_interfaces,
+                ..
+            } => {
+                for s in implement_interfaces.iter() {
+                    let name = &s.name;
+                    if let Some((_, ext_entry)) = project.get_origin_package(name) {
+                        inheritance_import_vec.push(ext_entry.export_types.as_ref().unwrap());
+                    }
+                }
+            }
+            Annotation { .. } => {}
+        }
+        res.import_inheritance(&inheritance_import_vec);
+        res
+    }
+
+    pub fn from_type_pre_inheritance(node: Rc<types::Type>, package: &Package) -> Self {
+        use ExportedTypeEntryName::*;
+        // won't check if node actually has no parent.
+        let prefix = &node.name;
+        let mut res = Self(HashMap::new());
+        let from_package = Rc::new(package.package.clone());
+
+        for (name, entry) in package.iter() {
+            if !name.has_proper_prefix(prefix) {
+                continue;
+            }
+            let k = name.get_suffix(prefix.len()).unwrap();
+            let v = ExportedTypeEntry {
+                name: Own(package.get_fqn(name).unwrap()),
+                visibility: entry.visibility,
+                root_package: from_package.clone(),
+            };
+            res.0.insert(k, v);
+        }
+
+        res
+    }
+
+    pub fn import_inheritance(&mut self, inheritances: &[&Self]) {
+        use ExportedTypeEntryName::*;
+
+        for inheritance in inheritances.iter() {
+            for (name, entry) in inheritance.0.iter() {
+                if let Some(entry) = self.0.get(name) {
+                    // if the name is in here already, then it might be
+                    // from Own (shadow) or from another branch (implement/extend)
+                    // of inheritance (ambiguous)
+                    match entry.name {
+                        Own(_) => {}
+                        Inherited(_) | Ambiguous => {
+                            self.0.get_mut(name).unwrap().name = Ambiguous;
+                        }
+                    }
+                    continue;
+                } else {
+                    self.0.insert(
+                        name.clone(),
+                        ExportedTypeEntry {
+                            name: match &entry.name {
+                                Own(s) | Inherited(s) => Inherited(s.clone()),
+                                Ambiguous => Ambiguous,
+                            },
+                            visibility: entry.visibility,
+                            root_package: entry.root_package.clone(),
+                        },
+                    );
+                }
+            }
+        }
+    }
+}
