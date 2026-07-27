@@ -155,22 +155,25 @@ impl Scope {
             let Some((pkg, _)) = project.get_origin_package(&import_obj.name) else {
                 continue;
             };
-            let Some(entry) = pkg.get_type(&import_obj.name) else {
-                continue;
-            };
-            if entry.visibility != AccessModifier::Public {
-                panic!("importing none-public type");
-            }
-            let typename = QualifiedName(vec![import_obj.name.0.last().unwrap().clone()]);
-            self.push(
-                typename.clone(),
-                FullyQualifiedName {
-                    source: TypeSource::InProjectType {
-                        package: pkg.package.clone(),
+            for (typename, entry) in pkg.iter() {
+                if !typename.has_prefix(&import_obj.name) {
+                    continue;
+                }
+                if entry.visibility != AccessModifier::Public {
+                    // justification: we do not need to care about in-package type, since in-package
+                    // type is imported right before we do single type import.
+                    continue;
+                }
+                self.push(
+                    typename.get_suffix(import_obj.name.len() - 1).unwrap(),
+                    FullyQualifiedName {
+                        source: TypeSource::InProjectType {
+                            package: pkg.package.clone(),
+                        },
+                        typename: typename.clone(),
                     },
-                    typename: import_obj.name.clone(),
-                },
-            );
+                );
+            }
         }
     }
 
