@@ -24,6 +24,7 @@ pub enum TypeSource {
     /// We don't resolve or distinguish these further, so no origin is tracked.
     ExternalDependencyType,
     Generic,
+    Ambiguous,
 }
 
 /// A fully qualified name denotes a package and a type.
@@ -34,25 +35,26 @@ pub struct FullyQualifiedName {
 }
 
 impl FullyQualifiedName {
-    pub fn into_fqn(&self) -> QualifiedName {
+    pub fn into_fqn(&self) -> Option<QualifiedName> {
         match self.source {
-            TypeSource::InProjectType { ref package } => {
+            TypeSource::InProjectType { ref package } => Some({
                 let mut name = package.clone();
                 name.0.append(&mut self.typename.0.clone());
                 name
-            }
+            }),
             TypeSource::PrimitiveType(ref prim) => match prim {
-                PrimitiveType::Int => QualifiedName(vec!["int".to_owned()]),
-                PrimitiveType::Boolean => QualifiedName(vec!["boolean".to_owned()]),
-                PrimitiveType::Char => QualifiedName(vec!["char".to_owned()]),
-                PrimitiveType::Byte => QualifiedName(vec!["byte".to_owned()]),
-                PrimitiveType::Short => QualifiedName(vec!["short".to_owned()]),
-                PrimitiveType::Long => QualifiedName(vec!["long".to_owned()]),
-                PrimitiveType::Float => QualifiedName(vec!["float".to_owned()]),
-                PrimitiveType::Double => QualifiedName(vec!["double".to_owned()]),
+                PrimitiveType::Int => Some(QualifiedName(vec!["int".to_owned()])),
+                PrimitiveType::Boolean => Some(QualifiedName(vec!["boolean".to_owned()])),
+                PrimitiveType::Char => Some(QualifiedName(vec!["char".to_owned()])),
+                PrimitiveType::Byte => Some(QualifiedName(vec!["byte".to_owned()])),
+                PrimitiveType::Short => Some(QualifiedName(vec!["short".to_owned()])),
+                PrimitiveType::Long => Some(QualifiedName(vec!["long".to_owned()])),
+                PrimitiveType::Float => Some(QualifiedName(vec!["float".to_owned()])),
+                PrimitiveType::Double => Some(QualifiedName(vec!["double".to_owned()])),
             },
-            TypeSource::ExternalDependencyType => self.typename.clone(),
-            TypeSource::Generic => self.typename.clone(),
+            TypeSource::ExternalDependencyType => Some(self.typename.clone()),
+            TypeSource::Generic => Some(self.typename.clone()),
+            TypeSource::Ambiguous => None,
         }
     }
 }

@@ -1,3 +1,4 @@
+use crate::name_resolution::export_types::ExportedInnerTypes;
 use crate::name_resolution::file_util::Stack;
 use crate::name_resolution::resolve_types::Project;
 use crate::resolved_types::{self, FullyQualifiedName, PrimitiveType, TypeSource};
@@ -271,6 +272,10 @@ impl Scope {
                 }
             },
         }
+    }
+
+    pub fn add_exported_types_from_parent(&mut self, exported_types: &ExportedInnerTypes) {
+        for (name, entry) in exported_types.0.iter() {}
     }
 
     /// Pushes the type param, in, and get the type param for pop
