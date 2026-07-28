@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::name_resolution::err::ReadProjectErr;
-use crate::name_resolution::resolve::ExportedInnerTypes;
+use crate::name_resolution::export_types::ExportedInnerTypes;
 use crate::resolved_types;
 use crate::resolved_types::FullyQualifiedName;
 use crate::resolved_types::TypeSource;
