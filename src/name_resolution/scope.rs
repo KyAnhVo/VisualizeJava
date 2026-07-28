@@ -4,6 +4,7 @@ use crate::name_resolution::resolve_types::Project;
 use crate::resolved_types::{self, FullyQualifiedName, PrimitiveType, TypeSource};
 use crate::types::{self, AccessModifier, QualifiedName};
 use std::collections::HashMap;
+use std::ops::FnOnce;
 use std::rc::Rc;
 
 /// A scope frame is, imagine each time you enter a scope, the new types/names
@@ -274,8 +275,43 @@ impl Scope {
         }
     }
 
-    pub fn add_exported_types_from_parent(&mut self, exported_types: &ExportedInnerTypes) {
-        for (name, entry) in exported_types.0.iter() {}
+    pub fn add_exported_types_from_parent(
+        &mut self,
+        exported_types: &ExportedInnerTypes,
+        pkg_name: &QualifiedName,
+    ) -> ScopeFrame {
+        use crate::name_resolution::export_types::ExportedTypeEntryName::*;
+        use crate::types::AccessModifier::*;
+        let mut scopeframe = ScopeFrame(vec![]);
+        for (name, entry) in exported_types.0.iter() {
+            let min_visibility = if *entry.root_package == *pkg_name {
+                Default
+            } else {
+                Protected
+            };
+            if entry.visibility < min_visibility {
+                continue;
+            }
+            match &entry.name {
+                Inherited(s) => {
+                    self.push(name.clone(), s.clone());
+                }
+                Own(s) => {
+                    self.push(name.clone(), s.clone());
+                }
+                Ambiguous => {
+                    self.push(
+                        name.clone(),
+                        FullyQualifiedName {
+                            source: TypeSource::Ambiguous,
+                            typename: QualifiedName(vec![]),
+                        },
+                    );
+                }
+            }
+            scopeframe.0.push(name.clone());
+        }
+        scopeframe
     }
 
     /// Pushes the type param, in, and get the type param for pop
@@ -443,6 +479,12 @@ impl Scope {
                 },
             }
         }
+    }
+
+    pub fn with_frame<T>(&mut self, frame: ScopeFrame, f: impl FnOnce(&mut Self) -> T) -> T {
+        let res = f(self);
+        self.pop_frame(&frame);
+        res
     }
 }
 
