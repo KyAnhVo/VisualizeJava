@@ -440,3 +440,337 @@ impl Scope {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::name_resolution::resolve_types::test::load_project;
+
+    /// Finds the AST for a specific fixture file by package + file name.
+    /// The project-wide `load_project` helper loads every file under the
+    /// fixture directory at once, so individual tests pick out the one
+    /// file whose `imported_objects`/`package_name` they want to exercise.
+    fn find_ast(
+        asts: &[Rc<types::JavaFile>],
+        package: &[&str],
+        file_name: &str,
+    ) -> Rc<types::JavaFile> {
+        asts.iter()
+            .find(|ast| {
+                ast.package_name.0
+                    == package
+                        .iter()
+                        .map(|s| s.to_string())
+                        .collect::<Vec<String>>()
+                    && ast.file.file_name().and_then(|f| f.to_str()) == Some(file_name)
+            })
+            .unwrap_or_else(|| panic!("fixture file {file_name} not found in package {package:?}"))
+            .clone()
+    }
+
+    fn qn(parts: &[&str]) -> QualifiedName {
+        QualifiedName(parts.iter().map(|s| s.to_string()).collect())
+    }
+
+    /// Builds the expected FullyQualifiedName for an in-project type,
+    /// where `typename_suffix` is relative to `package`.
+    fn fqn_in_project(package: &[&str], typename_suffix: &[&str]) -> FullyQualifiedName {
+        let mut typename: Vec<String> = package.iter().map(|s| s.to_string()).collect();
+        typename.extend(typename_suffix.iter().map(|s| s.to_string()));
+        FullyQualifiedName {
+            source: TypeSource::InProjectType {
+                package: qn(package),
+            },
+            typename: QualifiedName(typename),
+        }
+    }
+
+    // --------------------------- add_wildcard_import ---------------------------
+
+    /// `import scope.wildcard.*;` should bind every public type in the target
+    /// package -- including multi-level nested ones, keyed relative to the
+    /// package -- while skipping package-private types entirely.
+    #[test]
+    fn wildcard_import_public() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "WildcardConsumer.java");
+
+        let mut scope = Scope::new();
+        scope.add_wildcard_import(&ast, &project);
+
+        assert_eq!(
+            scope.get_fqn(&qn(&["Widget"])),
+            Some(&fqn_in_project(&["scope", "wildcard"], &["Widget"]))
+        );
+        assert_eq!(
+            scope.get_fqn(&qn(&["Nested"])),
+            Some(&fqn_in_project(&["scope", "wildcard"], &["Nested"]))
+        );
+        assert_eq!(
+            scope.get_fqn(&qn(&["Nested", "Child"])),
+            Some(&fqn_in_project(
+                &["scope", "wildcard"],
+                &["Nested", "Child"]
+            ))
+        );
+        // package-private types are not brought in by `import P.*;`
+        assert!(scope.get_fqn(&qn(&["Helper"])).is_none());
+    }
+
+    /// `import static scope.pkg.Outer.*;` should bind Outer's own public
+    /// static nested types keyed relative to Outer itself (not the package,
+    /// and not Outer), and still exclude private nested types.
+    #[test]
+    fn wildcard_import_static() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "StaticWildcardConsumer.java");
+
+        let mut scope = Scope::new();
+        scope.add_wildcard_import(&ast, &project);
+
+        // `import static scope.pkg.Outer.*;` binds Outer's own public static
+        // nested types by their name relative to Outer, not to the package.
+        assert_eq!(
+            scope.get_fqn(&qn(&["Inner"])),
+            Some(&fqn_in_project(&["scope", "pkg"], &["Outer", "Inner"]))
+        );
+        assert_eq!(
+            scope.get_fqn(&qn(&["Inner", "Deep"])),
+            Some(&fqn_in_project(
+                &["scope", "pkg"],
+                &["Outer", "Inner", "Deep"]
+            ))
+        );
+        // Outer itself is not a member of Outer.
+        assert!(scope.get_fqn(&qn(&["Outer"])).is_none());
+        // private nested types are excluded even under a static wildcard import.
+        assert!(scope.get_fqn(&qn(&["Hidden"])).is_none());
+    }
+
+    // ----------------------------- add_same_pkg ---------------------------------
+
+    /// Types declared in the same package as the current file should be in
+    /// scope without an import, including default (package-private) access
+    /// and nested chains, but private nested types stay excluded.
+    #[test]
+    fn same_pkg_scope() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "pkg"], "SamePkgConsumer.java");
+
+        let mut scope = Scope::new();
+        scope.add_same_pkg(&ast, &project);
+
+        assert_eq!(
+            scope.get_fqn(&qn(&["Sibling"])),
+            Some(&fqn_in_project(&["scope", "pkg"], &["Sibling"]))
+        );
+        // default (package-private) access is visible within the same package.
+        assert_eq!(
+            scope.get_fqn(&qn(&["PackagePrivate"])),
+            Some(&fqn_in_project(&["scope", "pkg"], &["PackagePrivate"]))
+        );
+        assert_eq!(
+            scope.get_fqn(&qn(&["Outer", "Inner", "Deep"])),
+            Some(&fqn_in_project(
+                &["scope", "pkg"],
+                &["Outer", "Inner", "Deep"]
+            ))
+        );
+        // private nested types are excluded even from the declaring type's own package.
+        assert!(scope.get_fqn(&qn(&["Outer", "Hidden"])).is_none());
+    }
+
+    // ------------------------- add_single_type_import ---------------------------
+
+    /// `import scope.pkg.Outer;` should bind Outer itself and its full nested
+    /// chain, each keyed with `Outer` as the leading segment (i.e. relative
+    /// to the package, not to the imported name).
+    #[test]
+    fn single_import_top_level() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "SingleImportOuter.java");
+
+        let mut scope = Scope::new();
+        scope.add_single_type_import(&ast, &project);
+
+        // `import scope.pkg.Outer;` binds Outer itself...
+        assert_eq!(
+            scope.get_fqn(&qn(&["Outer"])),
+            Some(&fqn_in_project(&["scope", "pkg"], &["Outer"]))
+        );
+        // ...and its nested descendants, keyed relative to the package (Outer stays
+        // the leading segment) rather than relative to the imported name itself.
+        assert_eq!(
+            scope.get_fqn(&qn(&["Outer", "Inner"])),
+            Some(&fqn_in_project(&["scope", "pkg"], &["Outer", "Inner"]))
+        );
+        assert_eq!(
+            scope.get_fqn(&qn(&["Outer", "Inner", "Deep"])),
+            Some(&fqn_in_project(
+                &["scope", "pkg"],
+                &["Outer", "Inner", "Deep"]
+            ))
+        );
+        assert!(scope.get_fqn(&qn(&["Outer", "Hidden"])).is_none());
+    }
+
+    /// `import scope.pkg.Outer.Inner;` should bind the bare name `Inner`
+    /// (plus its own nested chain), not `Outer.Inner` -- regression test for
+    /// the `import_obj.name.len() - 1` suffix fix; using the package length
+    /// instead would wrongly keep the `Outer.` prefix here.
+    #[test]
+    fn single_import_nested() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "SingleImportNested.java");
+
+        let mut scope = Scope::new();
+        scope.add_single_type_import(&ast, &project);
+
+        // `import scope.pkg.Outer.Inner;` must bind the bare name `Inner`,
+        // not `Outer.Inner` -- Outer was never imported here.
+        assert_eq!(
+            scope.get_fqn(&qn(&["Inner"])),
+            Some(&fqn_in_project(&["scope", "pkg"], &["Outer", "Inner"]))
+        );
+        assert_eq!(
+            scope.get_fqn(&qn(&["Inner", "Deep"])),
+            Some(&fqn_in_project(
+                &["scope", "pkg"],
+                &["Outer", "Inner", "Deep"]
+            ))
+        );
+        assert!(scope.get_fqn(&qn(&["Outer"])).is_none());
+        assert!(scope.get_fqn(&qn(&["Outer", "Inner"])).is_none());
+    }
+
+    // ---------------------------- add_same_file ----------------------------------
+
+    /// A type declared in the current file should be bound in scope under
+    /// its own simple name.
+    #[test]
+    fn same_file_scope() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "Character.java");
+
+        let mut scope = Scope::new();
+        scope.add_same_file(&ast, &project);
+
+        assert_eq!(
+            scope.get_fqn(&qn(&["Character"])),
+            Some(&fqn_in_project(&["scope", "consumer"], &["Character"]))
+        );
+    }
+
+    // ------------------------- precedence / shadowing -----------------------------
+
+    /// For the same simple name, a single type import should overwrite a
+    /// wildcard import's binding rather than being shadowed by it -- checked
+    /// in isolation from the same-file tier.
+    #[test]
+    fn import_precedence() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "Character.java");
+
+        let mut scope = Scope::new();
+        scope.add_wildcard_import(&ast, &project);
+        assert_eq!(
+            scope.get_fqn(&qn(&["Character"])),
+            Some(&fqn_in_project(&["scope", "shadow1"], &["Character"]))
+        );
+
+        scope.add_single_type_import(&ast, &project);
+        assert_eq!(
+            scope.get_fqn(&qn(&["Character"])),
+            Some(&fqn_in_project(&["scope", "shadow2"], &["Character"]))
+        );
+    }
+
+    /// End-to-end version of the README's worked shadowing example: a
+    /// wildcard import, a single type import, and a same-file declaration
+    /// all bind the same simple name `Character`. Per the documented
+    /// precedence order, the type declared in the current file must win.
+    ///
+    /// ```java
+    /// package scope.consumer;
+    /// import scope.shadow1.*;         // wildcard import: shadow1.Character
+    /// import scope.shadow2.Character; // single type import: shadow2.Character
+    /// public class Character {}       // declared in this very file
+    /// ```
+    #[test]
+    fn shadowing_example() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "Character.java");
+
+        let scope = Scope::construct_baseline_scope(&ast, &project);
+
+        assert_eq!(
+            scope.get_fqn(&qn(&["Character"])),
+            Some(&fqn_in_project(&["scope", "consumer"], &["Character"]))
+        );
+    }
+
+    // --------------------------- resolve_qualified_name ---------------------------
+
+    /// A primitive name like `int` should resolve to its `PrimitiveType`
+    /// regardless of scope or project contents.
+    #[test]
+    fn resolve_primitive() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "FullyQualifiedConsumer.java");
+        let scope = Scope::construct_baseline_scope(&ast, &project);
+
+        let resolved = scope.resolve_qualified_name(&qn(&["int"]), &project);
+        assert_eq!(
+            resolved.source,
+            TypeSource::PrimitiveType(PrimitiveType::Int)
+        );
+    }
+
+    /// A name that is neither in scope, nor a project type, nor a primitive
+    /// should be classified as an external dependency rather than erroring.
+    #[test]
+    fn resolve_external() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "FullyQualifiedConsumer.java");
+        let scope = Scope::construct_baseline_scope(&ast, &project);
+
+        let resolved = scope.resolve_qualified_name(&qn(&["java", "util", "List"]), &project);
+        assert_eq!(resolved.source, TypeSource::ExternalDependencyType);
+    }
+
+    /// A name only reachable through an import binding (not a real package
+    /// path) should resolve via the scope lookup, not the project fallback.
+    #[test]
+    fn resolve_scope_hit() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "SingleImportNested.java");
+        let scope = Scope::construct_baseline_scope(&ast, &project);
+
+        // `Inner` is only reachable through the scope binding created by the
+        // single type import of `scope.pkg.Outer.Inner`.
+        let resolved = scope.resolve_qualified_name(&qn(&["Inner"]), &project);
+        assert_eq!(
+            resolved,
+            fqn_in_project(&["scope", "pkg"], &["Outer", "Inner"])
+        );
+    }
+
+    /// Writing a name fully qualified, with no matching import at all,
+    /// should still resolve by falling back to the project index once the
+    /// scope lookup misses.
+    #[test]
+    fn resolve_fqn_fallback() {
+        let (asts, project) = load_project("test_target_scope");
+        let ast = find_ast(&asts, &["scope", "consumer"], "FullyQualifiedConsumer.java");
+        let scope = Scope::construct_baseline_scope(&ast, &project);
+
+        // Nothing imports scope.pkg.Outer.Inner here, but writing the fully
+        // qualified name resolves via the project index once scope misses.
+        let resolved =
+            scope.resolve_qualified_name(&qn(&["scope", "pkg", "Outer", "Inner"]), &project);
+        assert_eq!(
+            resolved,
+            fqn_in_project(&["scope", "pkg"], &["Outer", "Inner"])
+        );
+    }
+}
