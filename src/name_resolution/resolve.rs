@@ -80,17 +80,21 @@ impl Resolver {
     fn resolve_entry(&mut self, entry: TypeQueueEntry) {
         // we assume parents are resolved.
         let mut scope = entry.type_member_scope;
-        let package = self
-            .project
-            .get_package(&entry.ast_root.package_name)
-            .unwrap();
+        let pkg_name = &entry.ast_root.package_name;
 
         // Get scope from parent
         let entry_exported_types =
             ExportedInnerTypes::from_type(entry.type_node.clone(), &self.project);
         let inheritance_frame =
-            scope.add_exported_types_from_parent(&entry_exported_types, &package.package);
-        scope.with_frame(inheritance_frame, |scope| {})
+            scope.add_exported_types_from_parent(&entry_exported_types, pkg_name);
+        self.project
+            .get_mut_package(pkg_name)
+            .unwrap()
+            .get_mut_type(&entry.name)
+            .unwrap()
+            .export_types = Some(entry_exported_types);
+
+        scope.with_frame(inheritance_frame, |scope| todo!())
     }
 
     fn entry_parents_resolved(&self, entry: &TypeQueueEntry, project: &Project) -> bool {

@@ -211,6 +211,14 @@ impl Scope {
 
 // ------------------------- Resolving members and types ------------------------
 impl Scope {
+    pub fn resolve_type(
+        &mut self,
+        typeclass: Rc<types::Type>,
+        project: &Project,
+    ) -> resolved_types::Type {
+        unimplemented!();
+    }
+
     pub fn resolve_member(
         &mut self,
         member: &types::Member,

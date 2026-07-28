@@ -245,6 +245,7 @@ pub struct Type {
     pub type_kind: TypeKind,
     pub body: TypeBody,
     pub annotation: Rc<[Annotation]>,
+    pub type_params: TypeParamList,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

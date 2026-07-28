@@ -35,8 +35,8 @@ impl<'a> Parser<'a> {
             }
         });
 
-        // <type_param> (unimportant for now)
-        self.type_param_list().push_context(ctx)?;
+        // <type_param>
+        let type_params = self.type_param_list().push_context(ctx)?;
 
         // ["extends" <ref_type>]
         let inherits_from: Option<RefType> = if self.peek_next_token().token == Keyword("extends") {
@@ -88,6 +88,7 @@ impl<'a> Parser<'a> {
         // use default modifiers and annotation
         let typeclass = Type {
             name,
+            type_params,
             modifiers: Modifiers {
                 modifiers: BTreeSet::new(),
                 access_modifier: AccessModifier::Default,

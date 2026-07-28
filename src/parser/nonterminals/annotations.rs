@@ -31,6 +31,7 @@ impl<'a> Parser<'a> {
             name,
             type_kind,
             body,
+            type_params: TypeParamList(vec![]),
             annotation: vec![].into(),
             modifiers: Modifiers {
                 modifiers: BTreeSet::new(),

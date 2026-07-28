@@ -36,7 +36,8 @@ impl<'a> Parser<'a> {
             }
             .to_stack_parse_err(self.get_current_token().addr, ctx));
         };
-        self.type_param_list().push_context(ctx)?;
+
+        let type_params = self.type_param_list().push_context(ctx)?;
 
         // ["extends" <ref_type> {"," <ref_type>}]
         let extend_interfaces = if self.peek_next_token().token == Keyword("extends") {
@@ -69,6 +70,7 @@ impl<'a> Parser<'a> {
         Ok(Type {
             name,
             body,
+            type_params,
             type_kind: TypeKind::Interface { extend_interfaces },
             annotation: vec![].into(),
             modifiers: Modifiers {
@@ -115,6 +117,7 @@ impl<'a> Parser<'a> {
                     };
                 Rc::new(Type {
                     name: subtype.name.clone(),
+                    type_params: subtype.type_params.clone(),
                     modifiers: Modifiers {
                         modifiers,
                         access_modifier,

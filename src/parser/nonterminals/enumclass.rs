@@ -57,6 +57,7 @@ impl<'a> Parser<'a> {
                 modifiers.modifiers.insert("static".to_owned());
                 Rc::new(Type {
                     name: subtype.name.clone(),
+                    type_params: TypeParamList(vec![]),
                     modifiers,
                     type_kind: subtype.type_kind.clone(),
                     annotation: subtype.annotation.clone(),
@@ -67,6 +68,7 @@ impl<'a> Parser<'a> {
 
         Ok(Type {
             name,
+            type_params: TypeParamList(vec![]),
             modifiers: Modifiers {
                 modifiers: BTreeSet::new(),
                 access_modifier: AccessModifier::Default,
