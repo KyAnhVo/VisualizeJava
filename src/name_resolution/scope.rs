@@ -1,5 +1,6 @@
 use crate::name_resolution::export_types::ExportedInnerTypes;
 use crate::name_resolution::file_util::Stack;
+use crate::name_resolution::resolve::TypeQueueEntry;
 use crate::name_resolution::resolve_types::Project;
 use crate::resolved_types::{self, FullyQualifiedName, PrimitiveType, TypeSource};
 use crate::types::{self, AccessModifier, QualifiedName};
@@ -211,12 +212,103 @@ impl Scope {
 
 // ------------------------- Resolving members and types ------------------------
 impl Scope {
-    pub fn resolve_type(
+    pub fn resolve_type_no_child(
         &mut self,
         typeclass: Rc<types::Type>,
         project: &Project,
-    ) -> resolved_types::Type {
-        unimplemented!();
+        ast_root: Rc<types::JavaFile>,
+    ) -> (Rc<resolved_types::Type>, Vec<TypeQueueEntry>) {
+        let (frame, type_params) =
+            self.push_and_resolve_type_params(&typeclass.type_params, project);
+        self.with_frame(frame, |scope| {
+            let members: Rc<[Rc<resolved_types::Member>]> = typeclass
+                .body
+                .members
+                .iter()
+                .map(|member| scope.resolve_member(member, project).into())
+                .collect();
+            let children_queue_entries: Vec<TypeQueueEntry> = typeclass
+                .body
+                .subtypes
+                .iter()
+                .map(|subtype| TypeQueueEntry {
+                    name: subtype.name.clone(),
+                    ast_root: ast_root.clone(),
+                    type_node: subtype.clone(),
+                    type_member_scope: scope.clone(),
+                })
+                .collect();
+            (
+                resolved_types::Type {
+                    name: scope.resolve_qualified_name(&typeclass.name, project),
+                    modifiers: typeclass.modifiers.clone(),
+                    annotation: typeclass
+                        .annotation
+                        .iter()
+                        .map(|x| resolved_types::Annotation {
+                            name: scope.resolve_qualified_name(&x.name, project),
+                            s: x.s.clone(),
+                        })
+                        .collect(),
+                    body: resolved_types::TypeBody {
+                        members,
+                        subtypes: vec![].into(),
+                    },
+                    type_kind: scope.resolve_typekind(&typeclass.type_kind, project),
+                    type_params,
+                }
+                .into(),
+                children_queue_entries,
+            )
+        })
+    }
+
+    pub fn resolve_typekind(
+        &mut self,
+        typekind: &types::TypeKind,
+        project: &Project,
+    ) -> resolved_types::TypeKind {
+        match typekind {
+            types::TypeKind::Class {
+                inherit_class,
+                implement_interfaces,
+            } => resolved_types::TypeKind::Class {
+                inherit_class: match inherit_class.as_ref() {
+                    None => None,
+                    Some(x) => Some(self.resolve_reftype(x, project)),
+                },
+                implement_interfaces: implement_interfaces
+                    .iter()
+                    .map(|x| self.resolve_reftype(x, project))
+                    .collect(),
+            },
+            types::TypeKind::Enum {
+                implement_interfaces,
+                enum_vals,
+            } => resolved_types::TypeKind::Enum {
+                implement_interfaces: implement_interfaces
+                    .iter()
+                    .map(|x| self.resolve_reftype(x, project))
+                    .collect(),
+                enum_vals: enum_vals.clone(),
+            },
+            types::TypeKind::Interface { extend_interfaces } => {
+                resolved_types::TypeKind::Interface {
+                    extend_interfaces: extend_interfaces
+                        .iter()
+                        .map(|x| self.resolve_reftype(x, project))
+                        .collect(),
+                }
+            }
+            types::TypeKind::Annotation {
+                annotation_properties,
+            } => resolved_types::TypeKind::Annotation {
+                annotation_properties: annotation_properties
+                    .iter()
+                    .map(|(name, reftype)| (name.clone(), self.resolve_reftype(reftype, project)))
+                    .collect(),
+            },
+        }
     }
 
     pub fn resolve_member(

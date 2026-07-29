@@ -7,7 +7,7 @@ use crate::{
         resolve_types::{NameResolutionErr, Project},
         scope::Scope,
     },
-    resolved_types::TypeSource,
+    resolved_types::{self, TypeSource},
     types::{self, QualifiedName},
 };
 
@@ -19,7 +19,7 @@ pub struct TypeQueueEntry {
     pub type_member_scope: Scope,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResolveStatus {
     Finished,
     Unfinished,
@@ -54,6 +54,28 @@ impl Resolver {
         Ok(me)
     }
 
+    pub fn resolve(asts: &[Rc<types::JavaFile>]) -> Rc<[Rc<resolved_types::FileTypeTree>]> {
+        let resolved_trees: Vec<Rc<resolved_types::FileTypeTree>> = vec![];
+        // 1. create a new Resolver.
+        let mut resolver = Self::new(asts).unwrap();
+        // 2. continuously dequeue and resolve
+        while resolver.deque_and_resolve().unwrap() == ResolveStatus::Unfinished {}
+        // 3. construct the trees from the ground up.
+        todo!();
+
+        resolved_trees.into()
+    }
+
+    pub fn construct_tree(&self, type_node: Rc<types::Type>) -> Rc<resolved_types::Type> {
+        let subtypes: Vec<Rc<resolved_types::Type>> = type_node
+            .body
+            .subtypes
+            .iter()
+            .map(|subtype| self.construct_tree(subtype.clone()))
+            .collect();
+        todo!()
+    }
+
     pub fn deque_and_resolve(&mut self) -> Result<ResolveStatus, NameResolutionErr> {
         if self.queue.is_empty() {
             return Ok(ResolveStatus::Finished);
@@ -68,7 +90,6 @@ impl Resolver {
         if self.entry_parents_resolved(&entry, &self.project) {
             self.early_termination_counter = 0;
             self.resolve_entry(entry);
-            unimplemented!()
         } else {
             self.early_termination_counter += 1;
             self.queue.push_back(entry);
@@ -77,14 +98,14 @@ impl Resolver {
         Ok(ResolveStatus::Unfinished)
     }
 
-    fn resolve_entry(&mut self, entry: TypeQueueEntry) {
+    fn resolve_entry(&mut self, mut entry: TypeQueueEntry) {
         // we assume parents are resolved.
-        let mut scope = entry.type_member_scope;
+        let scope = &mut entry.type_member_scope;
         let pkg_name = &entry.ast_root.package_name;
 
         // Get scope from parent
         let entry_exported_types =
-            ExportedInnerTypes::from_type(entry.type_node.clone(), &self.project);
+            ExportedInnerTypes::from_type(entry.type_node.clone(), scope, &self.project);
         let inheritance_frame =
             scope.add_exported_types_from_parent(&entry_exported_types, pkg_name);
         self.project
@@ -94,7 +115,20 @@ impl Resolver {
             .unwrap()
             .export_types = Some(entry_exported_types);
 
-        scope.with_frame(inheritance_frame, |scope| todo!())
+        let (resolved_node, children_subtypes) = scope.with_frame(inheritance_frame, |scope| {
+            scope.resolve_type_no_child(
+                entry.type_node.clone(),
+                &self.project,
+                entry.ast_root.clone(),
+            )
+        });
+        self.project
+            .get_mut_package(pkg_name)
+            .unwrap()
+            .get_mut_type(&entry.name)
+            .unwrap()
+            .resolved_node = Some(resolved_node);
+        self.queue.extend(children_subtypes.into_iter());
     }
 
     fn entry_parents_resolved(&self, entry: &TypeQueueEntry, project: &Project) -> bool {

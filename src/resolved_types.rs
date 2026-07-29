@@ -154,11 +154,12 @@ pub struct TypeBody {
 /// A type can be a class/enum/interface/annotation.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Type {
-    pub name: QualifiedName,
+    pub name: FullyQualifiedName,
     pub modifiers: Modifiers,
     pub type_kind: TypeKind,
     pub body: TypeBody,
     pub annotation: Vec<Annotation>,
+    pub type_params: TypeParamList,
 }
 
 /// this is the AST when fully resolved.
