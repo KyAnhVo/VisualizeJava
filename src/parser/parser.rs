@@ -497,11 +497,13 @@ mod test {
 
     #[test]
     fn test_parser_1() {
-        test_parser("test_target/legacy/properties/DataSourcePropertiesBackwardCompatibility.java");
+        test_parser(
+            "test_target/prod_1/legacy/properties/DataSourcePropertiesBackwardCompatibility.java",
+        );
     }
 
     #[test]
     fn test_parser_2() {
-        test_parser("test_target/legacy/properties/PortalProperties.java");
+        test_parser("test_target/prod_1/legacy/properties/PortalProperties.java");
     }
 }

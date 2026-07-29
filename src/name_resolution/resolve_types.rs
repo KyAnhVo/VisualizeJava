@@ -201,7 +201,7 @@ pub struct TypeIndexEntry {
     pub unresolved_node: Rc<types::Type>,
     // ------------------------ RESOLVE METADATA -----------------------
     /// the resolved node of the AST that is this type
-    pub resolved_node: Option<Rc<resolved_types::Type>>,
+    pub resolved_node: Option<resolved_types::Type>,
     /// the data to propagate to children nodes
     pub export_types: Option<ExportedInnerTypes>,
 }
@@ -232,13 +232,13 @@ pub(crate) mod test {
 
     #[test]
     fn test_package_count() {
-        let (_asts, project) = load_project("test_target_small");
+        let (_asts, project) = load_project("test_target/small");
         assert_eq!(project.iter().count(), 7);
     }
 
     #[test]
     fn test_flatten_recurses_into_nested_types() {
-        let (_asts, project) = load_project("test_target_small");
+        let (_asts, project) = load_project("test_target/small");
         let pkg = project
             .get_package(&QualifiedName(vec!["library".into(), "model".into()]))
             .unwrap();
@@ -262,7 +262,7 @@ pub(crate) mod test {
 
     #[test]
     fn test_get_origin_package() {
-        let (_asts, project) = load_project("test_target_small");
+        let (_asts, project) = load_project("test_target/small");
         let book = QualifiedName(vec!["library".into(), "model".into(), "Book".into()]);
         let (origin, _) = project.get_origin_package(&book).unwrap();
         assert_eq!(

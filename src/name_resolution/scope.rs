@@ -217,7 +217,7 @@ impl Scope {
         typeclass: Rc<types::Type>,
         project: &Project,
         ast_root: Rc<types::JavaFile>,
-    ) -> (Rc<resolved_types::Type>, Vec<TypeQueueEntry>) {
+    ) -> (resolved_types::Type, Vec<TypeQueueEntry>) {
         let (frame, type_params) =
             self.push_and_resolve_type_params(&typeclass.type_params, project);
         self.with_frame(frame, |scope| {
@@ -639,7 +639,7 @@ mod test {
     /// package -- while skipping package-private types entirely.
     #[test]
     fn wildcard_import_public() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "WildcardConsumer.java");
 
         let mut scope = Scope::new();
@@ -669,7 +669,7 @@ mod test {
     /// and not Outer), and still exclude private nested types.
     #[test]
     fn wildcard_import_static() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "StaticWildcardConsumer.java");
 
         let mut scope = Scope::new();
@@ -701,7 +701,7 @@ mod test {
     /// and nested chains, but private nested types stay excluded.
     #[test]
     fn same_pkg_scope() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "pkg"], "SamePkgConsumer.java");
 
         let mut scope = Scope::new();
@@ -734,7 +734,7 @@ mod test {
     /// to the package, not to the imported name).
     #[test]
     fn single_import_top_level() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "SingleImportOuter.java");
 
         let mut scope = Scope::new();
@@ -767,7 +767,7 @@ mod test {
     /// instead would wrongly keep the `Outer.` prefix here.
     #[test]
     fn single_import_nested() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "SingleImportNested.java");
 
         let mut scope = Scope::new();
@@ -796,7 +796,7 @@ mod test {
     /// its own simple name.
     #[test]
     fn same_file_scope() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "Character.java");
 
         let mut scope = Scope::new();
@@ -815,7 +815,7 @@ mod test {
     /// in isolation from the same-file tier.
     #[test]
     fn import_precedence() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "Character.java");
 
         let mut scope = Scope::new();
@@ -845,7 +845,7 @@ mod test {
     /// ```
     #[test]
     fn shadowing_example() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "Character.java");
 
         let scope = Scope::construct_baseline_scope(&ast, &project);
@@ -862,7 +862,7 @@ mod test {
     /// regardless of scope or project contents.
     #[test]
     fn resolve_primitive() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "FullyQualifiedConsumer.java");
         let scope = Scope::construct_baseline_scope(&ast, &project);
 
@@ -877,7 +877,7 @@ mod test {
     /// should be classified as an external dependency rather than erroring.
     #[test]
     fn resolve_external() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "FullyQualifiedConsumer.java");
         let scope = Scope::construct_baseline_scope(&ast, &project);
 
@@ -889,7 +889,7 @@ mod test {
     /// path) should resolve via the scope lookup, not the project fallback.
     #[test]
     fn resolve_scope_hit() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "SingleImportNested.java");
         let scope = Scope::construct_baseline_scope(&ast, &project);
 
@@ -907,7 +907,7 @@ mod test {
     /// scope lookup misses.
     #[test]
     fn resolve_fqn_fallback() {
-        let (asts, project) = load_project("test_target_scope");
+        let (asts, project) = load_project("test_target/scope");
         let ast = find_ast(&asts, &["scope", "consumer"], "FullyQualifiedConsumer.java");
         let scope = Scope::construct_baseline_scope(&ast, &project);
 
