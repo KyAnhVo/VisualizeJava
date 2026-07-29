@@ -200,7 +200,7 @@ impl<'a> Lexer<'a> {
                 '\'' => return self.get_char_literal(),
                 '\"' => return self.get_string_literal(),
                 c if c.is_digit(10) => {}
-                c if c.is_alphanumeric() => {
+                c if c.is_alphanumeric() || c == '_' => {
                     let s = self.get_identifier_chain();
                     if matches!(
                         s,

@@ -12,7 +12,10 @@ use std::{
     rc::Rc,
 };
 
-use crate::{name_resolution::file_util::get_java_files, types::JavaFile};
+use crate::{
+    name_resolution::file_util::get_java_files,
+    types::{JavaFile, ParseErr},
+};
 
 #[derive(Debug, Clone, Copy)]
 enum Flags {
@@ -67,15 +70,25 @@ fn main() {
     };
 
     // Construct AST
+    let mut errs: Vec<&PathBuf> = vec![];
     let mut asts: Vec<Rc<JavaFile>> = vec![];
-    files.iter().for_each(|file| {
+    for file in files.iter() {
+        if file.ends_with("package-info.java") {
+            continue;
+        }
+        if file.ends_with("module-info.java") {
+            continue;
+        }
         let src_str = fs::read_to_string(file).unwrap();
-        let ast = match parser::parser::Parser::parse(&src_str, file) {
-            Ok(ast) => ast,
-            Err(e) => panic!("Err: {:#?}", e),
+        match parser::parser::Parser::parse(&src_str, file) {
+            Ok(ast) => asts.push(Rc::new(ast)),
+            Err(e) => {
+                errs.push(file);
+                println!("error file: {:#?}", file);
+                println!("{:#?}", e);
+            }
         };
-        asts.push(Rc::new(ast));
-    });
+    }
     if let Flags::DebugAst = flag {
         write!(output_src, "{:#?}", &asts).unwrap();
         let duration = start.elapsed();
@@ -103,4 +116,6 @@ fn main() {
     // End program
     let duration = start.elapsed();
     println!("Time taken: {:?} microseconds", duration.as_micros());
+    println!("Errored file count: {}", errs.len());
+    println!("Errored files: {:#?}", errs);
 }

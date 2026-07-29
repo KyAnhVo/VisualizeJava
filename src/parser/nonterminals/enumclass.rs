@@ -117,15 +117,11 @@ impl<'a> Parser<'a> {
 
             while self.peek_next_token().token == Comma {
                 self.get_next_token();
-                if let Identifier(s) = self.get_next_token().token {
-                    enum_vals.push(s.to_owned());
-                } else {
-                    return Err(ParseErrType::UnexpectedToken {
-                        expected: "IDENTIFIER",
-                        got: vec![self.get_current_token().token.to_owned_token()],
-                    }
-                    .to_stack_parse_err(self.get_current_token().addr, ctx));
-                }
+                let Identifier(s) = self.peek_next_token().token else {
+                    break;
+                };
+                self.get_next_token();
+                enum_vals.push(s.to_owned());
                 if self.peek_next_token().token == LParen {
                     self.skip_brace(LParen, RParen).push_context(ctx)?;
                 }
