@@ -4,7 +4,7 @@ use crate::{
     name_resolution::{
         err::ReadProjectErr,
         export_types::ExportedInnerTypes,
-        resolve_types::{NameResolutionErr, Project},
+        resolve_types::{NameResolutionErr, Package, Project},
         scope::Scope,
     },
     resolved_types::{self, TypeSource},
@@ -34,7 +34,7 @@ pub struct Resolver {
 
 impl Resolver {
     pub fn new(asts: &[Rc<types::JavaFile>]) -> Result<Self, ReadProjectErr> {
-        let project = Project::from_ast_lst(asts)?;
+        let project = Project::from_ast_lst(&asts)?;
         let mut me: Self = Self {
             queue: VecDeque::new(),
             project,
@@ -55,25 +55,43 @@ impl Resolver {
     }
 
     pub fn resolve(asts: &[Rc<types::JavaFile>]) -> Rc<[Rc<resolved_types::FileTypeTree>]> {
-        let resolved_trees: Vec<Rc<resolved_types::FileTypeTree>> = vec![];
         // 1. create a new Resolver.
         let mut resolver = Self::new(asts).unwrap();
         // 2. continuously dequeue and resolve
         while resolver.deque_and_resolve().unwrap() == ResolveStatus::Unfinished {}
         // 3. construct the trees from the ground up.
-        todo!();
-
-        resolved_trees.into()
+        asts.iter()
+            .map(|x| resolver.construct_tree(x.clone()))
+            .collect()
     }
 
-    pub fn construct_tree(&self, type_node: Rc<types::Type>) -> Rc<resolved_types::Type> {
+    pub fn construct_tree(
+        &mut self,
+        node: Rc<types::JavaFile>,
+    ) -> Rc<resolved_types::FileTypeTree> {
+        let pkg = self.project.get_mut_package(&node.package_name).unwrap();
+        Rc::new(resolved_types::FileTypeTree(
+            node.type_decls
+                .iter()
+                .map(|typeclass_rc| Self::construct_tree_recursive(typeclass_rc.clone(), pkg))
+                .collect(),
+        ))
+    }
+
+    fn construct_tree_recursive(
+        type_node: Rc<types::Type>,
+        pkg: &mut Package,
+    ) -> Rc<resolved_types::Type> {
         let subtypes: Vec<Rc<resolved_types::Type>> = type_node
             .body
             .subtypes
             .iter()
-            .map(|subtype| self.construct_tree(subtype.clone()))
+            .map(|subtype| Self::construct_tree_recursive(subtype.clone(), pkg))
             .collect();
-        todo!()
+        let type_index = pkg.get_mut_type(&type_node.name).unwrap();
+        let mut resolved_type_node = type_index.resolved_node.take().unwrap();
+        resolved_type_node.body.subtypes = subtypes.into();
+        Rc::new(resolved_type_node)
     }
 
     pub fn deque_and_resolve(&mut self) -> Result<ResolveStatus, NameResolutionErr> {

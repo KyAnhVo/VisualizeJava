@@ -92,6 +92,14 @@ fn main() {
         return;
     }
 
+    let resolved_tree = name_resolution::resolve::Resolver::resolve(&asts);
+    if let Flags::DebugNameResolution = flag {
+        write!(output_src, "{:#?}", resolved_tree).unwrap();
+        let duration = start.elapsed();
+        println!("Time taken: {:?} microseconds", duration.as_micros());
+        return;
+    }
+
     // End program
     let duration = start.elapsed();
     println!("Time taken: {:?} microseconds", duration.as_micros());
