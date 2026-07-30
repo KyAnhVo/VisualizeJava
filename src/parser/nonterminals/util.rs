@@ -115,14 +115,17 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// `<ref_type> ::= <annotations> <qualified_name> <type_arg_lst> { "[]" }`
+    /// `<ref_type> ::= <annotations> <qualified_name> <type_arg_lst> {<annotations> "[]" }`
     pub(crate) fn ref_type(&mut self) -> ParseResult<RefType> {
         let ctx = ("ref_type", self.peek_next_token().addr);
         self.annotations().push_context(ctx)?;
         let name: QualifiedName = self.qualified_name().push_context(ctx)?;
         let type_arg_list = self.type_arg_list().push_context(ctx)?;
         let mut arr_dim: u8 = 0;
-        while self.peek_next_token().token == LBracket {
+        while self.peek_next_token().token == LBracket || self.peek_next_token().token == At {
+            if self.peek_next_token().token == At {
+                self.annotations()?;
+            }
             self.get_next_token();
             consume_token!(self, ctx, RBracket, "RBracket");
             arr_dim += 1;
