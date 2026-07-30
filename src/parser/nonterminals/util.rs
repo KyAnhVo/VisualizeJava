@@ -122,9 +122,17 @@ impl<'a> Parser<'a> {
         let name: QualifiedName = self.qualified_name().push_context(ctx)?;
         let type_arg_list = self.type_arg_list().push_context(ctx)?;
         let mut arr_dim: u8 = 0;
-        while self.peek_next_token().token == LBracket || self.peek_next_token().token == At {
+        while self.peek_next_token().token == LBracket
+            || self.peek_next_token().token == At
+            || self.peek_next_token().token == Op("...")
+        {
             if self.peek_next_token().token == At {
                 self.annotations()?;
+            }
+            if self.peek_next_token().token == Op("...") {
+                self.get_next_token();
+                arr_dim += 1;
+                break;
             }
             self.get_next_token();
             consume_token!(self, ctx, RBracket, "RBracket");
