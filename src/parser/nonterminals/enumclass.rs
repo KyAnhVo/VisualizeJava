@@ -96,15 +96,10 @@ impl<'a> Parser<'a> {
     ) -> ParseResult<(Vec<String>, TypeBody)> {
         let ctx = ("enum_body", self.peek_next_token().addr);
 
-        if self.get_next_token().token != LBrace {
-            return Err(ParseErrType::UnexpectedToken {
-                expected: "LBrace",
-                got: vec![self.get_current_token().token.to_owned_token()],
-            }
-            .to_stack_parse_err(self.get_current_token().addr, ctx));
-        }
+        consume_token!(self, ctx, LBrace, "LBrace");
 
         let mut enum_vals: Vec<String> = vec![];
+        self.annotations()?;
         if let Identifier(s) = self.peek_next_token().token {
             self.get_next_token();
             enum_vals.push(s.to_owned());
@@ -117,6 +112,7 @@ impl<'a> Parser<'a> {
 
             while self.peek_next_token().token == Comma {
                 self.get_next_token();
+                self.annotations()?;
                 let Identifier(s) = self.peek_next_token().token else {
                     break;
                 };
