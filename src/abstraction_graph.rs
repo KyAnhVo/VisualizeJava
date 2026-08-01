@@ -1,1 +1,2 @@
-pub mod project_structure;
+pub mod graph;
+pub mod graph_types;
