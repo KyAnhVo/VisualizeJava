@@ -561,7 +561,7 @@ mod test {
                 RefType {
                     name: QualifiedName(vec!["Integer".to_owned()]),
                     type_arg_list: TypeArgList(vec![]),
-                    arr_dim: 0,
+                    arr_dim: 1,
                 }
             ]
         );
@@ -571,7 +571,7 @@ mod test {
             vec![RefType {
                 name: QualifiedName(vec!["String".to_owned()]),
                 type_arg_list: TypeArgList(vec![]),
-                arr_dim: 0,
+                arr_dim: 1,
             }]
         );
         parser = Parser::new("(int a, char b)").unwrap();

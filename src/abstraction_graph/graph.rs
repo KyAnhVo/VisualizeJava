@@ -15,7 +15,11 @@ impl Graph {
         res
     }
 
-    fn build_relationship(&mut self, tree: &FileTypeTree) {}
+    fn build_relationship(&mut self, tree: &FileTypeTree) {
+        for typeclass in tree.0.iter().cloned() {
+            self.build_inheritance_relationship_from_node(typeclass);
+        }
+    }
 
     fn build_inheritance_relationship_from_node(&mut self, node: Rc<Type>) {
         use EdgeVariant::*;
@@ -80,7 +84,6 @@ impl Graph {
             .or_insert(Node {
                 name: tree_node.name.clone(),
                 type_variant: TypeVariant::from_typekind(&tree_node.type_kind),
-                properties: vec![],
                 out_edges: vec![],
                 in_edges: vec![],
             });

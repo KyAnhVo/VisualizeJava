@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::resolved_types::{FullyQualifiedName, TypeKind};
 use crate::types::QualifiedName;
 
@@ -26,7 +24,7 @@ impl TypeVariant {
 pub enum EdgeVariant {
     Extends,
     Implements,
-    MemberType,
+    Association,
 }
 
 impl EdgeVariant {
@@ -69,7 +67,6 @@ pub struct Edge {
 pub struct Node {
     pub name: FullyQualifiedName,
     pub type_variant: TypeVariant,
-    pub properties: Vec<Property>,
 
     pub out_edges: Vec<Edge>,
     pub in_edges: Vec<Edge>,
