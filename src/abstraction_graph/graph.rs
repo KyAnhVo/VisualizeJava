@@ -12,12 +12,94 @@ impl Graph {
         for tree in trees.iter() {
             res.build_from_tree_no_relationship(tree);
         }
+        for tree in trees.iter() {
+            res.build_relationships_from_tree(tree);
+        }
         res
     }
 
-    fn build_relationship(&mut self, tree: &FileTypeTree) {
-        for typeclass in tree.0.iter().cloned() {
-            self.build_inheritance_relationship_from_node(typeclass);
+    fn build_relationships_from_tree(&mut self, tree: &FileTypeTree) {
+        for node in tree.0.iter() {
+            self.build_relationships_from_node(node.clone());
+        }
+    }
+
+    fn build_relationships_from_node(&mut self, tree_node: Rc<Type>) {
+        use EdgeVariant::Association;
+        self.build_inheritance_relationship_from_node(tree_node.clone());
+        for subtype in tree_node.body.subtypes.iter() {
+            self.build_relationships_from_node(subtype.clone());
+        }
+        // Association edges from member types are built in the relationship
+        // pass (build_relationships_from_node), once every node exists.
+        for member in tree_node.body.members.iter() {
+            match &member.member_kind {
+                MemberKind::Method {
+                    type_param_list,
+                    input,
+                    output,
+                    throws,
+                } => {
+                    for typeclass in type_param_list.0.iter() {
+                        self.build_edge(
+                            &tree_node.name,
+                            &typeclass.name,
+                            Association(member.clone()),
+                        );
+                    }
+                    for typeclass in input.iter() {
+                        self.build_edge(
+                            &tree_node.name,
+                            &typeclass.name,
+                            Association(member.clone()),
+                        );
+                    }
+                    if let VoidableType::RefType(reftype) = output {
+                        self.build_edge(
+                            &tree_node.name,
+                            &reftype.name,
+                            Association(member.clone()),
+                        );
+                    }
+                    for typeclass in throws.iter() {
+                        self.build_edge(
+                            &tree_node.name,
+                            &typeclass.name,
+                            Association(member.clone()),
+                        );
+                    }
+                }
+                MemberKind::Constructor {
+                    type_param_list,
+                    input,
+                    throws,
+                } => {
+                    for typeclass in type_param_list.0.iter() {
+                        self.build_edge(
+                            &tree_node.name,
+                            &typeclass.name,
+                            Association(member.clone()),
+                        );
+                    }
+                    for typeclass in input.iter() {
+                        self.build_edge(
+                            &tree_node.name,
+                            &typeclass.name,
+                            Association(member.clone()),
+                        );
+                    }
+                    for typeclass in throws.iter() {
+                        self.build_edge(
+                            &tree_node.name,
+                            &typeclass.name,
+                            Association(member.clone()),
+                        );
+                    }
+                }
+                MemberKind::Property { reftype, .. } => {
+                    self.build_edge(&tree_node.name, &reftype.name, Association(member.clone()));
+                }
+            }
         }
     }
 
@@ -31,10 +113,10 @@ impl Graph {
                 implement_interfaces,
             } => {
                 if let Some(parent) = inherit_class {
-                    self.build_edge(&parent.name, &node.name, Extends);
+                    self.build_edge(&node.name, &parent.name, Extends);
                 };
                 for parent in implement_interfaces.iter() {
-                    self.build_edge(&parent.name, &node.name, Implements);
+                    self.build_edge(&node.name, &parent.name, Implements);
                 }
             }
             TypeKind::Enum {
@@ -42,12 +124,12 @@ impl Graph {
                 ..
             } => {
                 for parent in implement_interfaces.iter() {
-                    self.build_edge(&parent.name, &node.name, Implements);
+                    self.build_edge(&node.name, &parent.name, Implements);
                 }
             }
             TypeKind::Interface { extend_interfaces } => {
                 for parent in extend_interfaces.iter() {
-                    self.build_edge(&parent.name, &node.name, Implements);
+                    self.build_edge(&node.name, &parent.name, Implements);
                 }
             }
             TypeKind::Annotation { .. } => {}
@@ -65,43 +147,88 @@ impl Graph {
         to: &FullyQualifiedName,
         edge_variant: EdgeVariant,
     ) {
-        self.0
-            .get_mut(&from.typename)
-            .unwrap()
-            .out_edges
-            .push(Edge {
-                typename: to.clone(),
-                variant: edge_variant,
-            });
-        self.0.get_mut(&to.typename).unwrap().in_edges.push(Edge {
+        let (Some(from_key), Some(to_key)) = (from.into_fqn(), to.into_fqn()) else {
+            return;
+        };
+        if !self.0.contains_key(&from_key) || !self.0.contains_key(&to_key) {
+            return;
+        }
+        self.0.get_mut(&from_key).unwrap().out_edges.push(Edge {
+            typename: to.clone(),
+            variant: edge_variant.clone(),
+        });
+        self.0.get_mut(&to_key).unwrap().in_edges.push(Edge {
             typename: from.clone(),
-            variant: edge_variant,
+            variant: edge_variant.clone(),
         });
     }
     fn build_node_no_relationship(&mut self, tree_node: Rc<Type>) {
-        self.0
-            .entry(tree_node.name.typename.clone())
-            .or_insert(Node {
-                name: tree_node.name.clone(),
-                type_variant: TypeVariant::from_typekind(&tree_node.type_kind),
-                out_edges: vec![],
-                in_edges: vec![],
-            });
+        let key = tree_node
+            .name
+            .into_fqn()
+            .expect("declared project type must have a resolvable fully-qualified name");
+        self.0.entry(key).or_insert(Node {
+            name: tree_node.name.clone(),
+            type_variant: TypeVariant::from_typekind(&tree_node.type_kind),
+            out_edges: vec![],
+            in_edges: vec![],
+        });
         for subtype in tree_node.body.subtypes.iter() {
             self.build_node_no_relationship(subtype.clone());
         }
-        for member in tree_node.body.members.iter() {
-            match &member.member_kind {
-                MemberKind::Method { .. } => {
-                    todo!("implement this");
-                }
-                MemberKind::Constructor { .. } => {
-                    todo!("implement this");
-                }
-                MemberKind::Property { reftype, arr_dim } => {
-                    todo!("implement this");
-                }
-            }
-        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::name_resolution::resolve::Resolver;
+    use crate::name_resolution::resolve_types::test::load_project;
+
+    fn build_graph(dir: &str) -> Graph {
+        let (asts, _project) = load_project(dir);
+        let trees = Resolver::resolve(&asts);
+        let trees: Vec<FileTypeTree> = trees.iter().map(|t| (**t).clone()).collect();
+        Graph::from_trees(&trees)
+    }
+
+    fn node_named<'a>(graph: &'a Graph, name: &str) -> &'a Node {
+        graph
+            .0
+            .iter()
+            .find(|(k, _)| k.0.last().map(String::as_str) == Some(name))
+            .unwrap_or_else(|| panic!("{name} node should exist"))
+            .1
+    }
+
+    /// End-to-end smoke test over a real (small) project: must not panic and
+    /// must produce a node per declared type.
+    ///
+    /// `Book implements Comparable<Book>` must NOT produce an edge, since
+    /// `Comparable` is outside the project and never gets a `Node` -- the
+    /// graph only represents project-internal relationships.
+    ///
+    /// `BookRepository extends AbstractRepository<Book, String>` is
+    /// project-internal and must produce a real `Extends` edge.
+    #[test]
+    fn builds_graph_for_small_project_without_panicking() {
+        let graph = build_graph("test_target/small");
+
+        let book = node_named(&graph, "Book");
+        assert!(
+            !book
+                .out_edges
+                .iter()
+                .any(|e| e.typename.typename.0.last().map(String::as_str) == Some("Comparable")),
+            "edges to types outside the project should be dropped"
+        );
+
+        // build_edge's (from, to) = (parent, child): the child's in_edges
+        // record the Extends relationship to its parent.
+        let book_repository = node_named(&graph, "BookRepository");
+        assert!(book_repository.out_edges.iter().any(|e| {
+            e.variant == EdgeVariant::Extends
+                && e.typename.typename.0.last().map(String::as_str) == Some("AbstractRepository")
+        }));
     }
 }

@@ -1,5 +1,6 @@
-use crate::resolved_types::{FullyQualifiedName, TypeKind};
+use crate::resolved_types::{FullyQualifiedName, Member, TypeKind};
 use crate::types::QualifiedName;
+use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeVariant {
@@ -14,17 +15,17 @@ impl TypeVariant {
         match typekind {
             TypeKind::Class { .. } => Self::Class,
             TypeKind::Enum { .. } => Self::Enum,
-            TypeKind::Interface { .. } => TypeVariant::Enum,
+            TypeKind::Interface { .. } => TypeVariant::Interface,
             TypeKind::Annotation { .. } => TypeVariant::Annotation,
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum EdgeVariant {
     Extends,
     Implements,
-    Association,
+    Association(Rc<Member>),
 }
 
 impl EdgeVariant {
@@ -48,12 +49,6 @@ impl EdgeVariant {
 pub struct Name {
     pub pkg_name: QualifiedName,
     pub name: QualifiedName,
-}
-
-#[derive(Debug)]
-pub struct Property {
-    pub typename: FullyQualifiedName,
-    pub name: String,
 }
 
 #[derive(Debug)]
