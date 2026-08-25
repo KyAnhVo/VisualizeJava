@@ -1,8 +1,9 @@
 use std::rc::Rc;
 
 use crate::types::{Modifiers, QualifiedName};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum PrimitiveType {
     Int,
     Boolean,
@@ -14,7 +15,7 @@ pub enum PrimitiveType {
     Double,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum TypeSource {
     InProjectType {
         package: QualifiedName,
@@ -28,7 +29,7 @@ pub enum TypeSource {
 }
 
 /// A fully qualified name denotes a package and a type.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct FullyQualifiedName {
     pub source: TypeSource,
     pub typename: QualifiedName,
@@ -37,11 +38,7 @@ pub struct FullyQualifiedName {
 impl FullyQualifiedName {
     pub fn into_fqn(&self) -> Option<QualifiedName> {
         match self.source {
-            TypeSource::InProjectType { ref package } => Some({
-                let mut name = package.clone();
-                name.0.append(&mut self.typename.0.clone());
-                name
-            }),
+            TypeSource::InProjectType { .. } => Some(self.typename.clone()),
             TypeSource::PrimitiveType(ref prim) => match prim {
                 PrimitiveType::Int => Some(QualifiedName(vec!["int".to_owned()])),
                 PrimitiveType::Boolean => Some(QualifiedName(vec!["boolean".to_owned()])),
@@ -59,20 +56,20 @@ impl FullyQualifiedName {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct RefType {
     pub name: FullyQualifiedName,
     pub type_arg_list: TypeArgList,
     pub arr_dim: u8,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum VoidableType {
     Void,
     RefType(RefType),
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum TypeArg {
     Is(RefType),
     Extends(RefType),
@@ -80,25 +77,25 @@ pub enum TypeArg {
     Wildcard,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct TypeArgList(pub Vec<TypeArg>);
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct TypeParam {
     pub name: FullyQualifiedName,
     pub extends_from: Vec<RefType>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct TypeParamList(pub Vec<TypeParam>);
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct Annotation {
     pub name: FullyQualifiedName,
     pub s: String,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum MemberKind {
     Property {
         reftype: RefType,
@@ -117,7 +114,7 @@ pub enum MemberKind {
     },
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct Member {
     pub name: String,
     pub member_kind: MemberKind,
@@ -126,7 +123,7 @@ pub struct Member {
 }
 
 /// A typekind is an enum of different kinds of type
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum TypeKind {
     Class {
         inherit_class: Option<RefType>,
@@ -145,14 +142,14 @@ pub enum TypeKind {
 }
 
 /// A type's body contains its members (not subtypes) and its subtypes.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct TypeBody {
     pub members: Rc<[Rc<Member>]>,
     pub subtypes: Rc<[Rc<Type>]>,
 }
 
 /// A type can be a class/enum/interface/annotation.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct Type {
     pub name: FullyQualifiedName,
     pub modifiers: Modifiers,
@@ -163,7 +160,7 @@ pub struct Type {
 }
 
 /// this is the AST when fully resolved.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct FileTypeTree(pub Vec<Rc<Type>>);
 
 pub struct PackageTypeTree(pub Vec<Rc<Type>>);

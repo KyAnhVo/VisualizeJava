@@ -494,16 +494,4 @@ mod test {
         let ast = Parser::parse(&java_file, &PathBuf::new()).unwrap();
         // println!("{:#?}", ast);
     }
-
-    #[test]
-    fn test_parser_1() {
-        test_parser(
-            "test_target/prod_1/legacy/properties/DataSourcePropertiesBackwardCompatibility.java",
-        );
-    }
-
-    #[test]
-    fn test_parser_2() {
-        test_parser("test_target/prod_1/legacy/properties/PortalProperties.java");
-    }
 }

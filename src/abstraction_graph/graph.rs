@@ -1,13 +1,16 @@
+use serde::Serialize;
+
 use crate::abstraction_graph::graph_types::{Edge, EdgeVariant, Node, TypeVariant};
 use crate::resolved_types::*;
 use crate::types::QualifiedName;
 use std::collections::HashMap;
 use std::rc::Rc;
-#[derive(Debug)]
+
+#[derive(Debug, Serialize)]
 pub struct Graph(pub HashMap<QualifiedName, Node>);
 
 impl Graph {
-    pub fn from_trees(trees: &[FileTypeTree]) -> Self {
+    pub fn from_trees(trees: &[Rc<FileTypeTree>]) -> Self {
         let mut res = Self(HashMap::new());
         for tree in trees.iter() {
             res.build_from_tree_no_relationship(tree);
@@ -25,13 +28,15 @@ impl Graph {
     }
 
     fn build_relationships_from_node(&mut self, tree_node: Rc<Type>) {
-        use EdgeVariant::Association;
         self.build_inheritance_relationship_from_node(tree_node.clone());
+        self.build_associative_relationshup_from_node(tree_node.clone());
         for subtype in tree_node.body.subtypes.iter() {
             self.build_relationships_from_node(subtype.clone());
         }
-        // Association edges from member types are built in the relationship
-        // pass (build_relationships_from_node), once every node exists.
+    }
+
+    fn build_associative_relationshup_from_node(&mut self, tree_node: Rc<Type>) {
+        use EdgeVariant::Association;
         for member in tree_node.body.members.iter() {
             match &member.member_kind {
                 MemberKind::Method {
@@ -170,6 +175,7 @@ impl Graph {
         self.0.entry(key).or_insert(Node {
             name: tree_node.name.clone(),
             type_variant: TypeVariant::from_typekind(&tree_node.type_kind),
+            members: tree_node.body.members.clone(),
             out_edges: vec![],
             in_edges: vec![],
         });
@@ -188,7 +194,7 @@ mod test {
     fn build_graph(dir: &str) -> Graph {
         let (asts, _project) = load_project(dir);
         let trees = Resolver::resolve(&asts);
-        let trees: Vec<FileTypeTree> = trees.iter().map(|t| (**t).clone()).collect();
+        let trees: Rc<[Rc<FileTypeTree>]> = trees.iter().map(|t| (t).clone()).collect();
         Graph::from_trees(&trees)
     }
 
@@ -223,12 +229,48 @@ mod test {
             "edges to types outside the project should be dropped"
         );
 
-        // build_edge's (from, to) = (parent, child): the child's in_edges
-        // record the Extends relationship to its parent.
         let book_repository = node_named(&graph, "BookRepository");
         assert!(book_repository.out_edges.iter().any(|e| {
             e.variant == EdgeVariant::Extends
                 && e.typename.typename.0.last().map(String::as_str) == Some("AbstractRepository")
         }));
+    }
+
+    /// `Loan` (`test_target/small/src/library/model/Loan.java`) has
+    /// `Property` fields `book: Book` and `member: Member`, both
+    /// project-internal types. Each should produce an `Association` edge,
+    /// out of `Loan` and into the referenced type, tagged with the `Member`
+    /// (field) that produced it.
+    #[test]
+    fn builds_association_edges_from_members() {
+        let graph = build_graph("test_target/small");
+
+        let loan = node_named(&graph, "Loan");
+
+        assert!(
+            loan.out_edges.iter().any(|e| {
+                e.typename.typename.0.last().map(String::as_str) == Some("Book")
+                    && matches!(&e.variant, EdgeVariant::Association(m) if m.name == "book")
+            }),
+            "Loan should have an Association edge to Book via its `book` field"
+        );
+        assert!(
+            loan.out_edges.iter().any(|e| {
+                e.typename.typename.0.last().map(String::as_str) == Some("Member")
+                    && matches!(&e.variant, EdgeVariant::Association(m) if m.name == "member")
+            }),
+            "Loan should have an Association edge to Member via its `member` field"
+        );
+
+        // build_edge is symmetric: the referenced type should record the
+        // same edge on its in_edges side.
+        let book = node_named(&graph, "Book");
+        assert!(
+            book.in_edges.iter().any(|e| {
+                e.typename.typename.0.last().map(String::as_str) == Some("Loan")
+                    && matches!(&e.variant, EdgeVariant::Association(m) if m.name == "book")
+            }),
+            "Book should have the reciprocal Association edge from Loan on in_edges"
+        );
     }
 }

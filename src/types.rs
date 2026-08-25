@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::parser::token::OwnedToken;
 use core::fmt;
 use std::{collections::BTreeSet, path::PathBuf, rc::Rc};
@@ -148,6 +150,15 @@ impl fmt::Debug for QualifiedName {
     }
 }
 
+impl serde::Serialize for QualifiedName {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.0.join("."))
+    }
+}
+
 /// A struct to represent type usages with generic,
 /// e.g. `java.util.Hashtable<Integer, ? extends com.util.MyClass>`
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -255,7 +266,7 @@ pub struct ImportObject {
     pub is_wildcard: bool,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord, Serialize)]
 pub enum AccessModifier {
     Private,
     Default,
@@ -263,7 +274,7 @@ pub enum AccessModifier {
     Public,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub struct Modifiers {
     pub modifiers: BTreeSet<String>,
     pub access_modifier: AccessModifier,

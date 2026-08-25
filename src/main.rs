@@ -12,10 +12,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{
-    name_resolution::file_util::get_java_files,
-    types::{JavaFile, ParseErr},
-};
+use crate::{name_resolution::file_util::get_java_files, types::JavaFile};
 
 #[derive(Debug, Clone, Copy)]
 enum Flags {
@@ -23,6 +20,7 @@ enum Flags {
     DebugAst,
     DebugFlattening,
     DebugNameResolution,
+    DebugGraph,
 }
 
 impl Flags {
@@ -32,6 +30,7 @@ impl Flags {
             "ast" => Some(Self::DebugAst),
             "flat" => Some(Self::DebugFlattening),
             "name-res" => Some(Self::DebugNameResolution),
+            "graph" => Some(Self::DebugGraph),
             _ => None,
         }
     }
@@ -99,17 +98,25 @@ fn main() {
     // Construct type index
     let pkg_ind = name_resolution::resolve_types::Project::from_ast_lst(&asts);
     if let Flags::DebugFlattening = flag {
-        write!(output_src, "{:#?}", pkg_ind).unwrap();
         let duration = start.elapsed();
         println!("Time taken: {:?} microseconds", duration.as_micros());
+        write!(output_src, "{:#?}", pkg_ind).unwrap();
         return;
     }
 
     let resolved_tree = name_resolution::resolve::Resolver::resolve(&asts);
     if let Flags::DebugNameResolution = flag {
-        write!(output_src, "{:#?}", resolved_tree).unwrap();
         let duration = start.elapsed();
         println!("Time taken: {:?} microseconds", duration.as_micros());
+        write!(output_src, "{:#?}", resolved_tree).unwrap();
+        return;
+    }
+
+    let graph = abstraction_graph::graph::Graph::from_trees(resolved_tree.as_ref());
+    if let Flags::DebugGraph = flag {
+        let duration = start.elapsed();
+        println!("Time taken: {:?} microseconds", duration.as_micros());
+        write!(output_src, "{:#?}", graph).unwrap();
         return;
     }
 
@@ -118,4 +125,7 @@ fn main() {
     println!("Time taken: {:?} microseconds", duration.as_micros());
     println!("Errored file count: {}", errs.len());
     println!("Errored files: {:#?}", errs);
+
+    let s = serde_json::to_string(&graph).unwrap();
+    println!("Serialized JSON:\n {}", s);
 }

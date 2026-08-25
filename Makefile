@@ -12,7 +12,7 @@ help:
 	@ echo "    runs the program with that directory."
 	@ echo "    Debug information stored in debug-output.log"
 	@ echo "    time it take"
-	@ echo " 		Mode: none, ast, flat, name-res"
+	@ echo " 		Mode: none, ast, flat, name-res, graph"
 	@ echo ""
 	@ echo "  make test"
 	@ echo "    runs test suite."

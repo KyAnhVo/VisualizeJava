@@ -1,11 +1,13 @@
+use serde::Serialize;
+
 use crate::resolved_types::{FullyQualifiedName, Member, TypeKind};
 use crate::types::QualifiedName;
 use std::rc::Rc;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize)]
 pub enum TypeVariant {
     Class,
-    Enum,
+    Enum(Vec<String>),
     Interface,
     Annotation,
 }
@@ -14,14 +16,14 @@ impl TypeVariant {
     pub fn from_typekind(typekind: &TypeKind) -> Self {
         match typekind {
             TypeKind::Class { .. } => Self::Class,
-            TypeKind::Enum { .. } => Self::Enum,
+            TypeKind::Enum { enum_vals, .. } => Self::Enum(enum_vals.clone()),
             TypeKind::Interface { .. } => TypeVariant::Interface,
             TypeKind::Annotation { .. } => TypeVariant::Annotation,
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize)]
 pub enum EdgeVariant {
     Extends,
     Implements,
@@ -40,29 +42,30 @@ impl EdgeVariant {
             (Class, _) => panic!("only class can extend class"),
             (Interface, _) => Implements,
             (Annotation, _) => panic!("annotation cannot extend anything"),
-            (Enum, _) => panic!("enum is final"),
+            (Enum(_), _) => panic!("enum is final"),
         }
     }
 }
 
-#[derive(Debug, Hash)]
+#[derive(Debug, Hash, Serialize)]
 pub struct Name {
     pub pkg_name: QualifiedName,
     pub name: QualifiedName,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Edge {
     pub typename: FullyQualifiedName,
     pub variant: EdgeVariant,
 }
 
 /// stores metadata and graph stuffs for nodes
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Node {
     pub name: FullyQualifiedName,
     pub type_variant: TypeVariant,
 
+    pub members: Rc<[Rc<Member>]>,
     pub out_edges: Vec<Edge>,
     pub in_edges: Vec<Edge>,
 }
