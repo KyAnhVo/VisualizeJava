@@ -1,6 +1,7 @@
 use std::env;
 
-use axum::{Router, routing::post};
+use axum::{Router, http::Method, routing::post};
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::server::handlers::graph_construct_handler;
 
@@ -16,7 +17,14 @@ async fn main() {
     tracing_subscriber::fmt::init();
     dotenvy::dotenv().unwrap();
 
-    let app: Router = Router::new().route("/graph", post(graph_construct_handler));
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers(Any);
+
+    let app: Router = Router::new()
+        .route("/graph", post(graph_construct_handler))
+        .layer(cors);
     let listener =
         tokio::net::TcpListener::bind("0.0.0.0:".to_string() + env::var("PORT").unwrap().as_str())
             .await
