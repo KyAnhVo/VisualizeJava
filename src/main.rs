@@ -1,131 +1,25 @@
+use std::env;
+
+use axum::{Router, routing::post};
+
+use crate::server::handlers::graph_construct_handler;
+
 pub mod abstraction_graph;
 pub mod name_resolution;
 pub mod parser;
 pub mod resolved_types;
+pub mod server;
 pub mod types;
 
-use std::{
-    ffi::OsString,
-    fs::{self, File},
-    io::Write,
-    path::PathBuf,
-    rc::Rc,
-};
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt::init();
+    dotenvy::dotenv().unwrap();
 
-use crate::{name_resolution::file_util::get_java_files, types::JavaFile};
-
-#[derive(Debug, Clone, Copy)]
-enum Flags {
-    None,
-    DebugAst,
-    DebugFlattening,
-    DebugNameResolution,
-    DebugGraph,
-}
-
-impl Flags {
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "none" => Some(Self::None),
-            "ast" => Some(Self::DebugAst),
-            "flat" => Some(Self::DebugFlattening),
-            "name-res" => Some(Self::DebugNameResolution),
-            "graph" => Some(Self::DebugGraph),
-            _ => None,
-        }
-    }
-}
-
-fn main() {
-    use std::time::Instant;
-    let start = Instant::now();
-
-    // Start program
-
-    let env_vars: Vec<OsString> = std::env::args_os().collect();
-
-    let mut output_src: Box<dyn Write> = match env_vars.len() {
-        3 => Box::new(std::io::stdout()),
-        4 => Box::new(File::create(env_vars[2].clone().into_string().unwrap()).unwrap()),
-        _ => panic!("Usage: <name> <src> [<output_file>] <mode>"),
-    };
-    let Ok(src) = env_vars[1].clone().into_string() else {
-        panic!("requires UTF-8 dir");
-    };
-    let Some(flag) = Flags::from_str(
-        env_vars[if env_vars.len() == 3 { 2 } else { 3 }]
-            .clone()
-            .into_string()
-            .unwrap()
-            .as_ref(),
-    ) else {
-        panic!("Mode: none, ast, flat, name-res");
-    };
-
-    let src_dir: PathBuf = src.into();
-    let files = match get_java_files(src_dir.as_ref()) {
-        Ok(f) => f,
-        Err(e) => panic!("cannot detect file: {:#?}", e),
-    };
-
-    // Construct AST
-    let mut errs: Vec<&PathBuf> = vec![];
-    let mut asts: Vec<Rc<JavaFile>> = vec![];
-    for file in files.iter() {
-        if file.ends_with("package-info.java") {
-            continue;
-        }
-        if file.ends_with("module-info.java") {
-            continue;
-        }
-        let src_str = fs::read_to_string(file).unwrap();
-        match parser::parser::Parser::parse(&src_str, file) {
-            Ok(ast) => asts.push(Rc::new(ast)),
-            Err(e) => {
-                errs.push(file);
-                println!("error file: {:#?}", file);
-                println!("{:#?}", e);
-            }
-        };
-    }
-    if let Flags::DebugAst = flag {
-        write!(output_src, "{:#?}", &asts).unwrap();
-        let duration = start.elapsed();
-        println!("Time taken: {:?} microseconds", duration.as_micros());
-        return;
-    }
-
-    // Construct type index
-    let pkg_ind = name_resolution::resolve_types::Project::from_ast_lst(&asts);
-    if let Flags::DebugFlattening = flag {
-        let duration = start.elapsed();
-        println!("Time taken: {:?} microseconds", duration.as_micros());
-        write!(output_src, "{:#?}", pkg_ind).unwrap();
-        return;
-    }
-
-    let resolved_tree = name_resolution::resolve::Resolver::resolve(&asts);
-    if let Flags::DebugNameResolution = flag {
-        let duration = start.elapsed();
-        println!("Time taken: {:?} microseconds", duration.as_micros());
-        write!(output_src, "{:#?}", resolved_tree).unwrap();
-        return;
-    }
-
-    let graph = abstraction_graph::graph::Graph::from_trees(resolved_tree.as_ref());
-    if let Flags::DebugGraph = flag {
-        let duration = start.elapsed();
-        println!("Time taken: {:?} microseconds", duration.as_micros());
-        write!(output_src, "{:#?}", graph).unwrap();
-        return;
-    }
-
-    // End program
-    let duration = start.elapsed();
-    println!("Time taken: {:?} microseconds", duration.as_micros());
-    println!("Errored file count: {}", errs.len());
-    println!("Errored files: {:#?}", errs);
-
-    let s = serde_json::to_string(&graph).unwrap();
-    println!("Serialized JSON:\n {}", s);
+    let app: Router = Router::new().route("/graph", post(graph_construct_handler));
+    let listener =
+        tokio::net::TcpListener::bind("0.0.0.0:".to_string() + env::var("PORT").unwrap().as_str())
+            .await
+            .unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
