@@ -146,6 +146,15 @@ impl Graph {
         }
     }
 
+    fn build_assoc_edge_from_reftype(
+        &mut self,
+        from: &FullyQualifiedName,
+        to: &FullyQualifiedName,
+        edge_variant: EdgeVariant,
+        reftype: RefType,
+    ) {
+    }
+
     fn build_edge(
         &mut self,
         from: &FullyQualifiedName,
