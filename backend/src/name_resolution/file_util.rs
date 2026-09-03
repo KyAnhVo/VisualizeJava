@@ -34,7 +34,7 @@ impl<T> Default for Stack<T> {
         Self::new()
     }
 }
-pub(crate) fn get_java_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
+pub fn get_java_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
     if !dir.is_dir() {
         if dir.extension().is_some_and(|x| x.eq("java")) {
             return Ok(vec![dir.to_path_buf()]);
