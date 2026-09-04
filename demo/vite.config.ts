@@ -5,6 +5,11 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages serves this from /VisualizeJava/, not a domain root. Left at
+  // the default `/`, every emitted URL — the HTML's script and stylesheet, both
+  // `new Worker(...)` calls, and the wasm `?url` import — points a level too
+  // high and 404s, so the page loads but renders nothing.
+  base: '/VisualizeJava/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
