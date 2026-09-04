@@ -21,6 +21,14 @@ bun run sync-wasm   # rebuilds ../wasm with wasm-pack and copies pkg -> src/pkg
 Other scripts: `bun run build` (typecheck + production bundle),
 `bun run preview`, `bun run lint`.
 
+`build` writes to **`<repo>/doc`**, not `demo/dist`, so the bundle sits at the
+project root ready to be served statically. That directory is outside Vite's
+root, so `emptyOutDir` is set explicitly — otherwise Vite refuses to clear it
+and stale hashed assets pile up. `bun run preview` serves `doc/` too.
+
+Asset URLs in the build are absolute (`/assets/…`). If you deploy under a
+subpath rather than a domain root, set `base` in `vite.config.ts`.
+
 ## Stack
 
 React 19, React Flow (`@xyflow/react`), ELK for layout, Tailwind v4 with
