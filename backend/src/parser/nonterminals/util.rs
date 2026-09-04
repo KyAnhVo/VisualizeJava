@@ -3,7 +3,7 @@ use crate::types::*;
 use std::{collections::BTreeSet, rc::Rc};
 
 impl<'a> Parser<'a> {
-    /// ```
+    /// ```ebnf
     /// <arg_list> ::=
     /// "(" <annotations> ["final"] <ref_type> (
     ///     |   ("..." IDENTIFIER)

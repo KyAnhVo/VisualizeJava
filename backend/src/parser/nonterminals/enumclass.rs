@@ -82,11 +82,11 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// ```
+    /// ```ebnf
     /// <enum_body> ::= "{" [<enum_val> {"," <enum_val>}] [";" <members>] "}"
     /// ```
     /// where
-    /// ```
+    /// ```ebnf
     /// <enum_val> ::= IDENTIFIEIR [<skip_paren>] [<skip_brace>]
     /// ```
     pub(crate) fn enum_body(

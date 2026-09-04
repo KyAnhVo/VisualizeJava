@@ -274,7 +274,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Numeric literal is represented as following:
-    /// ```
+    /// ```ebnf
     /// <numeric_literal> ::=
     ///     (here are ints)
     ///     | [0x|0X] hex_digits [L|l]

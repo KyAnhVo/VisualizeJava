@@ -4,7 +4,7 @@ use super::super::{parser::Parser, token::Token::*};
 use crate::types::*;
 
 impl<'a> Parser<'a> {
-    /// ```
+    /// ```ebnf
     /// <class_decl> ::= "class" IDENTIFIER <type_param_list>
     ///     ["extends" <ref_type>]
     ///     ["implements" <ref_type> {"," <ref_type>}]

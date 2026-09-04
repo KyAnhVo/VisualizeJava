@@ -178,7 +178,7 @@ impl<'a> Parser<'a> {
     }
 
     /// a valid assignment-ending comma is the first comma of the following phrase:
-    /// ```
+    /// ```ebnf
     /// "," <annotations> IDENTIFIER {"," <annotations> IDENTIFIER} (";" | "=")
     /// ```
     ///
