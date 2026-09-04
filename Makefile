@@ -8,3 +8,9 @@ compile_wasm:
 	rm -rf demo/src/pkg frontend/src/pkg
 	cp -r wasm/pkg demo/src/pkg
 	cp -r wasm/pkg frontend/src/pkg
+
+compile_demo:
+	cd ./demo && bun run build
+
+compile_frontend:
+	cd ./frontend && bun run build
