@@ -1,15 +1,19 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
-import path from "path"
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages serves this from /VisualizeJava/, not a domain root. Left at
+  // the default `/`, every emitted URL — the HTML's script and stylesheet, both
+  // `new Worker(...)` calls, and the wasm `?url` import — points a level too
+  // high and 404s, so the page loads but renders nothing.
+  base: '/VisualizeJava/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   build: {
@@ -20,5 +24,12 @@ export default defineConfig({
     // directory unless told to explicitly. Without this, stale hashed assets
     // from previous builds accumulate forever.
     emptyOutDir: true,
+  },
+  optimizeDeps: {
+    // elk-api.js is CommonJS; pre-bundling converts it to ESM. Its engine
+    // (elk-worker.min.js) is deliberately excluded — it is loaded as a worker
+    // entry via `?worker`, not imported. See lib/layout.ts.
+    include: ['elkjs/lib/elk-api.js'],
+    exclude: ['elkjs/lib/elk-worker.min.js'],
   },
 })

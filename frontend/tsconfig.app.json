@@ -8,11 +8,8 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
-    /* for shadcn */
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
 
     /* Bundler mode */
